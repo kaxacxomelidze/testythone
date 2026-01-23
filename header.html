@@ -1,21 +1,7 @@
-<!doctype html>
-<html lang="ka">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <title>Youth</title>
-
-  <!-- ✅ Font Awesome (ICONS) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-  <!-- ✅ Header CSS -->
-  <link rel="stylesheet" href="/youthagency/assets/header.css">
-</head>
-
-<body>
-
 <!-- header.html (INJECTED PARTIAL) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="/youthagency/assets/header.css">
+
 <header class="site-header" id="siteHeader">
   <div class="header-wrap">
 
@@ -26,30 +12,34 @@
     </div>
 
     <nav class="header-nav" aria-label="Main navigation">
-      <a href="/youthagency/index.html" data-active="/youthagency/">მთავარი</a>
+      <a href="/youthagency/index.html" data-active="/youthagency/" data-i18n="nav.home">მთავარი</a>
 
-      <a href="/youthagency/main_news/news_index.php" data-active="/main_news/news_index.php">სიახლეები</a>
+      <a href="/youthagency/main_news/news_index.php" data-active="/main_news/news_index.php" data-i18n="nav.news">სიახლეები</a>
 
       <!-- აქტივობები dropdown -->
       <div class="nav-item">
         <button class="nav-trigger" id="activitiesBtn" aria-expanded="false" type="button">
-          აქტივობები
+          <span data-i18n="nav.activities">აქტივობები</span>
           <i class="fa-solid fa-chevron-down"></i>
         </button>
 
         <div class="dropdown-menu" id="activitiesMenu">
-          <a href="/youthagency/camps/" data-active="/youthagency/camps/">ბანაკები</a>
-          <a href="/youthagency/meetings/" data-active="/youthagency/meetings/">შეხვედრები</a>
+          <a href="/youthagency/camps/" data-active="/youthagency/camps/" data-i18n="nav.camps">ბანაკები</a>
+          <a href="/youthagency/meetings/" data-active="/youthagency/meetings/" data-i18n="nav.meetings">შეხვედრები</a>
         </div>
       </div>
 
-      <a href="/youthagency/grants/grants_index.php" data-active="/youthagency/grants/">საგრანტო </a>
-      <a href="/youthagency/rules/" data-active="/youthagency/rules/">წესები</a>
+      <a href="/youthagency/grants/grants_index.php" data-active="/youthagency/grants/" data-i18n="nav.grants">საგრანტო</a>
+      <a href="/youthagency/rules/" data-active="/youthagency/rules/" data-i18n="nav.rules">წესები</a>
     </nav>
 
     <div class="header-right">
-      <a href="/youthagency/about/" data-active="/youthagency/about/">ჩვენს შესახებ</a>
-      <a class="cta" href="/youthagency/contact/" data-active="/youthagency/contact/">კონტაქტი</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button class="lang-btn" type="button" data-lang="ka" aria-pressed="true">ქართული</button>
+        <button class="lang-btn" type="button" data-lang="en" aria-pressed="false">English</button>
+      </div>
+      <a href="/youthagency/about/" data-active="/youthagency/about/" data-i18n="nav.about">ჩვენს შესახებ</a>
+      <a class="cta" href="/youthagency/contact/" data-active="/youthagency/contact/" data-i18n="nav.contact">კონტაქტი</a>
 
       <button class="burger" id="burgerBtn" aria-expanded="false" type="button">
         <i class="fa-solid fa-bars"></i>
@@ -62,25 +52,21 @@
   <div class="mobile-panel" id="mobilePanel">
     <div class="inner">
       <nav>
-        <a href="/youthagency/" data-active="/youthagency/">მთავარი</a>
-        <a href="/youthagency//main_news/news_index.php" data-active="/main_news/news_index.php">სიახლეები</a>
-        <a href="/youthagency/camps/" data-active="/youthagency/camps/">ბანაკები</a>
-        <a href="/youthagency/grants/grants_index.php" data-active="/youthagency/grants/">საგრანტო</a>
-        <a href="/youthagency/rules/" data-active="/youthagency/rules/">წესები</a>
+        <a href="/youthagency/" data-active="/youthagency/" data-i18n="nav.home">მთავარი</a>
+        <a href="/youthagency/main_news/news_index.php" data-active="/main_news/news_index.php" data-i18n="nav.news">სიახლეები</a>
+        <a href="/youthagency/camps/" data-active="/youthagency/camps/" data-i18n="nav.camps">ბანაკები</a>
+        <a href="/youthagency/grants/grants_index.php" data-active="/youthagency/grants/" data-i18n="nav.grants">საგრანტო</a>
+        <a href="/youthagency/rules/" data-active="/youthagency/rules/" data-i18n="nav.rules">წესები</a>
       </nav>
 
       <div class="mobile-actions">
-        <a href="/youthagency/about/" data-active="/youthagency/about/">ჩვენს შესახებ</a>
-        <a class="cta" href="/youthagency/contact/" data-active="/youthagency/contact/">კონტაქტი</a>
+        <div class="lang-switch mobile" role="group" aria-label="Language">
+          <button class="lang-btn" type="button" data-lang="ka" aria-pressed="true">ქართული</button>
+          <button class="lang-btn" type="button" data-lang="en" aria-pressed="false">English</button>
+        </div>
+        <a href="/youthagency/about/" data-active="/youthagency/about/" data-i18n="nav.about">ჩვენს შესახებ</a>
+        <a class="cta" href="/youthagency/contact/" data-active="/youthagency/contact/" data-i18n="nav.contact">კონტაქტი</a>
       </div>
     </div>
   </div>
 </header>
-
-
-  </main>
-
-  <!-- ✅ Header JS (MUST BE BEFORE </body>) -->
-<script src="assets/header.js"></script>
-</body>
-</html>

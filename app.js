@@ -3,6 +3,116 @@
 (function () {
   console.log('[app.js] loaded ✅');
 
+  const translations = {
+    ka: {
+      'nav.home': 'მთავარი',
+      'nav.news': 'სიახლეები',
+      'nav.activities': 'აქტივობები',
+      'nav.camps': 'ბანაკები',
+      'nav.meetings': 'შეხვედრები',
+      'nav.grants': 'საგრანტო',
+      'nav.rules': 'წესები',
+      'nav.about': 'ჩვენს შესახებ',
+      'nav.contact': 'კონტაქტი',
+      'footer.searchPlaceholder': 'მოძებნე საიტზე...',
+      'footer.searchButton': 'ძიება',
+      'footer.aboutTitle': 'ჩვენს შესახებ',
+      'footer.aboutText': 'სააგენტო ხელს უწყობს ახალგაზრდების ჩართულობას, განათლებასა და ინიციატივებს — საგრანტო პროგრამებით, პარტნიორული პროექტებით და პრაქტიკული სერვისებით.',
+      'footer.socialLabel': 'სოციალური ქსელები',
+      'footer.navTitle': 'ნავიგაცია',
+      'footer.navHome': 'მთავარი',
+      'footer.navCamps': 'ბანაკები',
+      'footer.navActivities': 'აქტივობები',
+      'footer.navGrants': 'საგრანტო პროექტები',
+      'footer.servicesTitle': 'სერვისები',
+      'footer.servicesNews': 'სიახლეები',
+      'footer.servicesAbout': 'ჩვენს შესახებ',
+      'footer.servicesContact': 'კონტაქტი',
+      'footer.docsTitle': 'დოკუმენტები',
+      'footer.docsPrivacy': 'კონფიდენციალურობის პოლიტიკა',
+      'footer.docsTerms': 'გამოყენების წესები',
+      'footer.docsCopyright': 'საავტორო უფლებები',
+      'footer.address': 'ვაჟა ფშაველას ქ. #76',
+      'footer.phone': '032 230 51 65',
+      'footer.email': 'info@youth.ge',
+      'footer.copy': 'youth.ge © 2026. ყველა უფლება დაცულია.'
+    },
+    en: {
+      'nav.home': 'Home',
+      'nav.news': 'News',
+      'nav.activities': 'Activities',
+      'nav.camps': 'Camps',
+      'nav.meetings': 'Meetings',
+      'nav.grants': 'Grants',
+      'nav.rules': 'Rules',
+      'nav.about': 'About Us',
+      'nav.contact': 'Contact',
+      'footer.searchPlaceholder': 'Search the site...',
+      'footer.searchButton': 'Search',
+      'footer.aboutTitle': 'About Us',
+      'footer.aboutText': 'The agency supports youth engagement, education, and initiatives through grant programs, partner projects, and practical services.',
+      'footer.socialLabel': 'Social networks',
+      'footer.navTitle': 'Navigation',
+      'footer.navHome': 'Home',
+      'footer.navCamps': 'Camps',
+      'footer.navActivities': 'Activities',
+      'footer.navGrants': 'Grant projects',
+      'footer.servicesTitle': 'Services',
+      'footer.servicesNews': 'News',
+      'footer.servicesAbout': 'About Us',
+      'footer.servicesContact': 'Contact',
+      'footer.docsTitle': 'Documents',
+      'footer.docsPrivacy': 'Privacy policy',
+      'footer.docsTerms': 'Terms of use',
+      'footer.docsCopyright': 'Copyright',
+      'footer.address': '76 Vazha-Pshavela St.',
+      'footer.phone': '032 230 51 65',
+      'footer.email': 'info@youth.ge',
+      'footer.copy': 'youth.ge © 2026. All rights reserved.'
+    }
+  };
+
+  function getStoredLanguage() {
+    return localStorage.getItem('language') || 'ka';
+  }
+
+  function applyTranslations(lang) {
+    const dict = translations[lang] || translations.ka;
+    document.documentElement.lang = lang;
+
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+      const key = el.getAttribute('data-i18n');
+      if (dict[key]) {
+        el.textContent = dict[key];
+      }
+    });
+
+    document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (dict[key]) {
+        el.setAttribute('placeholder', dict[key]);
+      }
+    });
+
+    document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+      const key = el.getAttribute('data-i18n-aria');
+      if (dict[key]) {
+        el.setAttribute('aria-label', dict[key]);
+      }
+    });
+
+    document.querySelectorAll('.lang-btn').forEach((btn) => {
+      const isActive = btn.getAttribute('data-lang') === lang;
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+  }
+
+  function setLanguage(lang) {
+    const nextLang = translations[lang] ? lang : 'ka';
+    localStorage.setItem('language', nextLang);
+    applyTranslations(nextLang);
+  }
+
   function normalizePath(path) {
     // ensure trailing slash for matching
     if (!path) return '/';
@@ -87,6 +197,15 @@
         }
       });
     }
+
+    const savedLang = getStoredLanguage();
+    applyTranslations(savedLang);
+
+    headerRoot.querySelectorAll('[data-lang]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setLanguage(btn.getAttribute('data-lang'));
+      });
+    });
 
     // Activities dropdown
     const activitiesBtn = document.getElementById('activitiesBtn');

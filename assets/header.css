@@ -106,6 +106,36 @@ body{
   gap:16px;
 }
 
+.lang-switch{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:4px;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.18);
+}
+
+.lang-switch.mobile{
+  align-self:flex-start;
+}
+
+.lang-btn{
+  border:0;
+  background:transparent;
+  color:rgba(255,255,255,.8);
+  font-size:12px;
+  padding:6px 10px;
+  border-radius:999px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.lang-btn[aria-pressed="true"]{
+  background:rgba(255,255,255,.18);
+  color:#fff;
+}
+
 .header-right a{
   color:rgba(255,255,255,.78);
   text-decoration:none;
@@ -157,6 +187,13 @@ body{
 
 /* Show on hover */
 .nav-item:hover .dropdown-menu{
+  opacity:1;
+  visibility:visible;
+  transform:translateY(0);
+}
+
+/* Show on click (JS toggle) */
+.dropdown-menu.open{
   opacity:1;
   visibility:visible;
   transform:translateY(0);
