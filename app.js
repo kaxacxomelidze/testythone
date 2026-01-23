@@ -35,7 +35,19 @@
       'footer.address': 'ვაჟა ფშაველას ქ. #76',
       'footer.phone': '032 230 51 65',
       'footer.email': 'info@youth.ge',
-      'footer.copy': 'youth.ge © 2026. ყველა უფლება დაცულია.'
+      'footer.copy': 'youth.ge © 2026. ყველა უფლება დაცულია.',
+      'about.title': 'ჩვენ შესახებ',
+      'about.body': 'სსიპ ახალგაზრდობის სააგენტო არის საჯარო სამართლის იურიდიული პირი, რომელიც შექმნილია სახელმწიფო ახალგაზრდული პოლიტიკის სტრატეგიის შემუშავების, განხორციელებისა და კოორდინაციის მიზნით. ახალგაზრდობა არის ქვეყნის მდგრადი განვითარების მამოძრავებელი ძალა და ადამიანური კაპიტალის მთავარი განახლებადი წყარო. სახელმწიფო ახალგაზრდებისთვის და ახალგაზრდებთან ერთად ქმნის მათი, როგორც ინდივიდებისა და საზოგადოების სრულფასოვანი წევრების განვითარების მხარდამჭერ გარემოს, რაც ხელს შეუწყობს თითოეულის პოტენციალის სრულად გამოყენებას, ეკონომიკურ გაძლიერებასა და ქვეყნის განვითარების პროცესში აქტიურ მონაწილეობას.',
+      'contact.title': 'კონტაქტი',
+      'contact.subtitle': 'გამოგვიგზავნეთ შეტყობინება და მალე დაგიკავშირდებით.',
+      'contact.name': 'სახელი და გვარი',
+      'contact.email': 'ელფოსტა',
+      'contact.phone': 'ტელეფონი (არასავალდებულო)',
+      'contact.message': 'შეტყობინება',
+      'contact.submit': 'გაგზავნა',
+      'contact.successTitle': 'გმადლობთ!',
+      'contact.successText': 'თქვენი შეტყობინება მიღებულია. მალე დაგიკავშირდებით.',
+      'contact.error': 'გთხოვთ სწორად შეავსოთ აუცილებელი ველები.'
     },
     en: {
       'nav.home': 'Home',
@@ -68,7 +80,19 @@
       'footer.address': '76 Vazha-Pshavela St.',
       'footer.phone': '032 230 51 65',
       'footer.email': 'info@youth.ge',
-      'footer.copy': 'youth.ge © 2026. All rights reserved.'
+      'footer.copy': 'youth.ge © 2026. All rights reserved.',
+      'about.title': 'About Us',
+      'about.body': 'The LEPL Youth Agency is a legal entity of public law established to develop, implement, and coordinate the state youth policy strategy. Youth is the driving force of sustainable development and the main renewable source of human capital. The state, together with young people, creates a supportive environment for their development as full members of society, enabling each person to fully realize their potential, strengthen economically, and participate actively in the country’s development.',
+      'contact.title': 'Contact',
+      'contact.subtitle': 'Send us your message and we will respond as soon as possible.',
+      'contact.name': 'Full name',
+      'contact.email': 'Email',
+      'contact.phone': 'Phone (optional)',
+      'contact.message': 'Message',
+      'contact.submit': 'Send message',
+      'contact.successTitle': 'Thank you!',
+      'contact.successText': 'Your message has been received. We will contact you shortly.',
+      'contact.error': 'Please fill out the required fields correctly.'
     }
   };
 

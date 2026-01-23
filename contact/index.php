@@ -1,0 +1,245 @@
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/../admin/config.php';
+
+$dataFile = DATA_DIR . '/contact_messages.json';
+$errors = [];
+$success = false;
+
+function save_message(string $path, array $message): bool {
+  $dir = dirname($path);
+  if (!is_dir($dir)) {
+    @mkdir($dir, 0775, true);
+  }
+
+  $fp = fopen($path, 'c+');
+  if (!$fp) {
+    return false;
+  }
+
+  if (!flock($fp, LOCK_EX)) {
+    fclose($fp);
+    return false;
+  }
+
+  $raw = stream_get_contents($fp);
+  $items = [];
+  if ($raw !== false && trim($raw) !== '') {
+    $decoded = json_decode($raw, true);
+    if (is_array($decoded)) {
+      $items = $decoded;
+    }
+  }
+
+  $items[] = $message;
+
+  ftruncate($fp, 0);
+  rewind($fp);
+  fwrite($fp, json_encode($items, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+  fflush($fp);
+  flock($fp, LOCK_UN);
+  fclose($fp);
+  return true;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  csrf_check($_POST['csrf'] ?? null);
+
+  $name = trim((string)($_POST['name'] ?? ''));
+  $email = trim((string)($_POST['email'] ?? ''));
+  $phone = trim((string)($_POST['phone'] ?? ''));
+  $message = trim((string)($_POST['message'] ?? ''));
+
+  if ($name === '') $errors[] = 'name';
+  if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'email';
+  if ($message === '') $errors[] = 'message';
+
+  if (!$errors) {
+    $entry = [
+      'id' => bin2hex(random_bytes(8)),
+      'name' => $name,
+      'email' => $email,
+      'phone' => $phone,
+      'message' => $message,
+      'created_at' => date('Y-m-d H:i:s'),
+      'ip' => client_ip(),
+    ];
+
+    if (save_message($dataFile, $entry)) {
+      $success = true;
+    } else {
+      $errors[] = 'save';
+    }
+  }
+}
+?>
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Youth Agency • Contact</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/youthagency/assets.css?v=1">
+
+  <style>
+    .page{
+      padding:48px 18px 60px;
+    }
+    .page-card{
+      max-width:760px;
+      margin:0 auto;
+      background:#fff;
+      border-radius:18px;
+      padding:28px;
+      box-shadow:0 18px 36px rgba(15,23,42,.08);
+      border:1px solid rgba(15,23,42,.08);
+    }
+    .page-card h1{
+      margin:0 0 8px;
+      color:#1f2a44;
+      font-size:28px;
+      font-weight:800;
+    }
+    .page-card p{
+      margin:0 0 22px;
+      color:#3b445a;
+      font-size:15px;
+      line-height:1.6;
+    }
+    .form-grid{
+      display:grid;
+      gap:16px;
+    }
+    .form-row{
+      display:grid;
+      gap:8px;
+    }
+    label{
+      font-size:14px;
+      font-weight:700;
+      color:#243252;
+    }
+    input, textarea{
+      width:100%;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid rgba(15,23,42,.16);
+      font-family:inherit;
+      font-size:14px;
+      background:#f8fafc;
+    }
+    textarea{
+      min-height:140px;
+      resize:vertical;
+    }
+    .btn-submit{
+      border:0;
+      padding:12px 18px;
+      border-radius:12px;
+      background:var(--btn);
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+      font-size:14px;
+      width: fit-content;
+    }
+    .btn-submit:hover{
+      background:var(--btn-hover);
+    }
+    .notice{
+      padding:12px 14px;
+      border-radius:12px;
+      margin-bottom:18px;
+      font-size:14px;
+    }
+    .notice.success{
+      background:rgba(22,163,74,.12);
+      border:1px solid rgba(22,163,74,.3);
+      color:#14532d;
+    }
+    .notice.error{
+      background:rgba(239,68,68,.12);
+      border:1px solid rgba(239,68,68,.3);
+      color:#7f1d1d;
+    }
+  </style>
+</head>
+<body>
+  <div id="siteHeaderMount"></div>
+
+  <main class="page">
+    <section class="page-card">
+      <h1 data-i18n="contact.title">კონტაქტი</h1>
+      <p data-i18n="contact.subtitle">გამოგვიგზავნეთ შეტყობინება და მალე დაგიკავშირდებით.</p>
+
+      <?php if ($success): ?>
+        <div class="notice success">
+          <strong data-i18n="contact.successTitle">გმადლობთ!</strong>
+          <span data-i18n="contact.successText">თქვენი შეტყობინება მიღებულია. მალე დაგიკავშირდებით.</span>
+        </div>
+      <?php elseif ($errors): ?>
+        <div class="notice error">
+          <span data-i18n="contact.error">გთხოვთ სწორად შეავსოთ აუცილებელი ველები.</span>
+        </div>
+      <?php endif; ?>
+
+      <form class="form-grid" method="post">
+        <input type="hidden" name="csrf" value="<?=h(csrf_token())?>">
+        <div class="form-row">
+          <label for="name" data-i18n="contact.name">სახელი და გვარი</label>
+          <input id="name" name="name" type="text" value="<?=h($_POST['name'] ?? '')?>" required>
+        </div>
+        <div class="form-row">
+          <label for="email" data-i18n="contact.email">ელფოსტა</label>
+          <input id="email" name="email" type="email" value="<?=h($_POST['email'] ?? '')?>" required>
+        </div>
+        <div class="form-row">
+          <label for="phone" data-i18n="contact.phone">ტელეფონი (არასავალდებულო)</label>
+          <input id="phone" name="phone" type="text" value="<?=h($_POST['phone'] ?? '')?>">
+        </div>
+        <div class="form-row">
+          <label for="message" data-i18n="contact.message">შეტყობინება</label>
+          <textarea id="message" name="message" required><?=h($_POST['message'] ?? '')?></textarea>
+        </div>
+        <button class="btn-submit" type="submit" data-i18n="contact.submit">გაგზავნა</button>
+      </form>
+    </section>
+  </main>
+
+  <div id="siteFooterMount"></div>
+
+  <script>
+    async function inject(id, file) {
+      const el = document.getElementById(id);
+      if (!el) throw new Error(`Mount element not found: #${id}`);
+      const res = await fetch(file + '?v=1');
+      if (!res.ok) throw new Error(`${file} not found. Status: ${res.status}`);
+      el.innerHTML = await res.text();
+    }
+
+    async function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src + '?v=1';
+        s.onload = resolve;
+        s.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+        document.body.appendChild(s);
+      });
+    }
+
+    (async () => {
+      try {
+        await inject('siteHeaderMount', '/youthagency/header.html');
+        await loadScript('/youthagency/app.js');
+        if (typeof window.initHeader === 'function') window.initHeader();
+        await inject('siteFooterMount', '/youthagency/footer.html');
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  </script>
+</body>
+</html>
