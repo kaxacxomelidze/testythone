@@ -1,0 +1,26 @@
+# /youthagency/.htaccess
+RewriteEngine On
+RewriteBase /youthagency/
+
+# 1) Do NOT rewrite real files/folders
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# --- NEWS SEO URLS ---
+# /news/123/some-title -> news_view.php?id=123&slug=some-title
+RewriteRule ^news/([0-9]+)/([^/]+)/?$ news_view.php?id=$1&slug=$2 [L,QSA]
+
+# /news/123/ -> news_view.php?id=123
+RewriteRule ^news/([0-9]+)/?$ news_view.php?id=$1 [L,QSA]
+
+# --- CAMPS SEO URLS ---
+RewriteRule ^camps/?$ camps/index.php
+RewriteRule ^camps/([0-9]+)/([^/]+)/?$ camps/view.php?id=$1&slug=$2
+
+# --- GRANTS SEO URLS ---
+RewriteRule ^grants/([0-9]+)/([^/]+)/?$ grants/grants_view.php?id=$1&slug=$2 [L,QSA]
+RewriteRule ^grants/([0-9]+)/?$ grants/grants_view.php?id=$1 [L,QSA]
+
+# Grants index
+RewriteRule ^grants/?$ grants/grants_index.php [L,QSA]

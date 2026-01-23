@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="ka">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Admin — Grants + Grant Portal (Demo)</title>
+<style>
+:root{
+  --bg:#0b1220; --panel:#0f172a; --card:#111827; --line:#22314a;
+  --text:#e5e7eb; --muted:#94a3b8; --accent:#2563eb; --ok:#16a34a;
+  --warn:#f59e0b; --bad:#dc2626; --radius:14px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Arial;background:var(--bg);color:var(--text)}
+.wrap{max-width:1240px;margin:0 auto;padding:18px}
+h1{margin:0;font-size:22px}
+.small{color:var(--muted);font-weight:800;font-size:13px}
+.tabs{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+.tab{border:1px solid var(--line);background:#0a0f1c;color:#fff;padding:10px 12px;border-radius:12px;font-weight:1000;cursor:pointer}
+.tab.active{border-color:rgba(37,99,235,.45);box-shadow:0 0 0 2px rgba(37,99,235,.15) inset}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:10px 0}
+.row > *{flex:1}
+.tight{flex:0 0 220px}
+.btn{border:0;border-radius:12px;padding:10px 14px;font-weight:1000;cursor:pointer}
+.btn-ac{background:var(--accent);color:#fff}
+.btn-ok{background:var(--ok);color:#fff}
+.btn-ghost{background:#0a0f1c;color:#fff;border:1px solid var(--line)}
+.btn-bad{background:var(--bad);color:#fff}
+input,select,textarea{
+  width:100%;background:#0a0f1c;color:var(--text);border:1px solid var(--line);
+  border-radius:12px;padding:10px 12px;outline:none;font-weight:900
+}
+textarea{min-height:110px;resize:vertical}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;font-size:14px;vertical-align:top}
+th{color:#93c5fd}
+.thumb{width:96px;height:56px;border-radius:12px;border:1px solid var(--line);overflow:hidden;background:#0a0f1c;display:flex;align-items:center;justify-content:center;color:#64748b;font-weight:1000;font-size:12px}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.pill{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid var(--line);
+  background:#0a0f1c;font-weight:1000;font-size:12px;color:#cbd5e1}
+.pill.open{border-color:rgba(22,163,74,.35);color:#86efac}
+.pill.closed{border-color:rgba(245,158,11,.35);color:#fde68a}
+.pill.need{border-color:rgba(220,38,38,.35);color:#fecaca}
+.act button{padding:7px 10px;border:0;border-radius:10px;font-weight:1000;cursor:pointer;margin-right:6px}
+.edit{background:var(--accent);color:#fff}
+.del{background:var(--bad);color:#fff}
+.prev{background:#13203a;color:#fff;border:1px solid var(--line)}
+.toggle{background:#0a0f1c;color:#fff;border:1px solid var(--line)}
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width: 980px){ .grid2{grid-template-columns:1fr} }
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal.show{display:flex}
+.box{width:min(1100px,100%);background:#0a0f1c;border:1px solid var(--line);border-radius:16px;padding:16px}
+.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.close{width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:#111827;color:#fff;cursor:pointer;font-weight:1000}
+
+/* chat */
+.chat{border:1px solid var(--line);border-radius:14px;background:#0a0f1c;padding:12px;max-height:260px;overflow:auto}
+.msg{padding:10px;border:1px solid var(--line);border-radius:14px;margin:8px 0}
+.msg.admin{border-color:rgba(37,99,235,.35)}
+.msg.app{border-color:rgba(22,163,74,.35)}
+.msg .meta{display:flex;justify-content:space-between;color:#93c5fd;font-weight:1000;font-size:12px;margin-bottom:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+    <div>
+      <h1>Admin — Grants + Grant Portal</h1>
+      <div class="small">CRUD • Portal Builder • Applications • Rating • Clarification • Export (Demo/localStorage)</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="seed()">Seed</button>
+      <button class="btn btn-ghost" onclick="resetAll()">Reset</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tGrants" onclick="showTab('grants')">Grants</button>
+    <button class="tab" id="tBuilder" onclick="showTab('builder')">Grant Portal Builder</button>
+    <button class="tab" id="tApps" onclick="showTab('apps')">Applications</button>
+  </div>
+
+  <!-- GRANTS -->
+  <section id="grants">
+    <div class="card">
+      <div class="row">
+        <button class="btn btn-ok tight" onclick="openGrant()">+ Add Grant</button>
+        <div>
+          <label class="small">Search (title)</label>
+          <input id="gq" placeholder="Search..." oninput="renderGrants()">
+        </div>
+        <div class="tight">
+          <label class="small">Status</label>
+          <select id="gstatus" onchange="renderGrants()">
+            <option value="all">All</option>
+            <option value="open">მიმდინარე</option>
+            <option value="closed">დახურული</option>
+          </select>
+        </div>
+        <div class="tight">
+          <label class="small">Sort</label>
+          <select id="gsort" onchange="renderGrants()">
+            <option value="new">Newest</option>
+            <option value="old">Oldest</option>
+          </select>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Cover</th>
+            <th>Program</th>
+            <th>Deadline</th>
+            <th>Status</th>
+            <th style="width:300px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="gBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- BUILDER -->
+  <section id="builder" hidden>
+    <div class="card">
+      <div class="row">
+        <div class="tight">
+          <label class="small">Select Grant</label>
+          <select id="bGrant" onchange="loadBuilder()"></select>
+        </div>
+        <div>
+          <div class="small">Builder controls: enable/disable steps • fields per step • dynamic applicant type</div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <b>Steps (Stepper)</b>
+            <button class="btn btn-ghost" onclick="addStep()">+ Add Step</button>
+          </div>
+          <div class="small">რიგი და ჩართვა/გამორთვა</div>
+          <div id="stepsList"></div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <b>Step Fields</b>
+            <button class="btn btn-ghost" onclick="addField()">+ Add Field</button>
+          </div>
+          <div class="small">აირჩიე Step და დაამატე ველები (required/conditional)</div>
+          <div class="row">
+            <div class="tight">
+              <label class="small">Active Step</label>
+              <select id="activeStep" onchange="renderFields()"></select>
+            </div>
+            <div></div>
+          </div>
+          <div id="fieldsList"></div>
+        </div>
+      </div>
+
+      <hr>
+      <div class="card">
+        <b>File Requirements (for “Files” step)</b>
+        <div class="small">სავალდებულო დოკუმენტების ჩამონათვალი (grant-ის მიხედვით)</div>
+        <div class="row">
+          <div><input id="reqName" placeholder="მაგ: პროექტის ბიუჯეტი (PDF)"></div>
+          <div class="tight"><select id="reqReq"><option value="yes">Required</option><option value="no">Optional</option></select></div>
+          <div class="tight"><button class="btn btn-ok" onclick="addRequirement()">Add</button></div>
+        </div>
+        <div id="reqList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APPLICATIONS -->
+  <section id="apps" hidden>
+    <div class="card">
+      <div class="row">
+        <div class="tight">
+          <label class="small">Grant</label>
+          <select id="aGrant" onchange="renderApps()"></select>
+        </div>
+        <div>
+          <label class="small">Search (name/email/id)</label>
+          <input id="aq" placeholder="Search..." oninput="renderApps()">
+        </div>
+        <div class="tight">
+          <label class="small">Status</label>
+          <select id="aStatus" onchange="renderApps()">
+            <option value="all">All</option>
+            <option value="submitted">Submitted</option>
+            <option value="in_review">In Review</option>
+            <option value="need_clarification">Need Clarification</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="tight">
+          <button class="btn btn-ghost" onclick="exportCSV()">Export CSV</button>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Applicant</th>
+            <th>Status</th>
+            <th>Rating</th>
+            <th style="width:360px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="aBody"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- GRANT MODAL -->
+<div class="modal" id="grantModal">
+  <div class="box">
+    <div class="head">
+      <h3 id="gmTitle" style="margin:0">Add Grant</h3>
+      <button class="close" onclick="closeGrant()">✕</button>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <label class="small">Cover image</label>
+        <input id="gImg" type="file" accept="image/*">
+        <div style="height:10px"></div>
+        <div class="thumb" style="width:100%;height:220px" id="gImgPrev">IMG</div>
+      </div>
+      <div class="card">
+        <div class="row" style="margin:0">
+          <div>
+            <label class="small">Program title</label>
+            <input id="gTitle" placeholder="საგრანტო პროგრამის დასახელება">
+          </div>
+          <div class="tight">
+            <label class="small">Deadline</label>
+            <input id="gDeadline" type="date">
+          </div>
+        </div>
+        <label class="small">Short description</label>
+        <input id="gShort" placeholder="მოკლე აღწერა">
+
+        <div style="height:10px"></div>
+        <label class="small">Details / Goals</label>
+        <textarea id="gDetails" placeholder="დეტალური აღწერა, მიზნები..."></textarea>
+
+        <div class="row">
+          <div class="tight">
+            <label class="small">Status</label>
+            <select id="gStatus">
+              <option value="open">მიმდინარე</option>
+              <option value="closed">დახურული</option>
+            </select>
+          </div>
+          <div class="tight">
+            <label class="small">CTA label</label>
+            <input id="gCTA" placeholder="განაცხადის შევსება">
+          </div>
+        </div>
+
+        <div class="row" style="justify-content:flex-end;margin-top:0">
+          <button class="btn btn-ghost" onclick="closeGrant()">Cancel</button>
+          <button class="btn btn-ok" onclick="saveGrant()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APPLICATION MODAL -->
+<div class="modal" id="appModal">
+  <div class="box">
+    <div class="head">
+      <h3 id="amTitle" style="margin:0">Application</h3>
+      <button class="close" onclick="closeApp()">✕</button>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <b>Application Data</b>
+        <div class="small" id="amMeta"></div>
+        <hr>
+        <div id="amData" class="small" style="white-space:pre-wrap"></div>
+        <hr>
+        <b>Action Plan (table)</b>
+        <div class="small">ავტომატური დანომვრა + Export CSV/PDF</div>
+        <div class="row">
+          <input id="apAct" placeholder="აქტივობა">
+          <input id="apStart" type="date">
+          <input id="apEnd" type="date">
+          <button class="btn btn-ok tight" onclick="addAP()">Add</button>
+        </div>
+        <div style="overflow:auto">
+          <table>
+            <thead><tr><th>#</th><th>Activity</th><th>Start</th><th>End</th><th></th></tr></thead>
+            <tbody id="apBody"></tbody>
+          </table>
+        </div>
+        <div class="row">
+          <button class="btn btn-ghost tight" onclick="exportAPCSV()">AP → CSV</button>
+          <button class="btn btn-ghost tight" onclick="printAP()">AP → PDF (Print)</button>
+          <div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <b>Review & Clarification</b>
+        <div class="row">
+          <div class="tight">
+            <label class="small">Status</label>
+            <select id="amStatus" onchange="saveAppMeta()">
+              <option value="submitted">Submitted</option>
+              <option value="in_review">In Review</option>
+              <option value="need_clarification">Need Clarification</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div class="tight">
+            <label class="small">Rating (0-100)</label>
+            <input id="amRating" type="number" min="0" max="100" oninput="saveAppMeta()">
+          </div>
+        </div>
+        <label class="small">Admin note (internal)</label>
+        <textarea id="amNote" placeholder="შიდა კომენტარი..." oninput="saveAppMeta()"></textarea>
+
+        <hr>
+        <b>Clarification thread (live chat-like)</b>
+        <div class="small">Admin შეტყობინება → history</div>
+        <div class="chat" id="chatBox"></div>
+        <div class="row">
+          <input id="chatMsg" placeholder="დაზუსტების ტექსტი...">
+          <button class="btn btn-ac tight" onclick="sendMsg()">Send</button>
+        </div>
+        <div class="small">შეტყობინება ამოქმედებს Need Clarification-ს (თუ გინდა, შეცვლადი წესია).</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== Storage ===== */
+const K_GRANTS='demo_grants_v1';
+const K_BUILDER='demo_builder_v1'; // {grantId: {steps:[...], fields:{stepId:[...]}, reqs:[...]}}
+const K_APPS='demo_apps_v1';
+
+let grants = load(K_GRANTS, []);
+let builder = load(K_BUILDER, {});
+let apps   = load(K_APPS, []);
+
+let editingGrantId=null, gImgData=null;
+let activeGrantForBuilder=null;
+let activeAppId=null;
+
+function load(k, fb){ try{ return JSON.parse(localStorage.getItem(k)) ?? fb }catch(e){ return fb } }
+function saveAll(){ localStorage.setItem(K_GRANTS, JSON.stringify(grants));
+                   localStorage.setItem(K_BUILDER, JSON.stringify(builder));
+                   localStorage.setItem(K_APPS, JSON.stringify(apps)); }
+function uid(){ return Math.random().toString(16).slice(2)+Date.now().toString(16); }
+function esc(s){return (s??'').toString()
+ .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+ .replaceAll('"','&quot;').replaceAll("'","&#039;");}
+function today(){ return new Date().toISOString().slice(0,10); }
+function fileToDataURL(file){
+  return new Promise((res, rej)=>{
+    const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file);
+  });
+}
+
+/* ===== Tabs ===== */
+function showTab(t){
+  ['grants','builder','apps'].forEach(id=>document.getElementById(id).hidden = id!==t);
+  ['tGrants','tBuilder','tApps'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  document.getElementById(t==='grants'?'tGrants':t==='builder'?'tBuilder':'tApps').classList.add('active');
+  if(t==='builder') syncBuilderGrantSelect();
+  if(t==='apps') syncAppsGrantSelect();
+}
+
+/* ===== Grants CRUD ===== */
+document.getElementById('gImg').addEventListener('change', async (e)=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  gImgData = await fileToDataURL(f);
+  document.getElementById('gImgPrev').innerHTML = `<img src="${gImgData}" style="width:100%;height:100%;object-fit:cover">`;
+});
+
+function openGrant(id=null){
+  editingGrantId=id; gImgData=null;
+  document.getElementById('gImg').value='';
+  document.getElementById('gmTitle').innerText = id?'Edit Grant':'Add Grant';
+
+  const g = id ? grants.find(x=>x.id===id) : null;
+  document.getElementById('gTitle').value = g?.title || '';
+  document.getElementById('gShort').value = g?.short || '';
+  document.getElementById('gDeadline').value = g?.deadline || today();
+  document.getElementById('gStatus').value = g?.status || 'open';
+  document.getElementById('gCTA').value = g?.cta || 'განაცხადის შევსება';
+  document.getElementById('gDetails').value = g?.details || '';
+  document.getElementById('gImgPrev').innerHTML = g?.img ? `<img src="${g.img}" style="width:100%;height:100%;object-fit:cover">` : 'IMG';
+
+  document.getElementById('grantModal').classList.add('show');
+}
+function closeGrant(){ document.getElementById('grantModal').classList.remove('show'); }
+
+function saveGrant(){
+  const title = document.getElementById('gTitle').value.trim();
+  const short = document.getElementById('gShort').value.trim();
+  const deadline = document.getElementById('gDeadline').value;
+  const status = document.getElementById('gStatus').value;
+  const cta = document.getElementById('gCTA').value.trim() || 'განაცხადის შევსება';
+  const details = document.getElementById('gDetails').value.trim();
+
+  if(!title || !short || !deadline || !details){
+    alert('სავალდებულოა: Title, Short, Deadline, Details');
+    return;
+  }
+
+  if(editingGrantId){
+    const g = grants.find(x=>x.id===editingGrantId);
+    g.title=title; g.short=short; g.deadline=deadline; g.status=status; g.cta=cta; g.details=details;
+    if(gImgData) g.img=gImgData;
+  }else{
+    const id=uid();
+    grants.unshift({id, title, short, deadline, status, cta, details, img:gImgData||null});
+    // init builder defaults
+    if(!builder[id]){
+      builder[id] = defaultBuilder();
+    }
+  }
+  saveAll();
+  closeGrant();
+  renderGrants();
+  syncBuilderGrantSelect();
+  syncAppsGrantSelect();
+}
+
+function delGrant(id){
+  if(!confirm('წავშალოთ საგრანტო პროგრამა?')) return;
+  grants = grants.filter(x=>x.id!==id);
+  // keep builder/apps as historical, or remove:
+  // delete builder[id]; apps = apps.filter(a=>a.grantId!==id);
+  saveAll();
+  renderGrants();
+  syncBuilderGrantSelect();
+  syncAppsGrantSelect();
+}
+
+function toggleGrant(id){
+  const g=grants.find(x=>x.id===id); if(!g) return;
+  g.status = g.status==='open' ? 'closed' : 'open';
+  saveAll(); renderGrants();
+}
+
+function renderGrants(){
+  const q=(document.getElementById('gq').value||'').toLowerCase().trim();
+  const st=document.getElementById('gstatus').value;
+  const sort=document.getElementById('gsort').value;
+
+  let list=grants.slice();
+  if(q) list=list.filter(g=>(g.title||'').toLowerCase().includes(q));
+  if(st!=='all') list=list.filter(g=>g.status===st);
+  list.sort((a,b)=> sort==='new' ? (b.deadline||'').localeCompare(a.deadline||'') : (a.deadline||'').localeCompare(b.deadline||''));
+
+  document.getElementById('gBody').innerHTML = list.map(g=>`
+    <tr>
+      <td><div class="thumb">${g.img?`<img src="${g.img}">`:'IMG'}</div></td>
+      <td><b>${esc(g.title)}</b><div class="small">${esc(g.short)}</div></td>
+      <td>${esc(g.deadline)}</td>
+      <td>${g.status==='open'?'<span class="pill open">მიმდინარე</span>':'<span class="pill closed">დახურული</span>'}</td>
+      <td class="act">
+        <button class="prev" onclick="quickCreateApp('${g.id}')">+ Test App</button>
+        <button class="toggle" onclick="toggleGrant('${g.id}')">Toggle</button>
+        <button class="edit" onclick="openGrant('${g.id}')">Edit</button>
+        <button class="del" onclick="delGrant('${g.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('') || `<tr><td colspan="5" class="small">No grants</td></tr>`;
+}
+
+/* ===== Builder ===== */
+function defaultBuilder(){
+  const steps = [
+    {id:uid(), key:'applicant', name:'განმცხადებელი', enabled:true, order:1},
+    {id:uid(), key:'project', name:'პროექტი', enabled:true, order:2},
+    {id:uid(), key:'budget', name:'ბიუჯეტი', enabled:true, order:3},
+    {id:uid(), key:'plan', name:'სამოქმედო გეგმა', enabled:true, order:4},
+    {id:uid(), key:'files', name:'ფაილები', enabled:true, order:5},
+    {id:uid(), key:'clarification', name:'დაზუსტება', enabled:true, order:6},
+  ];
+  const fields = {};
+  // applicant fields sample with condition
+  fields[steps[0].id] = [
+    {id:uid(), label:'განმცხადებლის ტიპი', type:'select', required:true, options:['ფიზიკური პირი','იურიდიული პირი/აიპი'], showFor:'all'},
+    {id:uid(), label:'სახელი', type:'text', required:true, showFor:'person'},
+    {id:uid(), label:'გვარი', type:'text', required:true, showFor:'person'},
+    {id:uid(), label:'პირადი ნომერი', type:'text', required:true, showFor:'person'},
+    {id:uid(), label:'კომპანიის/აიპის დასახელება', type:'text', required:true, showFor:'company'},
+    {id:uid(), label:'საიდენტიფიკაციო კოდი', type:'text', required:true, showFor:'company'},
+    {id:uid(), label:'ელ.ფოსტა', type:'email', required:true, showFor:'all'},
+    {id:uid(), label:'ტელეფონი', type:'phone', required:true, showFor:'all'},
+    {id:uid(), label:'მისამართი', type:'text', required:false, showFor:'all'},
+  ];
+  return {steps, fields, reqs:[]};
+}
+
+function syncBuilderGrantSelect(){
+  const sel=document.getElementById('bGrant');
+  sel.innerHTML = grants.map(g=>`<option value="${g.id}">${esc(g.title)}</option>`).join('');
+  if(!sel.value && grants[0]) sel.value=grants[0].id;
+  loadBuilder();
+}
+
+function loadBuilder(){
+  const gid=document.getElementById('bGrant').value;
+  if(!gid) return;
+  activeGrantForBuilder=gid;
+  if(!builder[gid]) builder[gid]=defaultBuilder();
+
+  const b=builder[gid];
+  // steps
+  const list=b.steps.slice().sort((a,b)=>a.order-b.order);
+  document.getElementById('stepsList').innerHTML = list.map(s=>`
+    <div class="card" style="margin-top:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div>
+          <b>${esc(s.name)}</b>
+          <div class="small">key: ${s.key} • order: ${s.order}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+          <button class="btn btn-ghost" onclick="stepUp('${s.id}')">↑</button>
+          <button class="btn btn-ghost" onclick="stepDown('${s.id}')">↓</button>
+          <button class="btn ${s.enabled?'btn-ok':'btn-ghost'}" onclick="toggleStep('${s.id}')">${s.enabled?'Enabled':'Disabled'}</button>
+          <button class="btn btn-bad" onclick="delStep('${s.id}')">Delete</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // active step select
+  const ssel=document.getElementById('activeStep');
+  ssel.innerHTML = list.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  if(!ssel.value && list[0]) ssel.value=list[0].id;
+
+  // requirements
+  renderReqs();
+  renderFields();
+  saveAll();
+}
+
+function addStep(){
+  const name=prompt('Step name?'); if(!name) return;
+  const gid=activeGrantForBuilder; const b=builder[gid];
+  const maxOrder=Math.max(0,...b.steps.map(s=>s.order));
+  const s={id:uid(), key:'custom', name, enabled:true, order:maxOrder+1};
+  b.steps.push(s); b.fields[s.id]=[];
+  saveAll(); loadBuilder();
+}
+function delStep(id){
+  const gid=activeGrantForBuilder; const b=builder[gid];
+  if(!confirm('Delete step?')) return;
+  b.steps=b.steps.filter(s=>s.id!==id);
+  delete b.fields[id];
+  saveAll(); loadBuilder();
+}
+function toggleStep(id){
+  const b=builder[activeGrantForBuilder];
+  const s=b.steps.find(x=>x.id===id); if(!s) return;
+  s.enabled=!s.enabled; saveAll(); loadBuilder();
+}
+function stepUp(id){
+  const b=builder[activeGrantForBuilder];
+  const s=b.steps.find(x=>x.id===id); if(!s) return;
+  s.order=Math.max(1,s.order-1);
+  saveAll(); loadBuilder();
+}
+function stepDown(id){
+  const b=builder[activeGrantForBuilder];
+  const s=b.steps.find(x=>x.id===id); if(!s) return;
+  s.order=s.order+1;
+  saveAll(); loadBuilder();
+}
+
+function renderFields(){
+  const gid=activeGrantForBuilder; if(!gid) return;
+  const b=builder[gid];
+  const sid=document.getElementById('activeStep').value;
+  const list=(b.fields[sid]||[]);
+  document.getElementById('fieldsList').innerHTML = list.map(f=>`
+    <div class="card" style="margin-top:10px">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+        <div>
+          <b>${esc(f.label)}</b>
+          <div class="small">type: ${f.type} • required: ${f.required?'yes':'no'} • showFor: ${f.showFor||'all'}</div>
+          ${f.type==='select'?`<div class="small">options: ${esc((f.options||[]).join(', '))}</div>`:''}
+        </div>
+        <div>
+          <button class="btn btn-ac" onclick="editField('${f.id}')">Edit</button>
+          <button class="btn btn-bad" onclick="delField('${f.id}')">Delete</button>
+        </div>
+      </div>
+    </div>
+  `).join('') || `<div class="small">No fields for this step.</div>`;
+}
+function addField(){
+  const gid=activeGrantForBuilder; const b=builder[gid];
+  const sid=document.getElementById('activeStep').value;
+  const label=prompt('Field label?'); if(!label) return;
+  const type=prompt('Field type? (text/textarea/select/number/date/email/phone/file)','text') || 'text';
+  const required=confirm('Required?');
+  const showFor=prompt('Show for? (all/person/company)','all')||'all';
+  let options=[];
+  if(type==='select'){
+    const raw=prompt('Options (comma separated)','Option1,Option2');
+    options=(raw||'').split(',').map(s=>s.trim()).filter(Boolean);
+  }
+  b.fields[sid]=b.fields[sid]||[];
+  b.fields[sid].push({id:uid(), label, type, required, showFor, options});
+  saveAll(); renderFields();
+}
+function delField(fid){
+  const gid=activeGrantForBuilder; const b=builder[gid];
+  const sid=document.getElementById('activeStep').value;
+  b.fields[sid]=(b.fields[sid]||[]).filter(f=>f.id!==fid);
+  saveAll(); renderFields();
+}
+function editField(fid){
+  const gid=activeGrantForBuilder; const b=builder[gid];
+  const sid=document.getElementById('activeStep').value;
+  const f=(b.fields[sid]||[]).find(x=>x.id===fid); if(!f) return;
+  const label=prompt('Label', f.label) ?? f.label;
+  const type=prompt('Type', f.type) ?? f.type;
+  const required=confirm('Required? (OK=yes, Cancel=no)') ? true : false;
+  const showFor=prompt('Show for (all/person/company)', f.showFor||'all') || f.showFor;
+  f.label=label; f.type=type; f.required=required; f.showFor=showFor;
+  if(type==='select'){
+    const raw=prompt('Options (comma)', (f.options||[]).join(',')) || '';
+    f.options=raw.split(',').map(s=>s.trim()).filter(Boolean);
+  } else f.options=[];
+  saveAll(); renderFields();
+}
+
+/* ===== Requirements ===== */
+function addRequirement(){
+  const gid=activeGrantForBuilder; const b=builder[gid];
+  const name=document.getElementById('reqName').value.trim();
+  const req=document.getElementById('reqReq').value;
+  if(!name){ alert('Enter file requirement name'); return; }
+  b.reqs=b.reqs||[];
+  b.reqs.push({id:uid(), name, required:req==='yes'});
+  document.getElementById('reqName').value='';
+  saveAll(); renderReqs();
+}
+function renderReqs(){
+  const b=builder[activeGrantForBuilder]; const list=b.reqs||[];
+  document.getElementById('reqList').innerHTML = list.map(r=>`
+    <div class="card" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div>
+        <b>${esc(r.name)}</b>
+        <div class="small">${r.required?'Required':'Optional'}</div>
+      </div>
+      <button class="btn btn-bad" onclick="delReq('${r.id}')">Delete</button>
+    </div>
+  `).join('') || `<div class="small">No requirements yet.</div>`;
+}
+function delReq(id){
+  const b=builder[activeGrantForBuilder];
+  b.reqs=(b.reqs||[]).filter(x=>x.id!==id);
+  saveAll(); renderReqs();
+}
+
+/* ===== Applications ===== */
+function syncAppsGrantSelect(){
+  const sel=document.getElementById('aGrant');
+  sel.innerHTML = grants.map(g=>`<option value="${g.id}">${esc(g.title)}</option>`).join('');
+  if(!sel.value && grants[0]) sel.value=grants[0].id;
+  renderApps();
+}
+
+function renderApps(){
+  const gid=document.getElementById('aGrant').value;
+  const q=(document.getElementById('aq').value||'').toLowerCase().trim();
+  const st=document.getElementById('aStatus').value;
+
+  let list=apps.filter(a=>a.grantId===gid);
+  if(st!=='all') list=list.filter(a=>a.status===st);
+  if(q){
+    list=list.filter(a=>{
+      const blob = (a.id+' '+(a.applicantName||'')+' '+(a.email||'')).toLowerCase();
+      return blob.includes(q);
+    });
+  }
+  document.getElementById('aBody').innerHTML = list.map(a=>`
+    <tr>
+      <td><b>${esc(a.id)}</b><div class="small">${esc(a.createdAt||'')}</div></td>
+      <td><b>${esc(a.applicantName||'-')}</b><div class="small">${esc(a.email||'')}</div></td>
+      <td>${pillStatus(a.status)}</td>
+      <td><b>${a.rating ?? 0}</b></td>
+      <td class="act">
+        <button class="prev" onclick="openApp('${a.id}')">Open</button>
+        <button class="toggle" onclick="setAppStatus('${a.id}','in_review')">In Review</button>
+        <button class="toggle" onclick="setAppStatus('${a.id}','need_clarification')">Need Clarif.</button>
+        <button class="del" onclick="delApp('${a.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('') || `<tr><td colspan="5" class="small">No applications for this grant.</td></tr>`;
+}
+
+function pillStatus(s){
+  if(s==='need_clarification') return '<span class="pill need">Need Clarification</span>';
+  if(s==='approved') return '<span class="pill open">Approved</span>';
+  if(s==='rejected') return '<span class="pill closed">Rejected</span>';
+  if(s==='in_review') return '<span class="pill open">In Review</span>';
+  return '<span class="pill">Submitted</span>';
+}
+
+function setAppStatus(id, st){
+  const a=apps.find(x=>x.id===id); if(!a) return;
+  a.status=st; a.updatedAt=new Date().toISOString();
+  saveAll(); renderApps();
+}
+function delApp(id){
+  if(!confirm('Delete application?')) return;
+  apps=apps.filter(x=>x.id!==id);
+  saveAll(); renderApps();
+}
+
+function exportCSV(){
+  const gid=document.getElementById('aGrant').value;
+  const list=apps.filter(a=>a.grantId===gid);
+  const rows=[['id','applicantName','email','status','rating','createdAt']].concat(
+    list.map(a=>[a.id,a.applicantName,a.email,a.status,a.rating??0,a.createdAt])
+  );
+  downloadCSV('applications.csv', rows);
+}
+
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(v=>`"${(v??'').toString().replaceAll('"','""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ===== Application modal (review + chat + action plan) ===== */
+function openApp(id){
+  const a=apps.find(x=>x.id===id); if(!a) return;
+  activeAppId=id;
+
+  document.getElementById('amTitle').innerText = `Application — ${id}`;
+  document.getElementById('amMeta').innerText = `Status: ${a.status} • Rating: ${a.rating??0} • Created: ${a.createdAt}`;
+  document.getElementById('amStatus').value = a.status;
+  document.getElementById('amRating').value = a.rating ?? 0;
+  document.getElementById('amNote').value = a.adminNote || '';
+
+  // show collected data (demo)
+  document.getElementById('amData').innerText = JSON.stringify(a.formData||{}, null, 2);
+
+  renderChat();
+  renderAP();
+
+  document.getElementById('appModal').classList.add('show');
+}
+function closeApp(){ document.getElementById('appModal').classList.remove('show'); activeAppId=null; }
+
+function saveAppMeta(){
+  if(!activeAppId) return;
+  const a=apps.find(x=>x.id===activeAppId); if(!a) return;
+  a.status=document.getElementById('amStatus').value;
+  a.rating=Number(document.getElementById('amRating').value||0);
+  a.adminNote=document.getElementById('amNote').value;
+  a.updatedAt=new Date().toISOString();
+  saveAll(); renderApps();
+}
+
+function renderChat(){
+  const a=apps.find(x=>x.id===activeAppId); if(!a) return;
+  a.messages=a.messages||[];
+  const box=document.getElementById('chatBox');
+  box.innerHTML = a.messages.map(m=>`
+    <div class="msg ${m.sender==='admin'?'admin':'app'}">
+      <div class="meta"><span>${m.sender}</span><span>${m.at}</span></div>
+      <div style="font-weight:900;color:#cbd5e1;white-space:pre-wrap">${esc(m.text)}</div>
+    </div>
+  `).join('') || `<div class="small">No messages</div>`;
+  box.scrollTop=box.scrollHeight;
+}
+
+function sendMsg(){
+  const txt=document.getElementById('chatMsg').value.trim();
+  if(!txt || !activeAppId) return;
+  const a=apps.find(x=>x.id===activeAppId); if(!a) return;
+  a.messages=a.messages||[];
+  a.messages.push({id:uid(), sender:'admin', text:txt, at:new Date().toISOString()});
+  document.getElementById('chatMsg').value='';
+  // rule: sending message sets Need Clarification
+  a.status='need_clarification';
+  saveAll(); renderChat(); saveAppMeta(); // also refresh list status
+}
+
+/* ===== Action plan table ===== */
+function renderAP(){
+  const a=apps.find(x=>x.id===activeAppId); if(!a) return;
+  a.actionPlan=a.actionPlan||[];
+  document.getElementById('apBody').innerHTML = a.actionPlan.map((r,idx)=>`
+    <tr>
+      <td><b>${idx+1}</b></td>
+      <td>${esc(r.activity)}</td>
+      <td>${esc(r.start||'')}</td>
+      <td>${esc(r.end||'')}</td>
+      <td><button class="btn btn-bad" onclick="delAP(${idx})">X</button></td>
+    </tr>
+  `).join('') || `<tr><td colspan="5" class="small">No rows</td></tr>`;
+}
+function addAP(){
+  const a=apps.find(x=>x.id===activeAppId); if(!a) return;
+  const activity=document.getElementById('apAct').value.trim();
+  const start=document.getElementById('apStart').value;
+  const end=document.getElementById('apEnd').value;
+  if(!activity){ alert('აქტივობა აუცილებელია'); return; }
+  a.actionPlan=a.actionPlan||[];
+  a.actionPlan.push({activity,start,end});
+  document.getElementById('apAct').value='';
+  saveAll(); renderAP();
+}
+function delAP(i){
+  const a=apps.find(x=>x.id===activeAppId); if(!a) return;
+  a.actionPlan.splice(i,1);
+  saveAll(); renderAP();
+}
+function exportAPCSV(){
+  const a=apps.find(x=>x.id===activeAppId); if(!a) return;
+  const rows=[['#','activity','start','end']].concat(
+    (a.actionPlan||[]).map((r,idx)=>[idx+1,r.activity,r.start,r.end])
+  );
+  downloadCSV('action-plan.csv', rows);
+}
+function printAP(){
+  // simple print-to-pdf: user chooses "Save as PDF"
+  const a=apps.find(x=>x.id===activeAppId); if(!a) return;
+  const rows=(a.actionPlan||[]).map((r,idx)=>`<tr><td>${idx+1}</td><td>${esc(r.activity)}</td><td>${esc(r.start||'')}</td><td>${esc(r.end||'')}</td></tr>`).join('');
+  const html = `
+  <html><head><meta charset="utf-8"><title>Action Plan</title>
+  <style>body{font-family:Arial} table{border-collapse:collapse;width:100%} td,th{border:1px solid #333;padding:8px}</style>
+  </head><body>
+  <h2>Action Plan — ${esc(activeAppId)}</h2>
+  <table><thead><tr><th>#</th><th>Activity</th><th>Start</th><th>End</th></tr></thead><tbody>${rows}</tbody></table>
+  </body></html>`;
+  const w=window.open('', '_blank');
+  w.document.write(html); w.document.close();
+  w.focus(); w.print();
+}
+
+/* ===== Demo: create sample application ===== */
+function quickCreateApp(grantId){
+  const g=grants.find(x=>x.id===grantId); if(!g) return;
+  const id=uid().slice(0,8).toUpperCase();
+  apps.unshift({
+    id, grantId,
+    applicantName:'Demo Applicant',
+    email:'demo@example.com',
+    status:'submitted',
+    rating:0,
+    adminNote:'',
+    formData:{
+      applicantType:'ფიზიკური პირი',
+      projectTitle:'დემო პროექტი',
+      projectGoal:'დემო მიზანი',
+      budgetTotal:15000
+    },
+    messages:[],
+    actionPlan:[],
+    createdAt:new Date().toISOString()
+  });
+  saveAll();
+  showTab('apps');
+  document.getElementById('aGrant').value=grantId;
+  renderApps();
+}
+
+/* ===== Seed/reset ===== */
+function seed(){
+  if(grants.length){ alert('Already seeded'); return; }
+  const g1={id:uid(), title:'საგრანტო პროგრამა #1', short:'ახალგაზრდებისთვის იდეებისა და პროექტების მხარდაჭერა', deadline:today(), status:'open', cta:'განაცხადის შევსება', details:'დეტალური აღწერა და მიზნები...', img:null};
+  const g2={id:uid(), title:'საგრანტო პროგრამა #2', short:'ინოვაციური ინიციატივების დაფინანსება', deadline:today(), status:'closed', cta:'განაცხადის შევსება', details:'დეტალური აღწერა და მიზნები...', img:null};
+  grants=[g1,g2];
+  builder[g1.id]=defaultBuilder();
+  builder[g2.id]=defaultBuilder();
+  saveAll();
+  renderGrants();
+  syncBuilderGrantSelect();
+  syncAppsGrantSelect();
+  alert('Seed ✅');
+}
+function resetAll(){
+  if(!confirm('Reset demo data?')) return;
+  localStorage.removeItem(K_GRANTS);
+  localStorage.removeItem(K_BUILDER);
+  localStorage.removeItem(K_APPS);
+  grants=[]; builder={}; apps=[];
+  renderGrants(); syncBuilderGrantSelect(); syncAppsGrantSelect();
+}
+
+/* init */
+renderGrants();
+syncBuilderGrantSelect();
+syncAppsGrantSelect();
+</script>
+</body>
+</html>

@@ -1,0 +1,968 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>საგრანტო პროგრამები • Grant Portal (Demo)</title>
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#0f172a; --card:#111827; --line:#22314a;
+      --text:#e5e7eb; --muted:#94a3b8; --accent:#2563eb; --ok:#16a34a;
+      --warn:#f59e0b; --bad:#dc2626; --radius:14px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Arial;background:var(--bg);color:var(--text)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1160px;margin:0 auto;padding:18px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+    .btn{border:0;border-radius:12px;padding:10px 14px;font-weight:900;cursor:pointer}
+    .btn-ac{background:var(--accent);color:#fff}
+    .btn-ok{background:var(--ok);color:#fff}
+    .btn-ghost{background:#0a0f1c;color:#fff;border:1px solid var(--line)}
+    .btn-bad{background:var(--bad);color:#fff}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid var(--line);
+      background:#0a0f1c;font-weight:900;font-size:12px;color:#cbd5e1}
+    .pill.open{border-color:rgba(22,163,74,.35);color:#86efac}
+    .pill.closed{border-color:rgba(245,158,11,.35);color:#fde68a}
+
+    /* Banner */
+    .banner{
+      border:1px solid var(--line);
+      border-radius:18px;
+      overflow:hidden;
+      background:
+        radial-gradient(1200px 500px at 20% 0%, rgba(37,99,235,.35), transparent 55%),
+        radial-gradient(900px 500px at 70% 30%, rgba(245,158,11,.20), transparent 55%),
+        linear-gradient(135deg, #0a0f1c 0%, #0f172a 60%, #0a0f1c 100%);
+      padding:26px;
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:18px;
+      align-items:center;
+    }
+    .banner h1{margin:0 0 8px 0;font-size:30px}
+    .banner p{margin:0 0 14px 0;color:var(--muted);font-weight:800;line-height:1.5}
+    .banner .art{
+      height:200px;border-radius:16px;border:1px solid var(--line);
+      background:
+        radial-gradient(160px 120px at 30% 40%, rgba(37,99,235,.55), transparent 70%),
+        radial-gradient(180px 120px at 70% 60%, rgba(16,185,129,.35), transparent 70%),
+        radial-gradient(220px 140px at 60% 20%, rgba(245,158,11,.35), transparent 70%),
+        linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    }
+    @media(max-width:900px){ .banner{grid-template-columns:1fr} .banner .art{height:160px} }
+
+    /* Grid cards */
+    .grid{
+      display:grid; gap:14px; margin-top:14px;
+      grid-template-columns:repeat(3, 1fr);
+    }
+    @media(max-width:1020px){ .grid{grid-template-columns:repeat(2, 1fr);} }
+    @media(max-width:680px){ .grid{grid-template-columns:1fr;} }
+
+    .grantCard{
+      background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;
+      display:flex;flex-direction:column;min-height:260px;
+    }
+    .thumb{height:120px; background:#0a0f1c; border-bottom:1px solid var(--line); position:relative}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .grantCard .body{padding:14px;display:flex;flex-direction:column;gap:10px;flex:1}
+    .grantCard h3{margin:0;font-size:18px}
+    .muted{color:var(--muted);font-weight:800}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .sp{justify-content:space-between}
+    .kv{display:grid;grid-template-columns:160px 1fr;gap:10px}
+    @media(max-width:680px){ .kv{grid-template-columns:1fr} }
+
+    /* Portal */
+    .portal{
+      display:grid; grid-template-columns:260px 1fr; gap:14px;
+    }
+    @media(max-width:960px){ .portal{grid-template-columns:1fr} }
+    .steps{position:sticky;top:14px;align-self:start}
+    @media(max-width:960px){ .steps{position:relative;top:0} }
+    .stepItem{
+      display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;
+      border:1px solid var(--line); background:#0a0f1c; margin-top:10px;
+      cursor:pointer;
+    }
+    .dot{width:26px;height:26px;border-radius:999px;border:1px solid var(--line);
+      display:flex;align-items:center;justify-content:center;font-weight:1000}
+    .stepItem.done{border-color:rgba(22,163,74,.35)}
+    .stepItem.active{border-color:rgba(37,99,235,.45); box-shadow:0 0 0 2px rgba(37,99,235,.15) inset}
+    .stepItem.disabled{opacity:.6; cursor:not-allowed}
+    .stepTitle{font-weight:1000}
+    .stepSub{font-size:12px;color:var(--muted);font-weight:900}
+
+    input,select,textarea{
+      width:100%;background:#0a0f1c;color:var(--text);border:1px solid var(--line);
+      border-radius:12px;padding:10px 12px;outline:none;font-weight:900
+    }
+    textarea{min-height:110px;resize:vertical}
+    label{display:block;color:#93c5fd;font-weight:1000;font-size:12px;margin-bottom:6px}
+    .field{margin-top:10px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;font-size:14px;vertical-align:top}
+    th{color:#93c5fd}
+    .notice{padding:12px;border-radius:14px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.08);color:#fde68a;font-weight:900}
+    .okbox{padding:12px;border-radius:14px;border:1px solid rgba(22,163,74,.35);background:rgba(22,163,74,.08);color:#86efac;font-weight:900}
+    .err{padding:12px;border-radius:14px;border:1px solid rgba(220,38,38,.35);background:rgba(220,38,38,.08);color:#fecaca;font-weight:900}
+  </style>
+</head>
+<body>
+  <div class="wrap" id="app"></div>
+
+<script>
+/* =========================
+   DEMO DATA
+========================= */
+const GRANTS = [
+  {
+    id: "g1",
+    title: "საგრანტო პროგრამა — ახალგაზრდული ინიციატივები",
+    short: "იდეების, პროექტებისა და ახალგაზრდული აქტივობების მხარდასაჭერად.",
+    deadline: addDaysISO(30),
+    cover: svgCover("Youth Grants", "#2563eb"),
+    details: "პროგრამის მიზანია ახალგაზრდული ინიციატივების მხარდაჭერა. დეტალურად აღწერეთ პროექტი, მიზნები, მოსალოდნელი შედეგები და ბიუჯეტი.",
+    requirements: [
+      {name:"პროექტის აღწერა (PDF)", required:true},
+      {name:"ბიუჯეტი (PDF ან XLSX)", required:true},
+      {name:"განმცხადებლის დოკუმენტი (ID/რეგისტრაცია)", required:true},
+    ]
+  },
+  {
+    id: "g2",
+    title: "საგრანტო პროგრამა — ინოვაცია და განათლება",
+    short: "ინოვაციური საგანმანათლებლო პროექტების წახალისება და დაფინანსება.",
+    deadline: addDaysISO(-5), // closed
+    cover: svgCover("Innovation", "#f59e0b"),
+    details: "პროგრამა ორიენტირებულია ინოვაციურ იდეებზე. ყურადღება მიექცეს განხორციელების გეგმას და ეფექტის გაზომვას.",
+    requirements: [
+      {name:"პროექტის კონცეფცია (PDF)", required:true},
+      {name:"გუნდის CV/პორტფოლიო (ZIP/PDF)", required:false},
+    ]
+  },
+  {
+    id: "g3",
+    title: "საგრანტო პროგრამა — რეგიონული განვითარება",
+    short: "რეგიონებში ახალგაზრდობის ჩართულობის ზრდა და საზოგადოებრივი სარგებელი.",
+    deadline: addDaysISO(12),
+    cover: svgCover("Regional", "#16a34a"),
+    details: "მიზანია რეგიონული პროექტების გაძლიერება. აღწერეთ მიზნობრივი ჯგუფი, პარტნიორები, რისკები და შედეგები.",
+    requirements: [
+      {name:"პროექტის აღწერა (PDF)", required:true},
+      {name:"ბიუჯეტი (XLSX/CSV/PDF)", required:true},
+    ]
+  }
+];
+
+/* =========================
+   STORAGE (applications)
+========================= */
+const K_APPS = "grant_apps_v1"; // { [grantId]: [applications...] }
+function loadApps(){ try{ return JSON.parse(localStorage.getItem(K_APPS)) || {}; }catch(e){ return {}; } }
+function saveApps(obj){ localStorage.setItem(K_APPS, JSON.stringify(obj)); }
+
+/* =========================
+   ROUTER
+========================= */
+window.addEventListener("hashchange", render);
+render();
+
+function render(){
+  const root = document.getElementById("app");
+  const hash = location.hash || "#/grants";
+  const parts = hash.replace("#/","").split("/");
+
+  if(parts[0]==="grants"){
+    root.innerHTML = pageGrants();
+    bindGrants();
+    return;
+  }
+  if(parts[0]==="grant" && parts[1]){
+    const g = GRANTS.find(x=>x.id===parts[1]);
+    root.innerHTML = g ? pageGrantDetails(g) : notFound();
+    bindDetails(g);
+    return;
+  }
+  if(parts[0]==="apply" && parts[1]){
+    const g = GRANTS.find(x=>x.id===parts[1]);
+    root.innerHTML = g ? pagePortal(g) : notFound();
+    bindPortal(g);
+    return;
+  }
+  root.innerHTML = notFound();
+}
+
+/* =========================
+   PAGE: LIST
+========================= */
+function pageGrants(){
+  return `
+    <div class="banner">
+      <div>
+        <h1>საგრანტო პროგრამები</h1>
+        <p>ახალგაზრდებისთვის განკუთვნილი საგრანტო შესაძლებლობები იდეებისა და პროექტების მხარდასაჭერად</p>
+        <div class="row">
+          <button class="btn btn-ac" id="btnGoActive">განაცხადის შევსება</button>
+          <span class="muted">გადადით აქტიურ პროგრამებზე</span>
+        </div>
+      </div>
+      <div class="art" aria-hidden="true"></div>
+    </div>
+
+    <div class="row sp" style="margin-top:14px">
+      <div class="muted">პროგრამების ჩამონათვალი</div>
+      <div class="row" style="gap:8px">
+        <select id="fltStatus" style="max-width:220px">
+          <option value="all">ყველა</option>
+          <option value="open">მიმდინარე</option>
+          <option value="closed">დახურული</option>
+        </select>
+        <select id="fltSort" style="max-width:220px">
+          <option value="new">ვადა: უახლესი</option>
+          <option value="old">ვადა: უძველესი</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  `;
+}
+
+function bindGrants(){
+  const btn = document.getElementById("btnGoActive");
+  btn.onclick = () => {
+    // go to first open grant details (or just scroll)
+    const open = GRANTS.find(g => statusOf(g)==="open");
+    if(open) location.hash = "#/grant/" + open.id;
+    else alert("აქტიური პროგრამა ამ ეტაპზე არ არის.");
+  };
+
+  document.getElementById("fltStatus").onchange = renderGrantGrid;
+  document.getElementById("fltSort").onchange = renderGrantGrid;
+  renderGrantGrid();
+}
+
+function renderGrantGrid(){
+  const st = document.getElementById("fltStatus").value;
+  const sort = document.getElementById("fltSort").value;
+
+  let list = GRANTS.slice();
+  if(st !== "all") list = list.filter(g => statusOf(g)===st);
+  list.sort((a,b)=>{
+    if(sort==="new") return (b.deadline||"").localeCompare(a.deadline||"");
+    return (a.deadline||"").localeCompare(b.deadline||"");
+  });
+
+  const grid = document.getElementById("grid");
+  grid.innerHTML = list.map(g => grantCard(g)).join("") || `<div class="card">პროგრამები ვერ მოიძებნა.</div>`;
+}
+
+function grantCard(g){
+  const st = statusOf(g);
+  return `
+    <div class="grantCard">
+      <div class="thumb"><img alt="" src="${g.cover}"></div>
+      <div class="body">
+        <div class="row sp">
+          <h3>${esc(g.title)}</h3>
+        </div>
+        <div class="muted">${esc(g.short)}</div>
+
+        <div class="row sp">
+          <div class="muted">ვადა: <b style="color:#e5e7eb">${g.deadline}</b></div>
+          ${st==="open" ? `<span class="pill open">მიმდინარე</span>` : `<span class="pill closed">დახურული</span>`}
+        </div>
+
+        <div class="row" style="margin-top:auto">
+          <button class="btn btn-ghost" onclick="location.hash='#/grant/${g.id}'">დეტალურად</button>
+          <button class="btn btn-ac" ${st==="open" ? "" : "disabled"} onclick="location.hash='#/apply/${g.id}'">განაცხადის შევსება</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* =========================
+   PAGE: DETAILS
+========================= */
+function pageGrantDetails(g){
+  const st = statusOf(g);
+  return `
+    <div class="card">
+      <div class="thumb" style="height:240px;border-radius:16px"><img alt="" src="${g.cover}"></div>
+
+      <div class="row sp" style="margin-top:12px">
+        <div>
+          <h1 style="margin:0;font-size:24px">${esc(g.title)}</h1>
+          <div class="muted">ვადა: <b style="color:#e5e7eb">${g.deadline}</b></div>
+        </div>
+        <div>
+          ${st==="open" ? `<span class="pill open">მიმდინარე</span>` : `<span class="pill closed">დახურული</span>`}
+        </div>
+      </div>
+
+      <div style="margin-top:12px;color:#cbd5e1;font-weight:900;line-height:1.6">
+        ${esc(g.details)}
+      </div>
+
+      <div style="margin-top:14px" class="card">
+        <b>სავალდებულო ფაილები</b>
+        <div class="muted" style="margin-top:6px">პორტალში ატვირთავთ შესაბამის დოკუმენტებს.</div>
+        <ul style="margin:10px 0 0 18px;color:#cbd5e1;font-weight:900">
+          ${(g.requirements||[]).map(r=>`<li>${esc(r.name)} ${r.required?'<span class="muted">(სავალდებულო)</span>':''}</li>`).join("")}
+        </ul>
+      </div>
+
+      <div class="row" style="margin-top:14px">
+        <button class="btn btn-ghost" onclick="location.hash='#/grants'">უკან</button>
+        <button class="btn btn-ac" id="btnApply" ${st==="open" ? "" : "disabled"}>განაცხადის შევსება</button>
+      </div>
+
+      ${st==="closed" ? `<div class="notice" style="margin-top:12px">მიღება დასრულებულია. პროგრამა დახურულია.</div>` : ``}
+    </div>
+  `;
+}
+
+function bindDetails(g){
+  if(!g) return;
+  const btn = document.getElementById("btnApply");
+  if(btn) btn.onclick = ()=> location.hash = "#/apply/" + g.id;
+}
+
+/* =========================
+   PAGE: PORTAL
+========================= */
+function pagePortal(g){
+  const st = statusOf(g);
+  if(st==="closed"){
+    return `
+      <div class="card">
+        <h1 style="margin:0 0 8px 0">Grant Portal</h1>
+        <div class="notice">ამ საგრანტო პროგრამაზე განაცხადების მიღება დასრულებულია.</div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn btn-ghost" onclick="location.hash='#/grant/${g.id}'">დაბრუნება დეტალებზე</button>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="card">
+      <div class="row sp">
+        <div>
+          <div class="muted">Grant Portal</div>
+          <h1 style="margin:0;font-size:22px">${esc(g.title)}</h1>
+        </div>
+        <div class="muted">ვადა: <b style="color:#e5e7eb">${g.deadline}</b></div>
+      </div>
+    </div>
+
+    <div class="portal" style="margin-top:14px">
+      <div class="card steps" id="stepsBox">
+        <b>ნაბიჯები</b>
+        <div class="muted">შეავსეთ ფორმა ნაბიჯობრივად</div>
+        <div id="stepsList"></div>
+      </div>
+
+      <div class="card" id="stepContent"></div>
+    </div>
+  `;
+}
+
+/* -------------------------
+   Portal state
+------------------------- */
+function bindPortal(g){
+  const state = makePortalState(g);
+  const steps = [
+    {key:"applicant", name:"განმცხადებელი"},
+    {key:"project",   name:"პროექტი"},
+    {key:"budget",    name:"ბიუჯეტი"},
+    {key:"files",     name:"ფაილები"},
+    {key:"submit",    name:"გაგზავნა"},
+  ];
+
+  const stepsList = document.getElementById("stepsList");
+  stepsList.innerHTML = steps.map((s,i)=>stepItem(s,i)).join("");
+
+  function stepItem(s,i){
+    return `
+      <div class="stepItem" data-step="${s.key}">
+        <div class="dot">${i+1}</div>
+        <div>
+          <div class="stepTitle">${s.name}</div>
+          <div class="stepSub" id="sub_${s.key}">შესავსებია</div>
+        </div>
+      </div>
+    `;
+  }
+
+  stepsList.querySelectorAll(".stepItem").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const key = el.getAttribute("data-step");
+      // allow only up to current+1 navigation (simple)
+      if(steps.findIndex(s=>s.key===key) <= state.currentIndex+1){
+        state.currentKey = key;
+        renderStep();
+      }
+    });
+  });
+
+  renderStep();
+
+  function renderStep(){
+    state.currentIndex = steps.findIndex(s=>s.key===state.currentKey);
+    // update steps UI
+    stepsList.querySelectorAll(".stepItem").forEach((el,idx)=>{
+      el.classList.remove("active","done","disabled");
+      if(idx < state.currentIndex) el.classList.add("done");
+      if(idx === state.currentIndex) el.classList.add("active");
+      if(idx > state.maxAllowedIndex()) el.classList.add("disabled");
+    });
+    // update subtitles quickly
+    document.getElementById("sub_applicant").textContent = state.valid.applicant ? "შევსებულია" : "შესავსებია";
+    document.getElementById("sub_project").textContent   = state.valid.project ? "შევსებულია" : "შესავსებია";
+    document.getElementById("sub_budget").textContent    = state.valid.budget ? "შევსებულია" : "შესავსებია";
+    document.getElementById("sub_files").textContent     = state.valid.files ? "შევსებულია" : "შესავსებია";
+    document.getElementById("sub_submit").textContent    = state.readyToSubmit() ? "მზადაა" : "შემოწმება";
+
+    const box = document.getElementById("stepContent");
+    if(state.currentKey==="applicant") box.innerHTML = viewApplicant();
+    if(state.currentKey==="project")   box.innerHTML = viewProject();
+    if(state.currentKey==="budget")    box.innerHTML = viewBudget();
+    if(state.currentKey==="files")     box.innerHTML = viewFiles();
+    if(state.currentKey==="submit")    box.innerHTML = viewSubmit();
+
+    bindStep();
+  }
+
+  function bindStep(){
+    if(state.currentKey==="applicant"){
+      const typeSel = document.getElementById("appType");
+      typeSel.onchange = ()=>{
+        state.data.applicant.type = typeSel.value;
+        renderStep(); // re-render fields
+      };
+      document.getElementById("btnNextA").onclick = ()=>{
+        state.collectApplicant();
+        if(state.validateApplicant()){
+          state.goto("project");
+        } else {
+          alert("გთხოვ შეავსე ყველა სავალდებულო ველი.");
+        }
+      };
+    }
+
+    if(state.currentKey==="project"){
+      document.getElementById("btnBackP").onclick = ()=> state.goto("applicant");
+      document.getElementById("btnNextP").onclick = ()=>{
+        state.collectProject();
+        if(state.validateProject()){
+          state.goto("budget");
+        } else alert("გთხოვ შეავსე ყველა სავალდებულო ველი.");
+      };
+    }
+
+    if(state.currentKey==="budget"){
+      document.getElementById("btnBackB").onclick = ()=> state.goto("project");
+      document.getElementById("btnAddRow").onclick = ()=>{
+        state.data.budget.rows.push({cat:"", desc:"", amount:0});
+        renderStep();
+      };
+      document.querySelectorAll("[data-row]").forEach(inp=>{
+        inp.oninput = ()=>{
+          const i = Number(inp.getAttribute("data-i"));
+          const k = inp.getAttribute("data-k");
+          state.data.budget.rows[i][k] = k==="amount" ? Number(inp.value||0) : inp.value;
+          document.getElementById("budgetTotal").textContent = formatMoney(state.budgetTotal());
+        };
+      });
+      document.querySelectorAll("[data-del]").forEach(btn=>{
+        btn.onclick = ()=>{
+          const i = Number(btn.getAttribute("data-del"));
+          state.data.budget.rows.splice(i,1);
+          renderStep();
+        };
+      });
+      document.getElementById("btnNextB").onclick = ()=>{
+        // validate: at least 1 row with cat+desc+amount>0
+        if(state.validateBudget()){
+          state.goto("files");
+        } else alert("ბიუჯეტში დაამატე მინიმუმ 1 სწორი ჩანაწერი (კატეგორია/აღწერა/თანხა).");
+      };
+    }
+
+    if(state.currentKey==="files"){
+      document.getElementById("btnBackF").onclick = ()=> state.goto("budget");
+
+      const input = document.getElementById("fileInput");
+      input.onchange = ()=>{
+        const files = Array.from(input.files||[]);
+        files.forEach(f=>{
+          state.data.files.uploaded.push({name:f.name, size:f.size, type:f.type});
+        });
+        input.value="";
+        renderStep();
+      };
+
+      document.querySelectorAll("[data-remove-file]").forEach(b=>{
+        b.onclick = ()=>{
+          const idx = Number(b.getAttribute("data-remove-file"));
+          state.data.files.uploaded.splice(idx,1);
+          renderStep();
+        };
+      });
+
+      document.getElementById("btnNextF").onclick = ()=>{
+        if(state.validateFiles()){
+          state.goto("submit");
+        } else {
+          alert("სავალდებულო ფაილები სრულად არ არის ატვირთული.");
+        }
+      };
+    }
+
+    if(state.currentKey==="submit"){
+      document.getElementById("btnBackS").onclick = ()=> state.goto("files");
+      document.getElementById("btnSubmit").onclick = ()=>{
+        // final validate all
+        state.collectApplicant();
+        state.collectProject();
+        if(!state.readyToSubmit()){
+          alert("განაცხადი არ არის მზად: შეამოწმე სავალდებულო ნაბიჯები.");
+          renderStep();
+          return;
+        }
+        const appId = state.submitApplication();
+        document.getElementById("finalBox").innerHTML = `
+          <div class="okbox">განაცხადი მიღებულია ✅</div>
+          <div class="card" style="margin-top:12px">
+            <b>Application ID:</b> <span style="color:#86efac;font-weight:1000">${appId}</span>
+            <div class="muted" style="margin-top:6px">შეინახეთ ეს ნომერი შემდგომი კომუნიკაციისთვის.</div>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn btn-ghost" onclick="location.hash='#/grant/${g.id}'">დაბრუნება საგრანტოზე</button>
+            <button class="btn btn-ghost" onclick="location.hash='#/grants'">ყველა პროგრამა</button>
+          </div>
+        `;
+      };
+    }
+  }
+
+  /* -------------------------
+     Step views
+  ------------------------- */
+  function viewApplicant(){
+    const t = state.data.applicant.type;
+    return `
+      <h2 style="margin:0 0 6px 0">განმცხადებელი</h2>
+      <div class="muted">აირჩიეთ განმცხადებლის ტიპი და შეავსეთ სავალდებულო ველები.</div>
+
+      <div class="field">
+        <label>განმცხადებლის ტიპი *</label>
+        <select id="appType">
+          <option value="person" ${t==="person"?"selected":""}>ფიზიკური პირი</option>
+          <option value="company" ${t==="company"?"selected":""}>იურიდიული პირი / აიპი</option>
+        </select>
+      </div>
+
+      ${t==="person" ? personFields() : companyFields()}
+
+      <div class="row" style="margin-top:14px;justify-content:flex-end">
+        <button class="btn btn-ac" id="btnNextA">შემდეგი</button>
+      </div>
+    `;
+  }
+  function personFields(){
+    const a = state.data.applicant;
+    return `
+      <div class="field"><label>სახელი *</label><input id="p_name" value="${escAttr(a.name)}"></div>
+      <div class="field"><label>გვარი *</label><input id="p_surname" value="${escAttr(a.surname)}"></div>
+      <div class="field"><label>პირადი ნომერი *</label><input id="p_pid" value="${escAttr(a.pid)}" placeholder="11 ციფრი"></div>
+      <div class="field"><label>ტელეფონი *</label><input id="p_phone" value="${escAttr(a.phone)}" placeholder="+995..."></div>
+      <div class="field"><label>ელ.ფოსტა *</label><input id="p_email" value="${escAttr(a.email)}" placeholder="example@mail.com"></div>
+      <div class="field"><label>მისამართი/რაიონი</label><input id="p_addr" value="${escAttr(a.addr)}"></div>
+    `;
+  }
+  function companyFields(){
+    const a = state.data.applicant;
+    return `
+      <div class="field"><label>ორგანიზაციის/აიპის დასახელება *</label><input id="c_name" value="${escAttr(a.orgName)}"></div>
+      <div class="field"><label>საიდენტიფიკაციო კოდი *</label><input id="c_code" value="${escAttr(a.orgCode)}"></div>
+      <div class="field"><label>წარმომადგენლის სახელი/გვარი *</label><input id="c_rep" value="${escAttr(a.rep)}"></div>
+      <div class="field"><label>ტელეფონი *</label><input id="c_phone" value="${escAttr(a.phone)}"></div>
+      <div class="field"><label>ელ.ფოსტა *</label><input id="c_email" value="${escAttr(a.email)}"></div>
+      <div class="field"><label>მისამართი</label><input id="c_addr" value="${escAttr(a.addr)}"></div>
+    `;
+  }
+
+  function viewProject(){
+    const p = state.data.project;
+    return `
+      <h2 style="margin:0 0 6px 0">პროექტი</h2>
+      <div class="muted">შეავსეთ პროექტის ძირითადი ინფორმაცია.</div>
+
+      <div class="field"><label>პროექტის დასახელება *</label><input id="pr_title" value="${escAttr(p.title)}"></div>
+      <div class="field"><label>მოკლე აღწერა *</label><input id="pr_short" value="${escAttr(p.short)}"></div>
+      <div class="field"><label>სრული აღწერა *</label><textarea id="pr_full">${esc(p.full)}</textarea></div>
+      <div class="field"><label>მიზნები *</label><textarea id="pr_goals">${esc(p.goals)}</textarea></div>
+      <div class="field"><label>მოსალოდნელი შედეგები *</label><textarea id="pr_results">${esc(p.results)}</textarea></div>
+
+      <div class="row">
+        <div style="flex:1">
+          <label>დასაწყისი *</label><input type="date" id="pr_start" value="${escAttr(p.start)}">
+        </div>
+        <div style="flex:1">
+          <label>დასრულება *</label><input type="date" id="pr_end" value="${escAttr(p.end)}">
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:14px;justify-content:space-between">
+        <button class="btn btn-ghost" id="btnBackP">უკან</button>
+        <button class="btn btn-ac" id="btnNextP">შემდეგი</button>
+      </div>
+    `;
+  }
+
+  function viewBudget(){
+    const rows = state.data.budget.rows;
+    const total = state.budgetTotal();
+    return `
+      <h2 style="margin:0 0 6px 0">ბიუჯეტი</h2>
+      <div class="muted">დაამატეთ ხარჯები. ჯამი ითვლება ავტომატურად.</div>
+
+      <div style="overflow:auto;margin-top:10px">
+        <table>
+          <thead>
+            <tr>
+              <th>კატეგორია *</th>
+              <th>აღწერა *</th>
+              <th style="width:160px">თანხა (₾) *</th>
+              <th style="width:90px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((r,i)=>`
+              <tr>
+                <td><input data-row data-i="${i}" data-k="cat" value="${escAttr(r.cat)}" placeholder="მაგ: აღჭურვილობა"></td>
+                <td><input data-row data-i="${i}" data-k="desc" value="${escAttr(r.desc)}" placeholder="დანიშნულება"></td>
+                <td><input data-row data-i="${i}" data-k="amount" type="number" min="0" value="${Number(r.amount||0)}"></td>
+                <td><button class="btn btn-bad" data-del="${i}" type="button">X</button></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="row sp" style="margin-top:10px">
+        <button class="btn btn-ghost" id="btnAddRow" type="button">+ ჩანაწერის დამატება</button>
+        <div class="pill open">ჯამი: <b id="budgetTotal">${formatMoney(total)}</b> ₾</div>
+      </div>
+
+      <div class="row" style="margin-top:14px;justify-content:space-between">
+        <button class="btn btn-ghost" id="btnBackB">უკან</button>
+        <button class="btn btn-ac" id="btnNextB">შემდეგი</button>
+      </div>
+    `;
+  }
+
+  function viewFiles(){
+    const req = g.requirements || [];
+    const uploaded = state.data.files.uploaded;
+
+    const reqHtml = req.map((r,idx)=>{
+      const ok = state.hasFileForRequirement(r.name);
+      return `
+        <div class="row sp card" style="margin-top:10px">
+          <div>
+            <b>${esc(r.name)}</b>
+            <div class="muted">${r.required ? "სავალდებულო" : "არასავალდებულო"}</div>
+          </div>
+          <div>${ok ? `<span class="pill open">ატვირთულია</span>` : `<span class="pill closed">არ არის</span>`}</div>
+        </div>
+      `;
+    }).join("");
+
+    const upHtml = uploaded.map((f,i)=>`
+      <tr>
+        <td><b>${esc(f.name)}</b><div class="muted">${Math.round((f.size||0)/1024)} KB</div></td>
+        <td>${esc(f.type||"-")}</td>
+        <td><button class="btn btn-bad" type="button" data-remove-file="${i}">Remove</button></td>
+      </tr>
+    `).join("") || `<tr><td colspan="3" class="muted">ჯერ ფაილი არ არის ატვირთული</td></tr>`;
+
+    return `
+      <h2 style="margin:0 0 6px 0">ფაილები</h2>
+      <div class="muted">ატვირთეთ მოთხოვნილი დოკუმენტები.</div>
+
+      <div style="margin-top:10px">
+        <label>ფაილის ატვირთვა</label>
+        <input id="fileInput" type="file" multiple>
+        <div class="muted" style="margin-top:6px">დემო ვერსიაში ინახება მხოლოდ ფაილის სახელი/ზომა.</div>
+      </div>
+
+      <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+
+      <b>მოთხოვნილი ფაილები</b>
+      ${reqHtml || `<div class="muted" style="margin-top:10px">მოთხოვნილი ფაილები არ არის განსაზღვრული.</div>`}
+
+      <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+
+      <b>ატვირთული ფაილები</b>
+      <div style="overflow:auto;margin-top:10px">
+        <table>
+          <thead><tr><th>ფაილი</th><th>ტიპი</th><th></th></tr></thead>
+          <tbody>${upHtml}</tbody>
+        </table>
+      </div>
+
+      <div class="row" style="margin-top:14px;justify-content:space-between">
+        <button class="btn btn-ghost" id="btnBackF">უკან</button>
+        <button class="btn btn-ac" id="btnNextF">შემდეგი</button>
+      </div>
+    `;
+  }
+
+  function viewSubmit(){
+    const ok = state.readyToSubmit();
+    return `
+      <h2 style="margin:0 0 6px 0">გაგზავნა</h2>
+      <div class="muted">სისტემა გადაამოწმებს სავალდებულო ნაბიჯებს და შემდეგ გაგზავნის განაცხადს.</div>
+
+      <div style="margin-top:12px">
+        ${ ok ? `<div class="okbox">ყველა სავალდებულო ნაწილი შევსებულია ✅</div>`
+              : `<div class="err">განაცხადი არ არის მზად. შეამოწმე: განმცხადებელი / პროექტი / ბიუჯეტი / ფაილები</div>` }
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <b>შეჯამება</b>
+        <div class="kv" style="margin-top:10px">
+          <div class="muted">განმცხადებელი</div><div>${esc(state.summaryApplicant())}</div>
+          <div class="muted">პროექტი</div><div>${esc(state.data.project.title || "-")}</div>
+          <div class="muted">ბიუჯეტის ჯამი</div><div>${formatMoney(state.budgetTotal())} ₾</div>
+          <div class="muted">ფაილები</div><div>${state.data.files.uploaded.length} ც.</div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:14px;justify-content:space-between">
+        <button class="btn btn-ghost" id="btnBackS">უკან</button>
+        <button class="btn btn-ok" id="btnSubmit" ${ok ? "" : "disabled"}>განაცხადის გაგზავნა</button>
+      </div>
+
+      <div id="finalBox" style="margin-top:12px"></div>
+    `;
+  }
+
+  /* -------------------------
+     Portal state object
+  ------------------------- */
+  function makePortalState(grant){
+    return {
+      grantId: grant.id,
+      currentKey: "applicant",
+      currentIndex: 0,
+      data: {
+        applicant: { type:"person", name:"", surname:"", pid:"", phone:"", email:"", addr:"", orgName:"", orgCode:"", rep:"" },
+        project:   { title:"", short:"", full:"", goals:"", results:"", start: todayISO(), end: todayISO() },
+        budget:    { rows: [{cat:"", desc:"", amount:0}] },
+        files:     { uploaded: [] }
+      },
+      valid: { applicant:false, project:false, budget:false, files:false },
+
+      goto(key){ this.currentKey = key; renderStep(); },
+      maxAllowedIndex(){
+        // simple linear access based on what's completed
+        const order=["applicant","project","budget","files","submit"];
+        let i=0;
+        if(this.valid.applicant) i=1;
+        if(this.valid.applicant && this.valid.project) i=2;
+        if(this.valid.applicant && this.valid.project && this.valid.budget) i=3;
+        if(this.valid.applicant && this.valid.project && this.valid.budget && this.valid.files) i=4;
+        return i;
+      },
+
+      // Collectors
+      collectApplicant(){
+        const a=this.data.applicant;
+        a.type = (document.getElementById("appType")?.value)||a.type;
+
+        if(a.type==="person"){
+          a.name    = (document.getElementById("p_name")?.value||"").trim();
+          a.surname = (document.getElementById("p_surname")?.value||"").trim();
+          a.pid     = (document.getElementById("p_pid")?.value||"").trim();
+          a.phone   = (document.getElementById("p_phone")?.value||"").trim();
+          a.email   = (document.getElementById("p_email")?.value||"").trim();
+          a.addr    = (document.getElementById("p_addr")?.value||"").trim();
+        } else {
+          a.orgName = (document.getElementById("c_name")?.value||"").trim();
+          a.orgCode = (document.getElementById("c_code")?.value||"").trim();
+          a.rep     = (document.getElementById("c_rep")?.value||"").trim();
+          a.phone   = (document.getElementById("c_phone")?.value||"").trim();
+          a.email   = (document.getElementById("c_email")?.value||"").trim();
+          a.addr    = (document.getElementById("c_addr")?.value||"").trim();
+        }
+      },
+      collectProject(){
+        const p=this.data.project;
+        p.title   = (document.getElementById("pr_title")?.value||"").trim();
+        p.short   = (document.getElementById("pr_short")?.value||"").trim();
+        p.full    = (document.getElementById("pr_full")?.value||"").trim();
+        p.goals   = (document.getElementById("pr_goals")?.value||"").trim();
+        p.results = (document.getElementById("pr_results")?.value||"").trim();
+        p.start   = (document.getElementById("pr_start")?.value||"").trim();
+        p.end     = (document.getElementById("pr_end")?.value||"").trim();
+      },
+
+      // Validators
+      validateApplicant(){
+        this.collectApplicant();
+        const a=this.data.applicant;
+        let ok=false;
+        if(a.type==="person"){
+          ok = !!(a.name && a.surname && a.pid && a.phone && a.email);
+        } else {
+          ok = !!(a.orgName && a.orgCode && a.rep && a.phone && a.email);
+        }
+        this.valid.applicant = ok;
+        return ok;
+      },
+      validateProject(){
+        this.collectProject();
+        const p=this.data.project;
+        const ok = !!(p.title && p.short && p.full && p.goals && p.results && p.start && p.end);
+        this.valid.project = ok;
+        return ok;
+      },
+      validateBudget(){
+        const rows=this.data.budget.rows || [];
+        const ok = rows.some(r => (r.cat||"").trim() && (r.desc||"").trim() && Number(r.amount||0) > 0);
+        this.valid.budget = ok;
+        return ok;
+      },
+      hasFileForRequirement(reqName){
+        const up=this.data.files.uploaded || [];
+        // demo: match by any upload (real app: you map each req to a specific file)
+        // here: if any file exists, and requirement is required, user can upload all in any order.
+        // stricter: require at least N required files.
+        return up.length > 0; // for per-requirement strict mapping, expand logic.
+      },
+      validateFiles(){
+        const req = grant.requirements || [];
+        const requiredCount = req.filter(r=>r.required).length;
+        const uploadedCount = (this.data.files.uploaded||[]).length;
+        // simple rule: uploaded must be >= requiredCount
+        const ok = uploadedCount >= requiredCount;
+        this.valid.files = ok;
+        return ok;
+      },
+
+      budgetTotal(){
+        return (this.data.budget.rows||[]).reduce((s,r)=> s + Number(r.amount||0), 0);
+      },
+      summaryApplicant(){
+        const a=this.data.applicant;
+        if(a.type==="person") return `${a.name||""} ${a.surname||""}`.trim() || "-";
+        return `${a.orgName||""} (${a.orgCode||""})`.trim() || "-";
+      },
+
+      readyToSubmit(){
+        // ensure validations (don’t assume previous)
+        const A=this.validateApplicant();
+        const P=this.validateProject();
+        const B=this.validateBudget();
+        const F=this.validateFiles();
+        return A && P && B && F;
+      },
+
+      submitApplication(){
+        const store = loadApps();
+        store[this.grantId] = store[this.grantId] || [];
+
+        const appId = genAppId();
+        const now = new Date().toISOString();
+
+        const rec = {
+          id: appId,
+          grantId: this.grantId,
+          createdAt: now,
+          applicant: this.data.applicant,
+          project: this.data.project,
+          budget: this.data.budget,
+          files: this.data.files,
+          total: this.budgetTotal(),
+          status: "submitted"
+        };
+
+        store[this.grantId].unshift(rec);
+        saveApps(store);
+        return appId;
+      }
+    };
+  }
+}
+
+/* =========================
+   Helpers
+========================= */
+function statusOf(g){
+  const now = todayISO();
+  return (g.deadline >= now) ? "open" : "closed";
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function addDaysISO(days){
+  const d=new Date(); d.setDate(d.getDate()+days);
+  return d.toISOString().slice(0,10);
+}
+function genAppId(){
+  // short unique id
+  return "APP-" + Math.random().toString(16).slice(2,8).toUpperCase() + "-" + Date.now().toString().slice(-6);
+}
+function formatMoney(n){ n=Number(n||0); return n.toLocaleString("ka-GE"); }
+function esc(s){
+  return (s??"").toString()
+    .replaceAll("&","&amp;").replaceAll("<","&lt;")
+    .replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+function escAttr(s){ return esc(s).replaceAll("\n"," "); }
+
+function svgCover(text, color){
+  // small SVG cover (no external images)
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600">
+    <defs>
+      <linearGradient id="g" x1="0" x2="1">
+        <stop offset="0" stop-color="${color}" stop-opacity="0.55"/>
+        <stop offset="1" stop-color="#0b1220" stop-opacity="1"/>
+      </linearGradient>
+      <radialGradient id="r" cx="30%" cy="35%" r="70%">
+        <stop offset="0" stop-color="${color}" stop-opacity="0.85"/>
+        <stop offset="1" stop-color="#0b1220" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="1200" height="600" fill="#0f172a"/>
+    <rect width="1200" height="600" fill="url(#g)"/>
+    <circle cx="380" cy="220" r="260" fill="url(#r)"/>
+    <circle cx="860" cy="360" r="240" fill="url(#r)"/>
+    <text x="70" y="320" fill="#e5e7eb" font-family="Arial" font-size="64" font-weight="800">${text}</text>
+    <text x="70" y="390" fill="#94a3b8" font-family="Arial" font-size="30" font-weight="700">Grant Program</text>
+  </svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+
+function notFound(){
+  return `
+    <div class="card">
+      <h1 style="margin:0 0 10px 0">404</h1>
+      <div class="muted">გვერდი ვერ მოიძებნა.</div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn btn-ac" onclick="location.hash='#/grants'">საგრანტო პროგრამები</button>
+      </div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Youth Agency</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="assets.css?v=1">
+
+  <!-- Slider CSS -->
+  <link rel="stylesheet" href="slider.css?v=1">
+</head>
+
+<body>
+
+  <!-- HEADER (injected) -->
+  <div id="siteHeaderMount"></div>
+
+  <!-- SLIDER -->
+  <section class="hero">
+    <div class="slider" id="heroSlider" aria-label="Main slider">
+      <div class="slides" id="slidesTrack"></div>
+
+      <button class="nav prev" type="button" id="prevBtn" aria-label="Previous slide">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+
+      <button class="nav next" type="button" id="nextBtn" aria-label="Next slide">
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+
+      <div class="dots" id="dots"></div>
+    </div>
+  </section>
+<div id="newsMount"></div>
+
+
+
+<script src="news.js?v=1"></script>
+
+  <!-- FOOTER (injected) -->
+  <div id="siteFooterMount"></div>
+
+  <!-- HEADER / FOOTER LOADER -->
+  <script>
+    async function inject(id, file) {
+      const el = document.getElementById(id);
+      if (!el) throw new Error(`Mount element not found: #${id}`);
+
+      const res = await fetch(file + '?v=1');
+      if (!res.ok) throw new Error(`${file} not found. Status: ${res.status}`);
+
+      el.innerHTML = await res.text();
+    }
+
+    async function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src + '?v=1';
+        s.onload = resolve;
+        s.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+        document.body.appendChild(s);
+      });
+    }
+
+    (async () => {
+      try {
+        await inject('siteHeaderMount', 'header.html');
+        await loadScript('app.js');
+
+        if (typeof window.initHeader === 'function') {
+          window.initHeader();
+        }
+
+        await inject('siteFooterMount', 'footer.html');
+      } catch (err) {
+        console.error('HEADER/FOOTER ERROR:', err);
+      }
+    })();
+  </script>
+
+  <!-- SLIDER JS (MUST BE LAST) -->
+  <script src="slider.js?v=1"></script>
+<script>
+  async function inject(id, file) {
+    const el = document.getElementById(id);
+    if (!el) throw new Error(`Mount element not found: #${id}`);
+    const res = await fetch(file + '?v=1');
+    if (!res.ok) throw new Error(`${file} not found. Status: ${res.status}`);
+    el.innerHTML = await res.text();
+  }
+
+  async function injectPhp(id, url) {
+    const el = document.getElementById(id);
+    if (!el) throw new Error(`Mount element not found: #${id}`);
+    const res = await fetch(url + '?v=1');
+    if (!res.ok) throw new Error(`${url} not found. Status: ${res.status}`);
+    el.innerHTML = await res.text();
+  }
+
+  async function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src + '?v=1';
+      s.onload = resolve;
+      s.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+      document.body.appendChild(s);
+    });
+  }
+
+  (async () => {
+    try {
+      await inject('siteHeaderMount', 'header.html');
+      await loadScript('app.js');
+      if (typeof window.initHeader === 'function') window.initHeader();
+      await injectPhp('newsMount', '/youthagency/news_list.php');   // ✅ THIS
+      await inject('siteFooterMount', 'footer.html');
+    } catch (err) {
+      console.error(err);
+    }
+  })();
+</script>
+
+</body>
+</html>
