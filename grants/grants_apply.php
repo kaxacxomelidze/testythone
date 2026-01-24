@@ -243,6 +243,8 @@ $payload = [
 </head>
 
 <body>
+  <div id="siteHeaderMount"></div>
+
   <div class="wrap">
     <div class="banner">
       <div>
@@ -274,6 +276,8 @@ $payload = [
       </div>
     <?php endif; ?>
   </div>
+
+  <div id="siteFooterMount"></div>
 
 <script>
 const DATA = <?= json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
@@ -1282,6 +1286,36 @@ function bindFields(activeDbStep, fields, idx, isFiles){
     });
   }
 }
+</script>
+<script>
+  async function inject(id, file) {
+    const el = document.getElementById(id);
+    if (!el) throw new Error(`Mount element not found: #${id}`);
+    const res = await fetch(file + '?v=1');
+    if (!res.ok) throw new Error(`${file} not found. Status: ${res.status}`);
+    el.innerHTML = await res.text();
+  }
+
+  async function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src + '?v=1';
+      s.onload = resolve;
+      s.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+      document.body.appendChild(s);
+    });
+  }
+
+  (async () => {
+    try {
+      await inject('siteHeaderMount', '/youthagency/header.html');
+      await loadScript('/youthagency/app.js');
+      if (typeof window.initHeader === 'function') window.initHeader();
+      await inject('siteFooterMount', '/youthagency/footer.html');
+    } catch (err) {
+      console.error('HEADER/FOOTER ERROR:', err);
+    }
+  })();
 </script>
 </body>
 </html>

@@ -1,6 +1,9 @@
 <?php
 require __DIR__ . '/config.php';
-require __DIR__ . '/db.php';
+require_login();
+require_super_admin();
+
+$pdo = db();
 
 /**
  * Run once, then DELETE this file.
@@ -33,4 +36,4 @@ foreach ($usersToEnsure as $u) {
   }
 }
 
-echo "<hr>DONE. ახლა აუცილებლად წაშალე: admin/seed_admins.php";
+echo "<hr>DONE. ახლა აუცილებლად წაშალე: admin/create_user.php";

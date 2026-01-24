@@ -113,6 +113,7 @@ label{display:block;margin:0 0 6px 0}
   border:1px solid rgba(255,255,255,.12);
   font-weight:900;font-size:12px;
 }
+.chip .count{font-weight:900;color:#fff}
 .dot{width:8px;height:8px;border-radius:999px;background:rgba(255,255,255,.35)}
 .dot.ok{background:rgba(46,204,113,.95)}
 .dot.warn{background:rgba(241,196,15,.95)}
@@ -124,6 +125,15 @@ label{display:block;margin:0 0 6px 0}
 table{width:100%;border-collapse:collapse}
 th,td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
 th{color:rgba(207,233,255,.92);font-size:12px;font-weight:900}
+.subtle{color:var(--muted);font-size:12px;font-weight:800}
+.stack{display:flex;flex-direction:column;gap:4px}
+.contactRow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tag{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.06);font-size:11px;font-weight:900;color:#fff
+}
+.tag.muted{color:var(--muted)}
 
 .statusPill{
   display:inline-flex;align-items:center;gap:8px;
@@ -248,9 +258,12 @@ a.dl:hover{opacity:.9}
       </div>
 
       <div class="chips">
-        <span class="chip"><span class="dot ac"></span> გახსნა → დეტალები + ფაილები + ბიუჯეტი</span>
-        <span class="chip"><span class="dot warn"></span> field_89 აღარ იქნება მარტო — გამოვიტანთ label-ს</span>
-        <span class="chip"><span class="dot ok"></span> მობილურზე სია იქნება card-ებით</span>
+        <span class="chip"><span class="dot muted"></span> სულ: <span class="count" id="kpi_total">0</span></span>
+        <span class="chip"><span class="dot ac"></span> გაგზავნილი: <span class="count" id="kpi_submitted">0</span></span>
+        <span class="chip"><span class="dot warn"></span> გადახედვაში: <span class="count" id="kpi_review">0</span></span>
+        <span class="chip"><span class="dot warn"></span> დაზუსტება: <span class="count" id="kpi_clarify">0</span></span>
+        <span class="chip"><span class="dot ok"></span> დამტკიცებული: <span class="count" id="kpi_approved">0</span></span>
+        <span class="chip"><span class="dot bad"></span> უარყოფილი: <span class="count" id="kpi_rejected">0</span></span>
       </div>
     </div>
   </div>
@@ -267,9 +280,10 @@ a.dl:hover{opacity:.9}
               <th style="width:90px">ID</th>
               <th>გრანტი</th>
               <th>განმცხადებელი</th>
+              <th>კონტაქტი</th>
               <th style="width:160px">სტატუსი</th>
               <th style="width:90px">ქულა</th>
-              <th style="width:340px">ქმედებები</th>
+              <th style="width:320px">ქმედებები</th>
             </tr>
           </thead>
           <tbody id="aBody"></tbody>
@@ -618,15 +632,48 @@ async function loadApps(withLoading){
 function renderApps(){
   const tb = document.getElementById('aBody');
   const cards = document.getElementById('cards');
+  const kpi = {
+    total: APPS.length,
+    submitted: 0,
+    in_review: 0,
+    need_clarification: 0,
+    approved: 0,
+    rejected: 0
+  };
+
+  (APPS || []).forEach(a => {
+    const st = (a.status || 'submitted');
+    if (st in kpi) kpi[st] += 1;
+  });
+
+  document.getElementById('kpi_total').textContent = String(kpi.total);
+  document.getElementById('kpi_submitted').textContent = String(kpi.submitted);
+  document.getElementById('kpi_review').textContent = String(kpi.in_review);
+  document.getElementById('kpi_clarify').textContent = String(kpi.need_clarification);
+  document.getElementById('kpi_approved').textContent = String(kpi.approved);
+  document.getElementById('kpi_rejected').textContent = String(kpi.rejected);
 
   const rows = (APPS || []).map(a=>`
     <tr>
       <td><b>${Number(a.id)}</b><div class="small">${esc(a.created_at || '')}</div></td>
       <td>
-        <b>${esc(a.grant_title || ('#'+(a.grant_id ?? '')) || '-')}</b>
-        <div class="small">grant_id: ${esc(String(a.grant_id ?? ''))}</div>
+        <div class="stack">
+          <b>${esc(a.grant_title || ('#'+(a.grant_id ?? '')) || '-')}</b>
+          <span class="subtle">grant_id: ${esc(String(a.grant_id ?? ''))}</span>
+        </div>
       </td>
-      <td><b>${esc(a.applicant_name || '-')}</b><div class="small">${esc(a.email || '')}</div></td>
+      <td>
+        <div class="stack">
+          <b>${esc(a.applicant_name || '-')}</b>
+          <span class="subtle">${esc(a.email || '—')}</span>
+        </div>
+      </td>
+      <td>
+        <div class="stack">
+          <span class="tag">📧 ${esc(a.email || '—')}</span>
+          <span class="tag">📞 ${esc(a.phone || '—')}</span>
+        </div>
+      </td>
       <td>${statusPill(a.status)}</td>
       <td><b>${Number(a.rating || 0)}</b></td>
       <td>
@@ -638,7 +685,7 @@ function renderApps(){
     </tr>
   `).join('');
 
-  tb.innerHTML = rows || `<tr><td colspan="6" class="small">განაცხადი არ არის. სცადე „ყველა გრანტი“ + სტატუსი „ყველა“.</td></tr>`;
+  tb.innerHTML = rows || `<tr><td colspan="7" class="small">განაცხადი არ არის. სცადე „ყველა გრანტი“ + სტატუსი „ყველა“.</td></tr>`;
 
   // mobile cards
   const cardsHtml = (APPS || []).map(a=>`
@@ -655,10 +702,12 @@ function renderApps(){
             <div class="small">grant_id: ${esc(String(a.grant_id ?? ''))}</div>
           </div>
 
-          <div class="kvmini">
-            <div><span class="k">განმცხადებელი:</span> <span class="v">${esc(a.applicant_name || '-')}</span></div>
-            <div><span class="k">ქულა:</span> <span class="v">${Number(a.rating || 0)}</span></div>
-          </div>
+            <div class="kvmini">
+              <div><span class="k">განმცხადებელი:</span> <span class="v">${esc(a.applicant_name || '-')}</span></div>
+              <div><span class="k">ქულა:</span> <span class="v">${Number(a.rating || 0)}</span></div>
+              <div><span class="k">ელ.ფოსტა:</span> <span class="v">${esc(a.email || '—')}</span></div>
+              <div><span class="k">ტელეფონი:</span> <span class="v">${esc(a.phone || '—')}</span></div>
+            </div>
         </div>
         <div class="appCardRight">
           <button class="btn ghost" type="button" onclick="openApp(${Number(a.id)}, ${Number(a.grant_id||0)})">გახსნა</button>
@@ -1053,7 +1102,7 @@ async function openApp(id, grantIdHint=0){
 
     document.getElementById('amTitle').textContent = "განაცხადი — " + a.id;
     document.getElementById('amMeta').textContent =
-      `გრანტი: ${(a.grant_title || ("#" + a.grant_id))} • სტატუსი: ${a.status} • ქულა: ${a.rating} • შექმნა: ${a.created_at}`;
+      `გრანტი: ${(a.grant_title || ("#" + a.grant_id))} • სტატუსი: ${a.status} • ქულა: ${a.rating} • შექმნა: ${a.created_at} • განახლდა: ${a.updated_at || "-"}`;
 
     document.getElementById('amStatus').value = a.status || 'submitted';
     document.getElementById('amRating').value = Number(a.rating || 0);

@@ -2,14 +2,10 @@
 // admin/camp_applicants.php
 declare(strict_types=1);
 require __DIR__ . '/config.php';
+require_login();
 
 if (!function_exists('h')) {
   function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
-}
-
-if (empty($_SESSION['admin_logged_in']) || (int)$_SESSION['admin_logged_in'] !== 1) {
-  header("Location: login.php");
-  exit;
 }
 
 $title = "Camp Applicants";
