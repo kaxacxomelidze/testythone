@@ -13,6 +13,15 @@ $stmt = $pdo->query("SELECT id,name,slug,cover,card_text,start_date,end_date,clo
                      ORDER BY id DESC
                      LIMIT 200");
 $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$openCount = 0;
+$closedCount = 0;
+foreach ($camps as $c) {
+  if ((int)($c['closed'] ?? 0) === 1) {
+    $closedCount++;
+  } else {
+    $openCount++;
+  }
+}
 
 function fmtDate(?string $d): string {
   $d = (string)$d;
@@ -72,22 +81,49 @@ function fmtDate(?string $d): string {
       display:flex;
       justify-content:space-between;
       align-items:flex-end;
-      gap:14px;
+      gap:16px;
       flex-wrap:wrap;
-      margin-bottom:12px;
+      margin-bottom:18px;
     }
 
-    .top h2{
+    .hero-title{
       margin:0;
       color:#ffffff;
       font-weight:950;
       letter-spacing:.2px;
-      font-size:1.55rem;
+      font-size:1.7rem;
       display:flex;
       align-items:center;
       gap:10px;
     }
-    .top h2 i{color:rgba(255,255,255,.92)}
+    .hero-title i{color:rgba(255,255,255,.92)}
+    .hero-sub{
+      margin-top:6px;
+      color:rgba(229,231,235,.85);
+      font-weight:700;
+      font-size:.98rem;
+      max-width:560px;
+    }
+
+    .stats{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .stat{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(30,42,69,.9);
+      background:rgba(11,18,32,.38);
+      font-weight:900;
+      color:#fff;
+      min-width:140px;
+    }
+    .stat .label{color:var(--muted);font-weight:800;font-size:.82rem}
+    .stat .value{font-size:1.1rem}
 
     /* Classic filter bar — improved colors/sizes */
     .bar{
@@ -203,12 +239,45 @@ function fmtDate(?string $d): string {
       box-shadow: var(--shadow2);
     }
 
+    .media{
+      position:relative;
+    }
     .cimg{
       width:100%;
       height:190px;
       object-fit:cover;
       display:block;
       filter:saturate(1.05) contrast(1.03);
+    }
+    .cimg-fallback{
+      height:190px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(135deg, rgba(96,165,250,.22), rgba(34,197,94,.12));
+      color:rgba(255,255,255,.9);
+      font-weight:900;
+      letter-spacing:.3px;
+    }
+    .shade{
+      position:absolute;
+      inset:0;
+      background:linear-gradient(180deg, rgba(2,6,23,.0) 30%, rgba(2,6,23,.45) 100%);
+    }
+    .badge{
+      position:absolute;
+      left:12px;
+      bottom:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.2);
+      background:rgba(15,23,42,.65);
+      color:#fff;
+      font-weight:900;
+      font-size:.8rem;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
     }
 
     .p{padding:14px}
@@ -240,6 +309,26 @@ function fmtDate(?string $d): string {
       font-size:.92rem;
     }
     .meta i{color:rgba(156,163,175,.95)}
+
+    .card-footer{
+      margin-top:14px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+    .cta{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid rgba(96,165,250,.75);
+      color:#e0f2fe;
+      font-weight:900;
+      font-size:.88rem;
+      background:rgba(96,165,250,.12);
+    }
 
     /* Status pill — more premium */
     .pill{
@@ -283,7 +372,7 @@ function fmtDate(?string $d): string {
       .wrap{padding:14px}
       .grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
       .cimg{height:170px}
-      .top h2{font-size:1.35rem}
+    .hero-title{font-size:1.45rem}
     }
   </style>
 </head>
@@ -295,6 +384,43 @@ function fmtDate(?string $d): string {
 
   <main class="wrap">
     <div class="top">
+      <div>
+        <div class="hero-title">
+          <i class="fa-solid fa-campground"></i>
+          ბანაკები
+        </div>
+        <div class="hero-sub">
+          აქ ნახავთ მიმდინარე და დაგეგმილ ახალგაზრდულ ბანაკებს. გამოიყენეთ ძიება ან ფილტრი,
+          რათა სწრაფად იპოვოთ თქვენთვის საინტერესო პროგრამა.
+        </div>
+      </div>
+
+      <div class="stats" aria-label="Camp stats">
+        <div class="stat">
+          <div>
+            <div class="label">სულ</div>
+            <div class="value"><?=h((string)count($camps))?></div>
+          </div>
+        </div>
+        <div class="stat">
+          <div>
+            <div class="label">ღია</div>
+            <div class="value" id="statOpen"><?=h((string)$openCount)?></div>
+          </div>
+        </div>
+        <div class="stat">
+          <div>
+            <div class="label">დახურული</div>
+            <div class="value" id="statClosed"><?=h((string)$closedCount)?></div>
+          </div>
+        </div>
+        <div class="stat">
+          <div>
+            <div class="label">შედეგი</div>
+            <div class="value" id="statShown"><?=h((string)count($camps))?></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="bar">
@@ -340,9 +466,18 @@ function fmtDate(?string $d): string {
            href="<?=h($url)?>"
            data-status="<?=h($status)?>"
            data-search="<?=h($search)?>">
-          <?php if ($cover !== ''): ?>
-            <img class="cimg" src="<?=h($cover)?>" alt="">
-          <?php endif; ?>
+          <div class="media">
+            <?php if ($cover !== ''): ?>
+              <img class="cimg" src="<?=h($cover)?>" alt="">
+            <?php else: ?>
+              <div class="cimg-fallback">Youth Camp</div>
+            <?php endif; ?>
+            <div class="shade"></div>
+            <div class="badge">
+              <i class="fa-regular fa-calendar"></i>
+              <?=h($start)?> → <?=h($end)?>
+            </div>
+          </div>
 
           <div class="p">
             <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
@@ -358,9 +493,17 @@ function fmtDate(?string $d): string {
             <?php endif; ?>
 
             <div class="meta">
-              <span><i class="fa-regular fa-calendar"></i> <?=h($start)?> → <?=h($end)?></span>
-              <span>•</span>
               <span><i class="fa-solid fa-hashtag"></i> <?=h((string)$id)?></span>
+              <span>•</span>
+              <span><i class="fa-solid fa-location-dot"></i> ახალგაზრდობის სააგენტო</span>
+            </div>
+
+            <div class="card-footer">
+              <span class="cta">
+                დეტალები
+                <i class="fa-solid fa-arrow-right"></i>
+              </span>
+              <span class="small" style="color:var(--muted);font-weight:800">განაცხადი ონლაინ</span>
             </div>
           </div>
         </a>
@@ -411,6 +554,7 @@ function fmtDate(?string $d): string {
 
       const cOpen = document.getElementById('cOpen');
       const cClosed = document.getElementById('cClosed');
+      const statShown = document.getElementById('statShown');
 
       let active = 'all';
 
@@ -419,6 +563,10 @@ function fmtDate(?string $d): string {
         cards.forEach(c => (c.dataset.status === 'open') ? open++ : closed++);
         cOpen.textContent = String(open);
         cClosed.textContent = String(closed);
+        const statOpen = document.getElementById('statOpen');
+        const statClosed = document.getElementById('statClosed');
+        if (statOpen) statOpen.textContent = String(open);
+        if (statClosed) statClosed.textContent = String(closed);
       }
 
       function apply(){
@@ -434,6 +582,7 @@ function fmtDate(?string $d): string {
         });
 
         clientEmpty.style.display = (shown === 0 && cards.length) ? '' : 'none';
+        if (statShown) statShown.textContent = String(shown);
       }
 
       buttons.forEach(b => {

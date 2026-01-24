@@ -2,16 +2,11 @@
 // admin/camps.php
 declare(strict_types=1);
 require __DIR__ . '/config.php';
+require_login();
 
 // if your config has h() keep it. If not, define safe:
 if (!function_exists('h')) {
   function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
-}
-
-// Auth (same logic as your system)
-if (empty($_SESSION['admin_logged_in']) || (int)$_SESSION['admin_logged_in'] !== 1) {
-  header("Location: login.php");
-  exit;
 }
 
 $title = "Camps";
