@@ -292,7 +292,7 @@ $deadline = (string)($g['deadline'] ?? '');
 
     <div class="topbar">
       <a class="btn secondary" href="/youthagency/grants/" onclick="if(history.length>1){ history.back(); return false; }">
-        <i class="fa-solid fa-arrow-left"></i> უკან
+        <i class="fa-solid fa-arrow-left"></i> <span data-i18n="grantsView.back">უკან</span>
       </a>
     </div>
 
@@ -302,7 +302,7 @@ $deadline = (string)($g['deadline'] ?? '');
 
         <span class="pill <?= $isClosed ? 'closed' : 'current' ?>">
           <i class="fa-solid fa-circle" style="font-size:8px;opacity:.85"></i>
-          <?=h($statusLabel)?>
+          <span data-i18n="<?= $isClosed ? 'grantsView.statusClosed' : 'grantsView.statusOpen' ?>"><?=h($statusLabel)?></span>
         </span>
       </div>
 
@@ -319,7 +319,7 @@ $deadline = (string)($g['deadline'] ?? '');
           <div class="metaRow">
             <span class="pill neutral">
               <i class="fa-regular fa-calendar"></i>
-              ვადა: <?=h(fmt_date($deadline))?>
+              <span data-i18n="grantsView.deadlineLabel">ვადა:</span> <?=h(fmt_date($deadline))?>
             </span>
           </div>
 
@@ -327,12 +327,12 @@ $deadline = (string)($g['deadline'] ?? '');
             <?php if(!$isClosed): ?>
               <!-- ✅ FIXED: always absolute + always includes grant id -->
               <a class="btn" href="<?=h($applyUrl)?>">
-                <i class="fa-solid fa-file-pen"></i> განაცხადის შევსება
+                <i class="fa-solid fa-file-pen"></i> <span data-i18n="grantsView.apply">განაცხადის შევსება</span>
               </a>
             <?php endif; ?>
 
             <a class="btn secondary" href="/youthagency/grants/">
-              <i class="fa-solid fa-list"></i> ყველა საგრანტო
+              <i class="fa-solid fa-list"></i> <span data-i18n="grantsView.all">ყველა საგრანტო</span>
             </a>
           </div>
         </aside>
@@ -340,7 +340,7 @@ $deadline = (string)($g['deadline'] ?? '');
     </section>
 
     <section class="block">
-      <h2>დეტალური აღწერა</h2>
+      <h2 data-i18n="grantsView.detailsTitle">დეტალური აღწერა</h2>
       <div class="content"><?=safe_html_paragraphs($body)?></div>
     </section>
 

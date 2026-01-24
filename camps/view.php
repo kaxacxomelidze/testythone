@@ -188,6 +188,10 @@ $regReason = '';
 if ($closedManual) $regReason = 'ადმინისტრატორმა დახურა';
 elseif ($timeNotStarted) $regReason = 'მალე დაიწყება';
 elseif ($timeEnded) $regReason = 'ვადა გავიდა';
+$regReasonKey = '';
+if ($closedManual) $regReasonKey = 'campsView.reasonManual';
+elseif ($timeNotStarted) $regReasonKey = 'campsView.reasonSoon';
+elseif ($timeEnded) $regReasonKey = 'campsView.reasonEnded';
 
 /* ------------------ SUBMIT (POST) ------------------ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -590,7 +594,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
 
     <div class="topbar">
       <a class="back" href="/youthagency/camps/">
-        <i class="fa-solid fa-arrow-left"></i> ბანაკებზე დაბრუნება
+        <i class="fa-solid fa-arrow-left"></i> <span data-i18n="campsView.back">ბანაკებზე დაბრუნება</span>
       </a>
 
       <?php
@@ -600,7 +604,11 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
       ?>
       <span class="status <?=$badgeClass?>">
         <i class="fa-solid <?=$badgeIcon?>"></i>
-        <?=h($badgeText)?>
+        <span data-i18n="<?= $regOpen ? 'campsView.registrationOpen' : 'campsView.registrationClosed' ?>"><?=h($regOpen ? 'რეგისტრაცია ღიაა' : 'რეგისტრაცია დახურულია')?></span>
+        <?php if (!$regOpen && $regReasonKey): ?>
+          <span> • </span>
+          <span data-i18n="<?=h($regReasonKey)?>"><?=h($regReason)?></span>
+        <?php endif; ?>
       </span>
     </div>
 
@@ -610,7 +618,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
           <?php if ($campCover !== ''): ?>
             <img class="cover" src="<?=h($campCover)?>" alt="">
           <?php else: ?>
-            <div class="cover" style="display:grid;place-items:center;color:rgba(156,163,175,.9);font-weight:900">No cover</div>
+            <div class="cover" style="display:grid;place-items:center;color:rgba(156,163,175,.9);font-weight:900" data-i18n="campsView.noCover">No cover</div>
           <?php endif; ?>
         </div>
 
@@ -623,10 +631,10 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
           <div class="meta">
             <span><i class="fa-regular fa-calendar"></i> <?=h($campStart)?> → <?=h($campEnd)?></span>
             <span>•</span>
-            <span><i class="fa-solid fa-hashtag"></i> ID: <?=h((string)$campId)?></span>
+            <span><i class="fa-solid fa-hashtag"></i> <span data-i18n="campsView.idLabel">ID:</span> <?=h((string)$campId)?></span>
             <?php if ($closedManual): ?>
               <span>•</span>
-              <span class="muted"><i class="fa-solid fa-lock"></i> დახურულია (manual)</span>
+              <span class="muted"><i class="fa-solid fa-lock"></i> <span data-i18n="campsView.manualClosed">დახურულია (manual)</span></span>
             <?php endif; ?>
           </div>
         </div>
@@ -634,10 +642,10 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
     </section>
 
     <section class="card">
-      <h2 class="sectionTitle"><i class="fa-regular fa-newspaper"></i> პოსტები</h2>
+      <h2 class="sectionTitle"><i class="fa-regular fa-newspaper"></i> <span data-i18n="campsView.posts">პოსტები</span></h2>
 
       <?php if (!$posts): ?>
-        <div class="muted" style="margin-top:10px">პოსტები ჯერ არ დამატებულა.</div>
+        <div class="muted" style="margin-top:10px" data-i18n="campsView.postsEmpty">პოსტები ჯერ არ დამატებულა.</div>
       <?php else: ?>
         <?php foreach ($posts as $p): $pid=(int)$p['id']; ?>
           <article class="post">
@@ -671,7 +679,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
     </section>
 
     <section class="card">
-      <h2 class="sectionTitle"><i class="fa-regular fa-clipboard"></i> რეგისტრაცია</h2>
+      <h2 class="sectionTitle"><i class="fa-regular fa-clipboard"></i> <span data-i18n="campsView.registration">რეგისტრაცია</span></h2>
 
       <?php if ($msg !== ''): ?>
         <div class="note <?= $ok ? 'ok' : 'bad' ?>" id="serverMsg"><?=h($msg)?></div>
@@ -680,7 +688,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
       <div class="note bad" id="formMsg" style="display:none"></div>
 
       <?php if (!$regOpen): ?>
-        <div class="muted" style="margin-top:10px">რეგისტრაცია დახურულია.</div>
+        <div class="muted" style="margin-top:10px" data-i18n="campsView.registrationClosed">რეგისტრაცია დახურულია.</div>
       <?php else: ?>
 
         <form method="post" enctype="multipart/form-data" id="regForm" novalidate>
@@ -710,7 +718,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
                     if (!$opts) $opts = array_filter(array_map('trim', explode(',', (string)($f['options_json'] ?? ''))));
                   ?>
                   <select name="<?=h($inputId)?>" id="<?=h($inputId)?>" data-autofill="<?=h($autofill)?>" <?=$requiredAttr?>>
-                    <option value="">-- აირჩიე --</option>
+                    <option value="" data-i18n="campsView.selectPlaceholder">-- აირჩიე --</option>
                     <?php foreach ($opts as $o): ?>
                       <option value="<?=h((string)$o)?>"><?=h((string)$o)?></option>
                     <?php endforeach; ?>
@@ -726,7 +734,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
                   <input type="text" name="<?=h($inputId)?>" id="<?=h($inputId)?>" placeholder="+995..." data-autofill="<?=h($autofill)?>" <?=$requiredAttr?>>
 
                 <?php elseif ($type === 'pid'): ?>
-                  <input type="text" name="<?=h($inputId)?>" id="<?=h($inputId)?>" placeholder="პირადი ნომერი" inputmode="numeric" data-autofill="pid" <?=$requiredAttr?>>
+                  <input type="text" name="<?=h($inputId)?>" id="<?=h($inputId)?>" placeholder="პირადი ნომერი" inputmode="numeric" data-autofill="pid" data-i18n-placeholder="campsView.pidPlaceholder" <?=$requiredAttr?>>
 
                 <?php elseif ($type === 'file'): ?>
                   <input type="file" name="<?=h($inputId)?>" id="<?=h($inputId)?>" <?=$requiredAttr?>>
@@ -741,20 +749,27 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
           <div class="formFooter">
             <div class="muted small">
               <i class="fa-solid fa-circle-info"></i>
-              ვარსკვლავით (<span class="req">*</span>) მონიშნული ველები სავალდებულოა.
+              <span data-i18n="campsView.requiredNote">ვარსკვლავით (*) მონიშნული ველები სავალდებულოა.</span>
             </div>
 
             <button class="btn" type="submit" id="submitBtn" <?= $ok ? 'disabled' : '' ?>>
-              <?= $ok ? 'გაიგზავნა ✅' : 'გაგზავნა' ?>
+              <span data-i18n="<?= $ok ? 'campsView.submitted' : 'campsView.submit' ?>"><?= $ok ? 'გაიგზავნა ✅' : 'გაგზავნა' ?></span>
               <i class="fa-solid fa-paper-plane"></i>
             </button>
           </div>
         </form>
 
+        <div aria-hidden="true" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">
+          <span data-i18n="campsView.errorRequired">გთხოვ შეავსო სავალდებულო ველები (*)</span>
+          <span data-i18n="campsView.submitting">იგზავნება...</span>
+        </div>
+
         <script>
           const form = document.getElementById('regForm');
           const msgBox = document.getElementById('formMsg');
           const submitBtn = document.getElementById('submitBtn');
+          const errorRequired = document.querySelector('[data-i18n="campsView.errorRequired"]');
+          const submittingLabel = document.querySelector('[data-i18n="campsView.submitting"]');
 
           function showError(text){
             msgBox.textContent = text;
@@ -786,7 +801,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
             });
 
             if (!ok) {
-              showError('გთხოვ შეავსო სავალდებულო ველები (*)');
+              showError(errorRequired ? errorRequired.textContent : 'გთხოვ შეავსო სავალდებულო ველები (*)');
               const first = form.querySelector('.fieldError');
               if (first) first.scrollIntoView({behavior:'smooth', block:'center'});
             }
@@ -801,7 +816,8 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
             }
             // prevent double submit
             submitBtn.disabled = true;
-            submitBtn.innerHTML = 'იგზავნება... <i class="fa-solid fa-spinner" style="margin-left:8px"></i>';
+            const label = submittingLabel ? submittingLabel.textContent : 'იგზავნება...';
+            submitBtn.innerHTML = `${label} <i class="fa-solid fa-spinner" style="margin-left:8px"></i>`;
           });
 
           form.querySelectorAll('[required]').forEach(el => {

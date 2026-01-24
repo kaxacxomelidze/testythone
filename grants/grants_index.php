@@ -347,23 +347,23 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
     <section class="hero">
       <div class="hero-inner">
         <div>
-          <h1>საგრანტო პროგრამები</h1>
-          <p>ახალგაზრდებისთვის განკუთვნილი საგრანტო შესაძლებლობები იდეებისა და პროექტების მხარდასაჭერად</p>
+          <h1 data-i18n="grants.title">საგრანტო პროგრამები</h1>
+          <p data-i18n="grants.subtitle">ახალგაზრდებისთვის განკუთვნილი საგრანტო შესაძლებლობები იდეებისა და პროექტების მხარდასაჭერად</p>
         </div>
 
         <a class="btn" href="<?=h($applyDefault)?>">
-          <i class="fa-solid fa-file-pen"></i> წესები და პირობები
+          <i class="fa-solid fa-file-pen"></i> <span data-i18n="grants.rulesCta">წესები და პირობები</span>
         </a>
       </div>
     </section>
 
     <div class="head">
-      <h2 class="section-title">საგრანტო პროგრამების ჩამონათვალი</h2>
-      <div class="counter"><i class="fa-regular fa-folder-open"></i> ჩანაწერები: <b><?= (int)$total ?></b></div>
+      <h2 class="section-title" data-i18n="grants.listTitle">საგრანტო პროგრამების ჩამონათვალი</h2>
+      <div class="counter"><i class="fa-regular fa-folder-open"></i> <span data-i18n="grants.recordsLabel">ჩანაწერები:</span> <b><?= (int)$total ?></b></div>
     </div>
 
     <?php if(!$items): ?>
-      <div class="empty">ამჟამად საგრანტო პროგრამები არ მოიძებნა.</div>
+      <div class="empty" data-i18n="grants.empty">ამჟამად საგრანტო პროგრამები არ მოიძებნა.</div>
     <?php else: ?>
       <section class="grid">
         <?php foreach($items as $g): ?>
@@ -374,6 +374,7 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
 
             $isClosed = ($adminClosed || $timeClosed);
 
+            $statusLabelKey = $isClosed ? 'grants.statusClosed' : 'grants.statusOpen';
             $statusLabel = $isClosed ? 'დახურულია' : 'მიმდინარე';
             $pillClass   = $isClosed ? 'closed' : 'current';
 
@@ -389,7 +390,7 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
 
               <span class="pill <?=h($pillClass)?>">
                 <i class="fa-solid fa-circle" style="font-size:8px;opacity:.8"></i>
-                <?=h($statusLabel)?>
+                <span data-i18n="<?=h($statusLabelKey)?>"><?=h($statusLabel)?></span>
               </span>
             </div>
 
@@ -399,18 +400,18 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <span class="small">
                   <i class="fa-regular fa-calendar"></i>
-                  ვადა: <?=h(fmt_date((string)($g['deadline'] ?? '')))?>
+                  <span data-i18n="grants.deadlineLabel">ვადა:</span> <?=h(fmt_date((string)($g['deadline'] ?? '')))?>
                 </span>
               </div>
 
-              <a class="details" href="<?=h($url)?>">დეტალურად</a>
+              <a class="details" href="<?=h($url)?>" data-i18n="grants.details">დეტალურად</a>
             </div>
           </article>
         <?php endforeach; ?>
       </section>
 
       <?php if($totalPages>1): ?>
-        <nav class="pager" aria-label="Pagination">
+        <nav class="pager" aria-label="Pagination" data-i18n-aria="grants.paginationAria">
           <?php for($p=1;$p<=$totalPages;$p++): ?>
             <a class="<?= $p===$page?'active':'' ?>" href="/youthagency/grants/?page=<?=$p?>"><?=$p?></a>
           <?php endfor; ?>

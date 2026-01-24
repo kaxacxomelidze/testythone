@@ -323,27 +323,27 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="bar">
       <div class="search">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input id="q" type="search" placeholder="ძიება ბანაკებში...">
+        <input id="q" type="search" placeholder="ძიება ბანაკებში..." data-i18n-placeholder="camps.searchPlaceholder">
       </div>
 
-      <div class="filters" aria-label="Filters">
+      <div class="filters" aria-label="Filters" data-i18n-aria="camps.filtersAria">
         <div class="btn active" data-filter="all">
-          ყველა <span class="count" id="cAll"><?=count($camps)?></span>
+          <span data-i18n="camps.filterAll">ყველა</span> <span class="count" id="cAll"><?=count($camps)?></span>
         </div>
 
         <div class="btn" data-filter="open">
           <i class="fa-solid fa-circle-check" style="color:var(--good)"></i>
-          ღია <span class="count" id="cOpen">0</span>
+          <span data-i18n="camps.filterOpen">ღია</span> <span class="count" id="cOpen">0</span>
         </div>
 
         <div class="btn" data-filter="upcoming">
           <i class="fa-solid fa-clock" style="color:var(--warn)"></i>
-          მალე <span class="count" id="cUpcoming">0</span>
+          <span data-i18n="camps.filterUpcoming">მალე</span> <span class="count" id="cUpcoming">0</span>
         </div>
 
         <div class="btn" data-filter="closed">
           <i class="fa-solid fa-circle-xmark" style="color:var(--bad)"></i>
-          დახურული <span class="count" id="cClosed">0</span>
+          <span data-i18n="camps.filterClosed">დახურული</span> <span class="count" id="cClosed">0</span>
         </div>
       </div>
     </div>
@@ -366,6 +366,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
           $status = campStatus($c);
 
+          $statusLabelKey = ($status === 'closed') ? 'camps.statusClosed' : (($status === 'upcoming') ? 'camps.statusUpcoming' : 'camps.statusOpen');
           $statusLabel = ($status === 'closed') ? 'დახურულია' : (($status === 'upcoming') ? 'მალე' : 'ღია');
 
           $search = mb_strtolower(trim($name.' '.$desc.' '.$start.' '.$end.' '.$statusLabel), 'UTF-8');
@@ -392,7 +393,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php else: ?>
                   <i class="fa-solid fa-unlock"></i>
                 <?php endif; ?>
-                <?=h($statusLabel)?>
+                <span data-i18n="<?=h($statusLabelKey)?>"><?=h($statusLabel)?></span>
               </span>
             </div>
 
@@ -412,14 +413,14 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <?php if (!$camps): ?>
       <div class="empty">
-        <b>ჯერ ბანაკები არ დამატებულა.</b>
-        <div class="muted">ადმინისტრატორის პანელიდან დაამატე პირველი ბანაკი და აქ გამოჩნდება.</div>
+        <b data-i18n="camps.emptyTitle">ჯერ ბანაკები არ დამატებულა.</b>
+        <div class="muted" data-i18n="camps.emptySubtitle">ადმინისტრატორის პანელიდან დაამატე პირველი ბანაკი და აქ გამოჩნდება.</div>
       </div>
     <?php endif; ?>
 
     <div id="clientEmpty" class="empty" style="display:none">
-      <b>შედეგი ვერ მოიძებნა.</b>
-      <div class="muted">სცადე სხვა სიტყვა ან შეცვალე ფილტრი.</div>
+      <b data-i18n="camps.noResultsTitle">შედეგი ვერ მოიძებნა.</b>
+      <div class="muted" data-i18n="camps.noResultsSubtitle">სცადე სხვა სიტყვა ან შეცვალე ფილტრი.</div>
     </div>
   </main>
 

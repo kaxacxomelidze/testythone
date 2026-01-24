@@ -41,3 +41,9 @@ RewriteRule ^camps/([0-9]+)/([^/]+)/?$ camps/view.php?id=$1&slug=$2 [L,QSA]
 RewriteRule ^grants/?$ grants/grants_index.php [L,QSA]
 RewriteRule ^grants/([0-9]+)/([^/]+)/?$ grants/grants_view.php?id=$1&slug=$2 [L,QSA]
 RewriteRule ^grants/([0-9]+)/?$ grants/grants_view.php?id=$1 [L,QSA]
+
+# ------------------------------
+# RULES PAGE
+# /youthagency/rules -> rules/index.php
+# ------------------------------
+RewriteRule ^rules/?$ rules/index.php [L,QSA]

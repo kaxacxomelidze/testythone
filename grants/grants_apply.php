@@ -250,9 +250,9 @@ $payload = [
         <p><?= h((string)($grant['description'] ?? '')) ?></p>
         <div class="row">
           <span class="pill <?= $open ? 'open' : 'closed' ?>">
-            <?= $open ? 'მიმდინარე' : 'დახურული' ?>
+            <span data-i18n="<?= $open ? 'grantsApply.statusOpen' : 'grantsApply.statusClosed' ?>"><?= $open ? 'მიმდინარე' : 'დახურული' ?></span>
           </span>
-          <span class="pill">ვადა: <b><?= h((string)($grant['deadline'] ?: '—')) ?></b></span>
+          <span class="pill"><span data-i18n="grantsApply.deadlineLabel">ვადა:</span> <b><?= h((string)($grant['deadline'] ?: '—')) ?></b></span>
         </div>
       </div>
       <div class="art" aria-hidden="true"></div>
@@ -260,13 +260,13 @@ $payload = [
 
     <?php if(!$open): ?>
       <div class="card" style="margin-top:14px">
-        <div class="notice">ამ საგრანტო პროგრამაზე განაცხადების მიღება დასრულებულია ან გამორთულია.</div>
+        <div class="notice" data-i18n="grantsApply.closedNotice">ამ საგრანტო პროგრამაზე განაცხადების მიღება დასრულებულია ან გამორთულია.</div>
       </div>
     <?php else: ?>
       <div class="portal">
         <div class="card steps">
-          <b>ნაბიჯები</b>
-          <div class="pill" style="margin-top:8px">შეავსეთ ნაბიჯობრივად</div>
+          <b data-i18n="grantsApply.stepsTitle">ნაბიჯები</b>
+          <div class="pill" style="margin-top:8px" data-i18n="grantsApply.stepsHint">შეავსეთ ნაბიჯობრივად</div>
           <div id="stepsList"></div>
         </div>
 
@@ -898,6 +898,72 @@ function pickApplicantMeta(){
   return { name, email, phone };
 }
 
+function buildSubmissionMeta(applicant){
+  const fields = getAllFieldsFlat();
+  const reqs = DATA.requirements || [];
+  const fieldMap = new Map(fields.map(f => [String(f.id), f]));
+  const reqMap = new Map(reqs.map(r => [String(r.id), r]));
+  const reqFiles = Object.keys(state.reqUploads).map(reqId => {
+    const f = state.reqUploads[reqId];
+    if (!f) return null;
+    const req = reqMap.get(String(reqId));
+    return {
+      requirement_id: String(reqId),
+      requirement_name: req ? String(req.name || '') : '',
+      is_required: req ? Number(req.is_required || 0) === 1 : false,
+      original_name: f.name,
+      size_bytes: f.size,
+      mime_type: f.type || ''
+    };
+  }).filter(Boolean);
+
+  const fieldFiles = Object.keys(state.fieldUploads).map(fieldId => {
+    const f = state.fieldUploads[fieldId];
+    if (!f) return null;
+    const field = fieldMap.get(String(fieldId));
+    return {
+      field_id: String(fieldId),
+      field_label: field ? String(field.label || '') : '',
+      original_name: f.name,
+      size_bytes: f.size,
+      mime_type: f.type || ''
+    };
+  }).filter(Boolean);
+
+  const otherFiles = state.otherUploads.map(f => ({
+    original_name: f.name,
+    size_bytes: f.size,
+    mime_type: f.type || ''
+  }));
+
+  const fieldLabels = {};
+  fields.forEach(f => {
+    fieldLabels["field_" + f.id] = String(f.label || '');
+  });
+
+  return {
+    submitted_at: new Date().toISOString(),
+    grant_id: String(state.grant_id),
+    grant_title: String(DATA.grant?.title || ''),
+    applicant_type: state.applicantType,
+    applicant_name: applicant.name || '',
+    applicant_email: applicant.email || '',
+    applicant_phone: applicant.phone || '',
+    field_labels: fieldLabels,
+    requirements: reqs.map(r => ({
+      id: String(r.id),
+      name: String(r.name || ''),
+      is_required: Number(r.is_required || 0) === 1
+    })),
+    files: {
+      requirements: reqFiles,
+      fields: fieldFiles,
+      other: otherFiles,
+      total_count: reqFiles.length + fieldFiles.length + otherFiles.length
+    }
+  };
+}
+
 function bindSubmit(){
   const back = document.getElementById("btnBackS");
   if(back){
@@ -947,9 +1013,10 @@ function bindSubmit(){
       fd.append("csrf", DATA.csrf);
       fd.append("grant_id", String(state.grant_id));
       fd.append("applicant_type", state.applicantType);
+      const meta = pickApplicantMeta();
+      state.form_data.__meta = buildSubmissionMeta(meta);
       fd.append("form_data", JSON.stringify(state.form_data));
 
-      const meta = pickApplicantMeta();
       if(meta.name) fd.append("applicant_name", meta.name);
       if(meta.email) fd.append("email", meta.email);
       if(meta.phone) fd.append("phone", meta.phone);

@@ -20,6 +20,7 @@
       'nav.contact': 'კონტაქტი',
 
       'footer.searchPlaceholder': 'მოძებნე საიტზე...',
+      'footer.searchAria': 'ძიება',
       'footer.searchButton': 'ძიება',
       'footer.aboutTitle': 'ჩვენს შესახებ',
       'footer.aboutText': 'სააგენტო ხელს უწყობს ახალგაზრდების ჩართულობას, განათლებასა და ინიციატივებს — საგრანტო პროგრამებით, პარტნიორული პროექტებით და პრაქტიკული სერვისებით.',
@@ -58,7 +59,92 @@
       'contact.infoTitle': 'საკონტაქტო ინფორმაცია',
       'contact.address': 'ვაჟა ფშაველას ქ. #76',
       'contact.phoneInfo': '032 230 51 65',
-      'contact.emailInfo': 'info@youth.ge'
+      'contact.emailInfo': 'info@youth.ge',
+
+      'home.sliderLabel': 'მთავარი სლაიდერი',
+      'home.prevSlide': 'წინა სლაიდი',
+      'home.nextSlide': 'შემდეგი სლაიდი',
+
+      'news.kicker': 'Youth Agency',
+      'news.title': 'სიახლეები',
+      'news.all': 'ნახე მეტი ↗',
+      'news.empty': 'სიახლეები ჯერ არ არის',
+      'news.featured': 'გამორჩეული',
+      'news.cta': 'გაიგე მეტი',
+      'news.morePosts': 'მეტი პოსტი მალე გამოჩნდება.',
+
+      'newsIndex.title': 'სიახლეები',
+      'newsIndex.searchPlaceholder': 'მოძებნე სიახლეები...',
+      'newsIndex.searchButton': 'ძიება',
+      'newsIndex.resetButton': 'გასუფთავება',
+      'newsIndex.resultsPrefix': 'ძებნის შედეგები:',
+      'newsIndex.empty': 'სიახლეები ვერ მოიძებნა',
+      'newsIndex.emptyFor': 'ძიების მიხედვით',
+      'newsIndex.noBody': 'დააწკაპე სრულად წასაკითხად.',
+      'newsIndex.readMore': 'ვრცლად →',
+      'newsIndex.noPreview': 'პრევიუ ტექსტი არ არის',
+      'newsIndex.paginationAria': 'გვერდები',
+
+      'grants.title': 'საგრანტო პროგრამები',
+      'grants.subtitle': 'ახალგაზრდებისთვის განკუთვნილი საგრანტო შესაძლებლობები იდეებისა და პროექტების მხარდასაჭერად',
+      'grants.rulesCta': 'წესები და პირობები',
+      'grants.listTitle': 'საგრანტო პროგრამების ჩამონათვალი',
+      'grants.recordsLabel': 'ჩანაწერები:',
+      'grants.empty': 'ამჟამად საგრანტო პროგრამები არ მოიძებნა.',
+      'grants.statusClosed': 'დახურულია',
+      'grants.statusOpen': 'მიმდინარე',
+      'grants.deadlineLabel': 'ვადა:',
+      'grants.details': 'დეტალურად',
+      'grants.paginationAria': 'გვერდები',
+
+      'grantsView.back': 'უკან',
+      'grantsView.statusClosed': 'დახურული',
+      'grantsView.statusOpen': 'მიმდინარე',
+      'grantsView.deadlineLabel': 'ვადა:',
+      'grantsView.apply': 'განაცხადის შევსება',
+      'grantsView.all': 'ყველა საგრანტო',
+      'grantsView.detailsTitle': 'დეტალური აღწერა',
+
+      'grantsApply.statusOpen': 'მიმდინარე',
+      'grantsApply.statusClosed': 'დახურული',
+      'grantsApply.deadlineLabel': 'ვადა:',
+      'grantsApply.closedNotice': 'ამ საგრანტო პროგრამაზე განაცხადების მიღება დასრულებულია ან გამორთულია.',
+      'grantsApply.stepsTitle': 'ნაბიჯები',
+      'grantsApply.stepsHint': 'შეავსეთ ნაბიჯობრივად',
+
+      'camps.searchPlaceholder': 'ძიება ბანაკებში...',
+      'camps.filtersAria': 'ფილტრები',
+      'camps.filterAll': 'ყველა',
+      'camps.filterOpen': 'ღია',
+      'camps.filterUpcoming': 'მალე',
+      'camps.filterClosed': 'დახურული',
+      'camps.statusOpen': 'ღია',
+      'camps.statusUpcoming': 'მალე',
+      'camps.statusClosed': 'დახურულია',
+      'camps.emptyTitle': 'ჯერ ბანაკები არ დამატებულა.',
+      'camps.emptySubtitle': 'ადმინისტრატორის პანელიდან დაამატე პირველი ბანაკი და აქ გამოჩნდება.',
+      'camps.noResultsTitle': 'შედეგი ვერ მოიძებნა.',
+      'camps.noResultsSubtitle': 'სცადე სხვა სიტყვა ან შეცვალე ფილტრი.',
+
+      'campsView.back': 'ბანაკებზე დაბრუნება',
+      'campsView.registrationOpen': 'რეგისტრაცია ღიაა',
+      'campsView.registrationClosed': 'რეგისტრაცია დახურულია',
+      'campsView.reasonManual': 'ადმინისტრატორმა დახურა',
+      'campsView.reasonSoon': 'მალე დაიწყება',
+      'campsView.reasonEnded': 'ვადა გავიდა',
+      'campsView.noCover': 'ქავერი არ არის',
+      'campsView.idLabel': 'ID:',
+      'campsView.manualClosed': 'დახურულია (manual)',
+      'campsView.posts': 'პოსტები',
+      'campsView.postsEmpty': 'პოსტები ჯერ არ დამატებულა.',
+      'campsView.registration': 'რეგისტრაცია',
+      'campsView.selectPlaceholder': '-- აირჩიე --',
+      'campsView.pidPlaceholder': 'პირადი ნომერი',
+      'campsView.requiredNote': 'ვარსკვლავით (*) მონიშნული ველები სავალდებულოა.',
+      'campsView.submitted': 'გაიგზავნა ✅',
+      'campsView.submit': 'გაგზავნა',
+      'campsView.errorRequired': 'გთხოვ შეავსო სავალდებულო ველები (*)',
+      'campsView.submitting': 'იგზავნება...'
     },
 
     en: {
@@ -73,6 +159,7 @@
       'nav.contact': 'Contact',
 
       'footer.searchPlaceholder': 'Search the site...',
+      'footer.searchAria': 'Search',
       'footer.searchButton': 'Search',
       'footer.aboutTitle': 'About Us',
       'footer.aboutText': 'The agency supports youth engagement, education, and initiatives through grant programs, partner projects, and practical services.',
@@ -111,7 +198,92 @@
       'contact.infoTitle': 'Contact information',
       'contact.address': '76 Vazha-Pshavela St.',
       'contact.phoneInfo': '032 230 51 65',
-      'contact.emailInfo': 'info@youth.ge'
+      'contact.emailInfo': 'info@youth.ge',
+
+      'home.sliderLabel': 'Main slider',
+      'home.prevSlide': 'Previous slide',
+      'home.nextSlide': 'Next slide',
+
+      'news.kicker': 'Youth Agency',
+      'news.title': 'News',
+      'news.all': 'View more ↗',
+      'news.empty': 'No news yet',
+      'news.featured': 'Featured',
+      'news.cta': 'Learn more',
+      'news.morePosts': 'More posts will appear here.',
+
+      'newsIndex.title': 'News',
+      'newsIndex.searchPlaceholder': 'Search news...',
+      'newsIndex.searchButton': 'Search',
+      'newsIndex.resetButton': 'Reset',
+      'newsIndex.resultsPrefix': 'Showing results for:',
+      'newsIndex.empty': 'No news found',
+      'newsIndex.emptyFor': 'for',
+      'newsIndex.noBody': 'Click to read the full article.',
+      'newsIndex.readMore': 'Read more →',
+      'newsIndex.noPreview': 'No preview text',
+      'newsIndex.paginationAria': 'Pagination',
+
+      'grants.title': 'Grant programs',
+      'grants.subtitle': 'Grant opportunities for young people to support ideas and projects',
+      'grants.rulesCta': 'Rules and terms',
+      'grants.listTitle': 'Grant program list',
+      'grants.recordsLabel': 'Records:',
+      'grants.empty': 'No grant programs found at the moment.',
+      'grants.statusClosed': 'Closed',
+      'grants.statusOpen': 'Open',
+      'grants.deadlineLabel': 'Deadline:',
+      'grants.details': 'Details',
+      'grants.paginationAria': 'Pagination',
+
+      'grantsView.back': 'Back',
+      'grantsView.statusClosed': 'Closed',
+      'grantsView.statusOpen': 'Open',
+      'grantsView.deadlineLabel': 'Deadline:',
+      'grantsView.apply': 'Apply',
+      'grantsView.all': 'All grants',
+      'grantsView.detailsTitle': 'Detailed description',
+
+      'grantsApply.statusOpen': 'Open',
+      'grantsApply.statusClosed': 'Closed',
+      'grantsApply.deadlineLabel': 'Deadline:',
+      'grantsApply.closedNotice': 'Applications for this grant program are closed or disabled.',
+      'grantsApply.stepsTitle': 'Steps',
+      'grantsApply.stepsHint': 'Fill out step by step',
+
+      'camps.searchPlaceholder': 'Search camps...',
+      'camps.filtersAria': 'Filters',
+      'camps.filterAll': 'All',
+      'camps.filterOpen': 'Open',
+      'camps.filterUpcoming': 'Upcoming',
+      'camps.filterClosed': 'Closed',
+      'camps.statusOpen': 'Open',
+      'camps.statusUpcoming': 'Upcoming',
+      'camps.statusClosed': 'Closed',
+      'camps.emptyTitle': 'No camps have been added yet.',
+      'camps.emptySubtitle': 'Add the first camp from the admin panel and it will appear here.',
+      'camps.noResultsTitle': 'No results found.',
+      'camps.noResultsSubtitle': 'Try another word or change the filter.',
+
+      'campsView.back': 'Back to camps',
+      'campsView.registrationOpen': 'Registration open',
+      'campsView.registrationClosed': 'Registration closed',
+      'campsView.reasonManual': 'Closed by admin',
+      'campsView.reasonSoon': 'Starts soon',
+      'campsView.reasonEnded': 'Deadline passed',
+      'campsView.noCover': 'No cover',
+      'campsView.idLabel': 'ID:',
+      'campsView.manualClosed': 'Closed (manual)',
+      'campsView.posts': 'Posts',
+      'campsView.postsEmpty': 'No posts yet.',
+      'campsView.registration': 'Registration',
+      'campsView.selectPlaceholder': '-- Select --',
+      'campsView.pidPlaceholder': 'Personal ID',
+      'campsView.requiredNote': 'Fields marked with (*) are required.',
+      'campsView.submitted': 'Submitted ✅',
+      'campsView.submit': 'Submit',
+      'campsView.errorRequired': 'Please fill the required fields (*)',
+      'campsView.submitting': 'Submitting...'
     }
   };
 
@@ -160,6 +332,21 @@
     });
 
     syncLangButtons(lang);
+  }
+
+  function initTranslationObserver() {
+    if (window.__i18nObserverInitialized) return;
+    window.__i18nObserverInitialized = true;
+    let pending = false;
+    const observer = new MutationObserver(() => {
+      if (pending) return;
+      pending = true;
+      window.requestAnimationFrame(() => {
+        pending = false;
+        applyTranslations(getStoredLanguage());
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   function setLanguage(lang) {
@@ -325,6 +512,7 @@
     // Language init + buttons
     const savedLang = getStoredLanguage();
     applyTranslations(savedLang);
+    initTranslationObserver();
 
     headerRoot.querySelectorAll('.lang-btn[data-lang]').forEach((btn) => {
       btn.addEventListener('click', () => {

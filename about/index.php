@@ -33,6 +33,28 @@
       font-size:16px;
       line-height:1.7;
     }
+    @media (max-width: 768px){
+      .page{
+        padding:32px 16px 46px;
+      }
+      .page-card{
+        padding:22px;
+      }
+    }
+    @media (max-width: 480px){
+      .page{
+        padding:24px 14px 40px;
+      }
+      .page-card{
+        padding:18px;
+      }
+      .page-card h1{
+        font-size:22px;
+      }
+      .page-card p{
+        font-size:15px;
+      }
+    }
   </style>
 </head>
 <body>
