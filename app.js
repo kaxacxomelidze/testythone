@@ -47,11 +47,7 @@
       'contact.submit': 'გაგზავნა',
       'contact.successTitle': 'გმადლობთ!',
       'contact.successText': 'თქვენი შეტყობინება მიღებულია. მალე დაგიკავშირდებით.',
-      'contact.error': 'გთხოვთ სწორად შეავსოთ აუცილებელი ველები.',
-      'contact.infoTitle': 'საკონტაქტო ინფორმაცია',
-      'contact.address': 'ვაჟა ფშაველას ქ. #76',
-      'contact.phoneInfo': '032 230 51 65',
-      'contact.emailInfo': 'info@youth.ge'
+      'contact.error': 'გთხოვთ სწორად შეავსოთ აუცილებელი ველები.'
     },
     en: {
       'nav.home': 'Home',

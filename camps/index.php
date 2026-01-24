@@ -99,7 +99,7 @@ function fmtDate(?string $d): string {
     .hero-title i{color:rgba(255,255,255,.92)}
     .hero-sub{
       margin-top:6px;
-      color:#e0f2fe;
+      color:rgba(229,231,235,.85);
       font-weight:700;
       font-size:.98rem;
       max-width:560px;

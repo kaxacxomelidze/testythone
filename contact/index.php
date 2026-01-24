@@ -98,28 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       box-shadow:0 18px 36px rgba(15,23,42,.08);
       border:1px solid rgba(15,23,42,.08);
     }
-    .info-card{
-      margin-top:20px;
-      padding:18px;
-      border-radius:16px;
-      border:1px solid rgba(15,23,42,.12);
-      background:#f8fafc;
-    }
-    .info-card h2{
-      margin:0 0 12px;
-      font-size:16px;
-      color:#1f2a44;
-      font-weight:800;
-    }
-    .info-row{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      color:#334155;
-      font-weight:700;
-      margin-bottom:8px;
-    }
-    .info-row i{color:#3b82f6}
     .page-card h1{
       margin:0 0 8px;
       color:#1f2a44;
