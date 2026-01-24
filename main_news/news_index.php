@@ -267,7 +267,20 @@ $placeholder = "data:image/svg+xml;charset=UTF-8," . rawurlencode(
   .hint{color:var(--muted); font-size:13px; align-self:center;}
   @media (max-width:760px){
     .bar{flex-direction:column}
-    .bar form{max-width:100%}
+    .bar form{
+      max-width:100%;
+      flex-wrap:wrap;
+    }
+    .btn{
+      width:100%;
+      justify-content:center;
+    }
+  }
+  @media (max-width:640px){
+    .wrap{padding:24px 16px 50px;}
+    h1{font-size:28px;}
+    .bar{padding:12px;}
+    .in{padding:10px 12px 10px 38px;}
   }
 
   .news-grid{
@@ -328,6 +341,10 @@ $placeholder = "data:image/svg+xml;charset=UTF-8," . rawurlencode(
   @media (max-width: 520px){
     .news-item{flex-direction:column}
     .thumb{width:100%; min-width:unset; height:210px}
+  }
+  @media (max-width: 420px){
+    .thumb{height:180px}
+    .actions{flex-direction:column; align-items:flex-start;}
   }
 
   .content{min-width:0; flex:1; display:flex; flex-direction:column;}
@@ -444,7 +461,7 @@ $placeholder = "data:image/svg+xml;charset=UTF-8," . rawurlencode(
 
     <div class="header">
       <div>
-        <h1>News</h1>
+        <h1 data-i18n="newsIndex.title">News</h1>
       </div>
     </div>
 
@@ -453,26 +470,36 @@ $placeholder = "data:image/svg+xml;charset=UTF-8," . rawurlencode(
       <form method="get" action="/youthagency/news/">
         <div class="in-wrap">
           <i class="fa-solid fa-magnifying-glass in-ico" aria-hidden="true"></i>
-          <input class="in" type="text" name="q" value="<?=h($q)?>" placeholder="Search news...">
+          <input class="in" type="text" name="q" value="<?=h($q)?>" placeholder="Search news..." data-i18n-placeholder="newsIndex.searchPlaceholder">
         </div>
 
         <button class="btn primary" type="submit">
-          <i class="fa-solid fa-search" style="margin-right:8px;"></i> Search
+          <i class="fa-solid fa-search" style="margin-right:8px;"></i> <span data-i18n="newsIndex.searchButton">Search</span>
         </button>
 
         <?php if ($q !== ''): ?>
           <a class="btn ghost" href="/youthagency/news/">
-            <i class="fa-solid fa-rotate-left" style="margin-right:8px;"></i> Reset
+            <i class="fa-solid fa-rotate-left" style="margin-right:8px;"></i> <span data-i18n="newsIndex.resetButton">Reset</span>
           </a>
         <?php endif; ?>
       </form>
 
-      <div class="hint"><?= $q !== '' ? 'Showing results for: “'.h($q).'”' : '' ?></div>
+      <div class="hint">
+        <?php if ($q !== ''): ?>
+          <span data-i18n="newsIndex.resultsPrefix">Showing results for:</span>
+          <span>“<?=h($q)?>”</span>
+        <?php endif; ?>
+      </div>
     </div>
 
     <?php if (!$items): ?>
       <div class="empty">
-        No news found<?= $q!=='' ? ' for “'.h($q).'”' : '' ?>.
+        <span data-i18n="newsIndex.empty">No news found</span>
+        <?php if ($q !== ''): ?>
+          <span data-i18n="newsIndex.emptyFor">for</span>
+          <span>“<?=h($q)?>”</span>
+        <?php endif; ?>
+        <span>.</span>
       </div>
     <?php else: ?>
       <section class="news-grid">
@@ -503,12 +530,16 @@ $placeholder = "data:image/svg+xml;charset=UTF-8," . rawurlencode(
               <?php if ($hasBody && !empty($n['body'])): ?>
                 <div class="text"><?=h(excerpt((string)$n['body'], 240))?></div>
               <?php else: ?>
-                <div class="text" style="color:#64748b;">Click to read the full article.</div>
+                <div class="text" style="color:#64748b;" data-i18n="newsIndex.noBody">Click to read the full article.</div>
               <?php endif; ?>
 
               <div class="actions">
-                <a class="read" href="<?=h($url)?>">Read more →</a>
-                <span class="tiny"><?= $hasBody && !empty($n['body']) ? '' : 'No preview text' ?></span>
+                <a class="read" href="<?=h($url)?>" data-i18n="newsIndex.readMore">Read more →</a>
+                <span class="tiny">
+                  <?php if (!$hasBody || empty($n['body'])): ?>
+                    <span data-i18n="newsIndex.noPreview">No preview text</span>
+                  <?php endif; ?>
+                </span>
               </div>
             </div>
           </article>
@@ -516,7 +547,7 @@ $placeholder = "data:image/svg+xml;charset=UTF-8," . rawurlencode(
       </section>
 
       <?php if ($totalPages > 1): ?>
-        <nav class="pager" aria-label="Pagination">
+        <nav class="pager" aria-label="Pagination" data-i18n-aria="newsIndex.paginationAria">
           <?php
             $qPart = ($q !== '') ? '&q='.rawurlencode($q) : '';
             for ($p=1;$p<=$totalPages;$p++):

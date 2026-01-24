@@ -20,6 +20,7 @@
       'nav.contact': 'კონტაქტი',
 
       'footer.searchPlaceholder': 'მოძებნე საიტზე...',
+      'footer.searchAria': 'ძიება',
       'footer.searchButton': 'ძიება',
       'footer.aboutTitle': 'ჩვენს შესახებ',
       'footer.aboutText': 'სააგენტო ხელს უწყობს ახალგაზრდების ჩართულობას, განათლებასა და ინიციატივებს — საგრანტო პროგრამებით, პარტნიორული პროექტებით და პრაქტიკული სერვისებით.',
@@ -58,7 +59,31 @@
       'contact.infoTitle': 'საკონტაქტო ინფორმაცია',
       'contact.address': 'ვაჟა ფშაველას ქ. #76',
       'contact.phoneInfo': '032 230 51 65',
-      'contact.emailInfo': 'info@youth.ge'
+      'contact.emailInfo': 'info@youth.ge',
+
+      'home.sliderLabel': 'მთავარი სლაიდერი',
+      'home.prevSlide': 'წინა სლაიდი',
+      'home.nextSlide': 'შემდეგი სლაიდი',
+
+      'news.kicker': 'Youth Agency',
+      'news.title': 'სიახლეები',
+      'news.all': 'ნახე მეტი ↗',
+      'news.empty': 'სიახლეები ჯერ არ არის',
+      'news.featured': 'გამორჩეული',
+      'news.cta': 'გაიგე მეტი',
+      'news.morePosts': 'მეტი პოსტი მალე გამოჩნდება.',
+
+      'newsIndex.title': 'სიახლეები',
+      'newsIndex.searchPlaceholder': 'მოძებნე სიახლეები...',
+      'newsIndex.searchButton': 'ძიება',
+      'newsIndex.resetButton': 'გასუფთავება',
+      'newsIndex.resultsPrefix': 'ძებნის შედეგები:',
+      'newsIndex.empty': 'სიახლეები ვერ მოიძებნა',
+      'newsIndex.emptyFor': 'ძიების მიხედვით',
+      'newsIndex.noBody': 'დააწკაპე სრულად წასაკითხად.',
+      'newsIndex.readMore': 'ვრცლად →',
+      'newsIndex.noPreview': 'პრევიუ ტექსტი არ არის',
+      'newsIndex.paginationAria': 'გვერდები'
     },
 
     en: {
@@ -73,6 +98,7 @@
       'nav.contact': 'Contact',
 
       'footer.searchPlaceholder': 'Search the site...',
+      'footer.searchAria': 'Search',
       'footer.searchButton': 'Search',
       'footer.aboutTitle': 'About Us',
       'footer.aboutText': 'The agency supports youth engagement, education, and initiatives through grant programs, partner projects, and practical services.',
@@ -111,7 +137,31 @@
       'contact.infoTitle': 'Contact information',
       'contact.address': '76 Vazha-Pshavela St.',
       'contact.phoneInfo': '032 230 51 65',
-      'contact.emailInfo': 'info@youth.ge'
+      'contact.emailInfo': 'info@youth.ge',
+
+      'home.sliderLabel': 'Main slider',
+      'home.prevSlide': 'Previous slide',
+      'home.nextSlide': 'Next slide',
+
+      'news.kicker': 'Youth Agency',
+      'news.title': 'News',
+      'news.all': 'View more ↗',
+      'news.empty': 'No news yet',
+      'news.featured': 'Featured',
+      'news.cta': 'Learn more',
+      'news.morePosts': 'More posts will appear here.',
+
+      'newsIndex.title': 'News',
+      'newsIndex.searchPlaceholder': 'Search news...',
+      'newsIndex.searchButton': 'Search',
+      'newsIndex.resetButton': 'Reset',
+      'newsIndex.resultsPrefix': 'Showing results for:',
+      'newsIndex.empty': 'No news found',
+      'newsIndex.emptyFor': 'for',
+      'newsIndex.noBody': 'Click to read the full article.',
+      'newsIndex.readMore': 'Read more →',
+      'newsIndex.noPreview': 'No preview text',
+      'newsIndex.paginationAria': 'Pagination'
     }
   };
 
@@ -160,6 +210,21 @@
     });
 
     syncLangButtons(lang);
+  }
+
+  function initTranslationObserver() {
+    if (window.__i18nObserverInitialized) return;
+    window.__i18nObserverInitialized = true;
+    let pending = false;
+    const observer = new MutationObserver(() => {
+      if (pending) return;
+      pending = true;
+      window.requestAnimationFrame(() => {
+        pending = false;
+        applyTranslations(getStoredLanguage());
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   function setLanguage(lang) {
@@ -325,6 +390,7 @@
     // Language init + buttons
     const savedLang = getStoredLanguage();
     applyTranslations(savedLang);
+    initTranslationObserver();
 
     headerRoot.querySelectorAll('.lang-btn[data-lang]').forEach((btn) => {
       btn.addEventListener('click', () => {

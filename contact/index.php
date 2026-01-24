@@ -202,6 +202,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       border:1px solid rgba(239,68,68,.3);
       color:#7f1d1d;
     }
+    @media (max-width: 768px){
+      .page{
+        padding:32px 16px 46px;
+      }
+      .page-card{
+        padding:22px;
+      }
+      .info-card{
+        padding:16px;
+      }
+    }
+    @media (max-width: 480px){
+      .page{
+        padding:24px 14px 40px;
+      }
+      .page-card{
+        padding:18px;
+      }
+      .page-card h1{
+        font-size:22px;
+      }
+      .page-card p{
+        font-size:14px;
+      }
+      .form-grid{
+        gap:12px;
+      }
+      .btn-submit{
+        width:100%;
+      }
+      .info-row{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+    }
   </style>
 </head>
 <body>

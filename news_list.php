@@ -33,10 +33,10 @@ $list = array_slice($items, 1, 4);
 ?>
 <section class="mag-news">
   <div class="mag-head">
-    <div class="mag-kicker">Youth Agency</div>
+    <div class="mag-kicker" data-i18n="news.kicker">Youth Agency</div>
     <div class="mag-row">
-      <h2 class="mag-title">სიახლეები</h2>
-      <a class="mag-all" href="/youthagency/news_all.php">ნახე მეტი ↗</a>
+      <h2 class="mag-title" data-i18n="news.title">სიახლეები</h2>
+      <a class="mag-all" href="/youthagency/news_all.php" data-i18n="news.all">ნახე მეტი ↗</a>
     </div>
   </div>
 
@@ -44,7 +44,7 @@ $list = array_slice($items, 1, 4);
     <div class="mag-empty">
       <div class="mag-emptyIcon">🗞️</div>
       <div>
-        <div class="mag-emptyTitle">No news yet</div>
+        <div class="mag-emptyTitle" data-i18n="news.empty">No news yet</div>
       </div>
     </div>
   <?php else: ?>
@@ -68,7 +68,7 @@ $list = array_slice($items, 1, 4);
             <?php endif; ?>
             <div class="mag-feature__shade"></div>
 
-            <div class="mag-feature__badge">Featured</div>
+            <div class="mag-feature__badge" data-i18n="news.featured">Featured</div>
           </div>
 
           <div class="mag-feature__body">
@@ -77,7 +77,7 @@ $list = array_slice($items, 1, 4);
             <?php if ($fDesc): ?><p class="mag-feature__desc"><?=h($fDesc)?></p><?php endif; ?>
 
             <div class="mag-feature__cta">
-              <span class="mag-cta">გაიგე მეტი</span>
+              <span class="mag-cta" data-i18n="news.cta">გაიგე მეტი</span>
               <span class="mag-ctaArrow">→</span>
             </div>
           </div>
@@ -87,7 +87,7 @@ $list = array_slice($items, 1, 4);
       <!-- RIGHT LIST -->
       <div class="mag-side">
         <?php if (!$list): ?>
-          <div class="mag-sideEmpty">More posts will appear here.</div>
+          <div class="mag-sideEmpty" data-i18n="news.morePosts">More posts will appear here.</div>
         <?php else: ?>
           <?php foreach ($list as $n): ?>
             <?php
