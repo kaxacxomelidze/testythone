@@ -174,12 +174,15 @@ th{color:rgba(207,233,255,.92);font-size:12px;font-weight:900}
 
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;padding:12px;z-index:50}
 .modal.show{display:flex}
+.box{width:min(1560px,98vw);background:rgba(20,27,51,.92);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow);max-height:98vh;display:flex;flex-direction:column}
 .box{width:min(1180px,100%);background:rgba(20,27,51,.92);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow);max-height:92vh;display:flex;flex-direction:column}
 .head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .close{width:44px;height:44px;border-radius:14px}
 
 .modal-body{overflow:auto;padding-right:4px;flex:1}
 
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px}
+@media(max-width:1200px){.grid2{grid-template-columns:1fr}}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:980px){.grid2{grid-template-columns:1fr}}
 
@@ -206,6 +209,7 @@ hr{border:0;border-top:1px solid var(--line);margin:12px 0}
 .answersHeader{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:10px}
 .answersMeta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .answersMeta input{max-width:260px}
+.answerGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;max-height:75vh;overflow:auto;padding-right:4px}
 .answerGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;max-height:520px;overflow:auto;padding-right:4px}
 .answerGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
 .answerCard{border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(11,16,34,.45)}
@@ -213,6 +217,7 @@ hr{border:0;border-top:1px solid var(--line);margin:12px 0}
 .answerValue{font-weight:800;margin-top:6px;white-space:pre-wrap;word-break:break-word}
 .answerMeta{font-size:11px;color:var(--muted);margin-top:6px}
 
+.uploadsGrid{display:grid;gap:10px;max-height:55vh;overflow:auto;padding-right:4px}
 .uploadsGrid{display:grid;gap:10px;max-height:320px;overflow:auto;padding-right:4px}
 .uploadCard{border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(11,16,34,.45)}
 .uploadCard .mini{margin-top:6px}
@@ -356,6 +361,12 @@ a.dl:hover{opacity:.9}
           <div class="summaryLabel">განმცხადებელი</div>
           <div class="summaryValue" id="amApplicantName">—</div>
           <div class="summaryMeta small" id="amApplicantMeta"></div>
+        </div>
+        <div class="summaryCard">
+          <div class="summaryLabel">სტატუსი</div>
+          <div class="summaryValue" id="amStatusText">—</div>
+          <div class="summaryMeta small" id="amTimeline"></div>
+        </div>
     <div class="summaryGrid">
       <div class="summaryCard">
         <div class="summaryLabel">გრანტი</div>
@@ -482,6 +493,12 @@ a.dl:hover{opacity:.9}
           <div style="height:10px"></div>
           <label class="small">ადმინის შენიშვნა</label>
           <textarea id="amNote" oninput="saveAppMetaSoon()"></textarea>
+
+          <hr>
+          <div class="small">
+            ⚠️ წაშლა არის <b>soft-delete</b> (ფაილები არ იშლება).
+          </div>
+
 
           <hr>
           <div class="small">
@@ -978,14 +995,14 @@ function deepFindBudgetRows(obj, depth=0){
   }
   return null;
 }
-function showBudgetInModal(formData){
+function showBudgetInModal(formData, rowsHint=null){
   const wrap = document.getElementById("amBudgetWrap");
   const body = document.getElementById("amBudgetBody");
   const totalEl = document.getElementById("amBudgetTotal");
   if(!wrap || !body || !totalEl) return;
 
-  const rows = deepFindBudgetRows(formData);
-  if(!rows || !rows.length){
+  const rows = Array.isArray(rowsHint) ? rowsHint : deepFindBudgetRows(formData);
+  if(!rows){
     wrap.style.display = "none";
     body.innerHTML = "";
     totalEl.textContent = "0";
@@ -1013,6 +1030,16 @@ function showBudgetInModal(formData){
 
   totalEl.textContent = fmtMoney(total);
   wrap.style.display = "block";
+}
+
+function extractBudgetRowsFromResolved(resolved){
+  if(!Array.isArray(resolved)) return null;
+  for(const row of resolved){
+    if(!row || row.type !== "budget_table") continue;
+    const val = parseJsonMaybe(row.value);
+    if(val && typeof val === "object" && Array.isArray(val.rows)) return val.rows;
+  }
+  return null;
 }
 
 /* Pretty view with label mapping */
@@ -1094,6 +1121,21 @@ function renderPretty(formData, app){
     if(seen.has(kk)) continue;
     seen.add(kk);
     const label = resolveLabelForKey(grantId, kk);
+    const normalizedValue = normalizeAnswerValue(label, v);
+    rows.push({label, value: normalizedValue, rawKey: kk});
+  }
+
+  box.innerHTML = rows.map(row=>{
+    const showMeta = row.rawKey && !looksLikeFieldKey(row.rawKey) && row.rawKey !== row.label;
+    return `
+      <div class="answerCard" data-label="${escAttr(row.label)}" data-key="${escAttr(row.rawKey)}">
+        <div class="answerLabel">${esc(row.label)}</div>
+        <div class="answerValue">${esc(row.value || "—")}</div>
+        ${showMeta ? `<div class="answerMeta">path: ${esc(row.rawKey)}</div>` : ""}
+      </div>
+    `;
+  }).join("");
+
     rows.push({label, value: v, rawKey: kk});
   }
 
@@ -1354,6 +1396,8 @@ async function openApp(id, grantIdHint=0){
     renderApplicantTypePill(fd);
     renderPretty(fd, a);
     renderUploads(a.uploads || [], fd, Number(a.grant_id || 0));
+    const budgetRowsHint = extractBudgetRowsFromResolved(a.form_data_resolved || []);
+    showBudgetInModal(fd, budgetRowsHint);
     showBudgetInModal(fd);
 
     document.getElementById('appModal').classList.add('show');

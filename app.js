@@ -360,6 +360,19 @@
     applyTranslations(next);
   }
 
+  function initGlobalLanguageHandlers() {
+    const savedLang = getStoredLanguage();
+    applyTranslations(savedLang);
+    initTranslationObserver();
+
+    document.addEventListener('click', (event) => {
+      const btn = event.target.closest('.lang-btn[data-lang]');
+      if (!btn) return;
+      event.preventDefault();
+      setLanguage(btn.getAttribute('data-lang') || 'ka');
+    });
+  }
+
   // ----------------------------
   // Active links (best match)
   // ----------------------------
@@ -532,4 +545,6 @@
 
   // expose for injected header usage
   window.initHeader = initHeader;
+
+  initGlobalLanguageHandlers();
 })();
