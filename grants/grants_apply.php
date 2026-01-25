@@ -288,6 +288,8 @@ $payload = [
     <?php endif; ?>
   </div>
 
+  <div id="siteFooterMount"></div>
+
 <script>
 const DATA = <?= json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 // grants/grants_apply.php -> ../admin/api/...
@@ -1362,6 +1364,24 @@ function bindFields(activeDbStep, fields, idx, isFiles){
     });
   }
 }
-</script>
+  </script>
+
+  <script>
+    async function injectFooter() {
+      const el = document.getElementById('siteFooterMount');
+      if (!el) return;
+      const res = await fetch('/youthagency/footer.html?v=2');
+      if (res.ok) el.innerHTML = await res.text();
+    }
+    (async () => {
+      const s = document.createElement('script');
+      s.src = '/youthagency/app.js?v=2';
+      s.onload = () => {
+        if (typeof window.initHeader === 'function') window.initHeader();
+      };
+      document.body.appendChild(s);
+      await injectFooter();
+    })();
+  </script>
 </body>
 </html>
