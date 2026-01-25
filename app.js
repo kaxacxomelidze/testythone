@@ -350,6 +350,7 @@
       const fallback = el.getAttribute(lang === 'en' ? 'data-text-ka' : 'data-text-en');
       const value = (primary !== null && primary !== '') ? primary : (fallback ?? '');
       if (value !== null) el.textContent = decode(value);
+      if (value !== null) el.textContent = value;
     });
 
     syncLangButtons(lang);
