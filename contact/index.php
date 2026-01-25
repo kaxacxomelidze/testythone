@@ -307,7 +307,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     async function inject(id, file) {
       const el = document.getElementById(id);
       if (!el) throw new Error(`Mount element not found: #${id}`);
-      const res = await fetch(file + '?v=1');
+      const res = await fetch(file + '?v=2');
       if (!res.ok) throw new Error(`${file} not found. Status: ${res.status}`);
       el.innerHTML = await res.text();
     }
@@ -315,7 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     async function loadScript(src) {
       return new Promise((resolve, reject) => {
         const s = document.createElement('script');
-        s.src = src + '?v=1';
+        s.src = src + '?v=2';
         s.onload = resolve;
         s.onerror = () => reject(new Error(`Failed to load script: ${src}`));
         document.body.appendChild(s);

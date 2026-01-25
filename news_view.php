@@ -107,6 +107,6 @@ $bodyTextEn = (string)($n['body_en'] ?? '');
     <?php endif; ?>
   </div>
 
-  <script src="/youthagency/app.js?v=1"></script>
+  <script src="/youthagency/app.js?v=2"></script>
 </body>
 </html>

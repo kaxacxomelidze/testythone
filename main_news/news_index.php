@@ -592,7 +592,7 @@ $placeholder = "data:image/svg+xml;charset=UTF-8," . rawurlencode(
     async function inject(id, url) {
       const el = document.getElementById(id);
       if (!el) throw new Error(`Mount element not found: #${id}`);
-      const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'v=1');
+      const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'v=2');
       if (!res.ok) throw new Error(`${url} not found. Status: ${res.status}`);
       el.innerHTML = await res.text();
     }
@@ -600,7 +600,7 @@ $placeholder = "data:image/svg+xml;charset=UTF-8," . rawurlencode(
     async function loadScript(url) {
       return new Promise((resolve, reject) => {
         const s = document.createElement('script');
-        s.src = url + (url.includes('?') ? '&' : '?') + 'v=1';
+        s.src = url + (url.includes('?') ? '&' : '?') + 'v=2';
         s.onload = resolve;
         s.onerror = () => reject(new Error(`Failed to load script: ${url}`));
         document.body.appendChild(s);

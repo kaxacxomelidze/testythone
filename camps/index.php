@@ -445,14 +445,14 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <script>
     async function inject(id, file) {
       const el = document.getElementById(id);
-      const res = await fetch(file + (file.includes('?') ? '&' : '?') + 'v=1');
+      const res = await fetch(file + (file.includes('?') ? '&' : '?') + 'v=2');
       if (res.ok) el.innerHTML = await res.text();
     }
 
     async function loadScript(src) {
       return new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = src + (src.includes('?') ? '&' : '?') + 'v=1';
+      const s = document.createElement('script');
+      s.src = src + (src.includes('?') ? '&' : '?') + 'v=2';
         s.onload = resolve;
         s.onerror = () => reject(new Error(`Failed to load script: ${src}`));
         document.body.appendChild(s);

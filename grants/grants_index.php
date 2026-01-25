@@ -446,13 +446,13 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
   <script>
     async function inject(id, url){
       const el = document.getElementById(id);
-      const res = await fetch(url + (url.includes('?')?'&':'?') + 'v=1');
+      const res = await fetch(url + (url.includes('?')?'&':'?') + 'v=2');
       if(res.ok) el.innerHTML = await res.text();
     }
     async function loadScript(url){
       return new Promise((ok, bad)=>{
         const s=document.createElement('script');
-        s.src=url + (url.includes('?')?'&':'?') + 'v=1';
+        s.src=url + (url.includes('?')?'&':'?') + 'v=2';
         s.onload=ok; s.onerror=bad;
         document.body.appendChild(s);
       });

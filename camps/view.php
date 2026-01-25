@@ -905,7 +905,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
     async function inject(id, file) {
       const el = document.getElementById(id);
       if (!el) return;
-      const res = await fetch(file + (file.includes('?') ? '&' : '?') + 'v=1');
+      const res = await fetch(file + (file.includes('?') ? '&' : '?') + 'v=2');
       if (!res.ok) return;
       el.innerHTML = await res.text();
     }
@@ -913,7 +913,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
     async function loadScript(src) {
       return new Promise((resolve) => {
         const s = document.createElement('script');
-        s.src = src + (src.includes('?') ? '&' : '?') + 'v=1';
+        s.src = src + (src.includes('?') ? '&' : '?') + 'v=2';
         s.onload = resolve;
         s.onerror = resolve;
         document.body.appendChild(s);
