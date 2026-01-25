@@ -7,6 +7,17 @@ $pdo = db();
 function h($s): string {
   return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 }
+function has_col(PDO $pdo, string $table, string $col): bool {
+  $table = preg_replace('/[^a-zA-Z0-9_]+/', '', $table);
+  $col   = preg_replace('/[^a-zA-Z0-9_]+/', '', $col);
+  if ($table === '' || $col === '') return false;
+  try{
+    $q = $pdo->query("SHOW COLUMNS FROM `$table` LIKE " . $pdo->quote($col));
+    return (bool)$q->fetch(PDO::FETCH_ASSOC);
+  }catch(Throwable $e){
+    return false;
+  }
+}
 function fmt_date(?string $raw): string {
   $raw = trim((string)$raw);
   if ($raw === '') return '—';
@@ -45,7 +56,11 @@ function build_apply_url(int $grantId, string $dbUrl): string {
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) { http_response_code(404); exit('Not found'); }
 
-$st = $pdo->prepare("SELECT * FROM grants WHERE id=? AND is_active=1 LIMIT 1");
+$st = $pdo->prepare("SELECT id,title," . (has_col($pdo, 'grants', 'title_en') ? "title_en" : "'' AS title_en") . ",
+  slug,description," . (has_col($pdo, 'grants', 'description_en') ? "description_en" : "'' AS description_en") . ",
+  body," . (has_col($pdo, 'grants', 'body_en') ? "body_en" : "'' AS body_en") . ",
+  deadline,status,apply_url,is_active,image_path
+  FROM grants WHERE id=? AND is_active=1 LIMIT 1");
 $st->execute([$id]);
 $g = $st->fetch(PDO::FETCH_ASSOC);
 if (!$g) { http_response_code(404); exit('Not found'); }
@@ -68,8 +83,11 @@ if ($img === '') {
 }
 
 $title = (string)($g['title'] ?? 'საგრანტო პროგრამა');
+$titleEn = (string)($g['title_en'] ?? '');
 $desc  = trim((string)($g['description'] ?? ''));
+$descEn  = trim((string)($g['description_en'] ?? ''));
 $body  = (string)($g['body'] ?? '');
+$bodyEn  = (string)($g['body_en'] ?? '');
 $deadline = (string)($g['deadline'] ?? '');
 ?>
 <!doctype html>
@@ -279,6 +297,7 @@ $deadline = (string)($g['deadline'] ?? '');
       color: rgba(243,245,250,.72);
       font-size:14px;
       line-height:1.8;
+      white-space:pre-wrap;
     }
 
     a{ -webkit-tap-highlight-color: transparent; }
@@ -298,7 +317,7 @@ $deadline = (string)($g['deadline'] ?? '');
 
     <section class="hero">
       <div class="heroHead">
-        <h1 class="heroTitle"><?=h($title)?></h1>
+        <h1 class="heroTitle" data-i18n-text data-text-ka="<?=h($title)?>" data-text-en="<?=h($titleEn)?>"><?=h($title)?></h1>
 
         <span class="pill <?= $isClosed ? 'closed' : 'current' ?>">
           <i class="fa-solid fa-circle" style="font-size:8px;opacity:.85"></i>
@@ -306,8 +325,8 @@ $deadline = (string)($g['deadline'] ?? '');
         </span>
       </div>
 
-      <?php if($desc !== ''): ?>
-        <div class="heroDesc"><?=h($desc)?></div>
+      <?php if($desc !== '' || $descEn !== ''): ?>
+        <div class="heroDesc" data-i18n-text data-text-ka="<?=h($desc)?>" data-text-en="<?=h($descEn)?>"><?=h($desc !== '' ? $desc : $descEn)?></div>
       <?php endif; ?>
 
       <div class="layout">
@@ -341,7 +360,7 @@ $deadline = (string)($g['deadline'] ?? '');
 
     <section class="block">
       <h2 data-i18n="grantsView.detailsTitle">დეტალური აღწერა</h2>
-      <div class="content"><?=safe_html_paragraphs($body)?></div>
+      <div class="content" data-i18n-text data-text-ka="<?=h($body)?>" data-text-en="<?=h($bodyEn)?>"><?=h($body !== '' ? $body : $bodyEn)?></div>
     </section>
 
   </main>
@@ -352,13 +371,13 @@ $deadline = (string)($g['deadline'] ?? '');
     async function inject(id, url){
       const el = document.getElementById(id);
       if(!el) return;
-      const res = await fetch(url + (url.includes('?')?'&':'?') + 'v=1');
+      const res = await fetch(url + (url.includes('?')?'&':'?') + 'v=2');
       if(res.ok) el.innerHTML = await res.text();
     }
     async function loadScript(url){
       return new Promise((ok, bad)=>{
         const s=document.createElement('script');
-        s.src=url + (url.includes('?')?'&':'?') + 'v=1';
+        s.src=url + (url.includes('?')?'&':'?') + 'v=2';
         s.onload=ok; s.onerror=bad;
         document.body.appendChild(s);
       });

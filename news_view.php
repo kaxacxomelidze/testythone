@@ -2,11 +2,25 @@
 require_once __DIR__ . '/admin/config.php';
 $pdo = db();
 
+function has_col(PDO $pdo, string $table, string $col): bool {
+  $table = preg_replace('/[^a-zA-Z0-9_]+/', '', $table);
+  $col   = preg_replace('/[^a-zA-Z0-9_]+/', '', $col);
+  if ($table === '' || $col === '') return false;
+  try{
+    $q = $pdo->query("SHOW COLUMNS FROM `$table` LIKE " . $pdo->quote($col));
+    return (bool)$q->fetch(PDO::FETCH_ASSOC);
+  }catch(Throwable $e){
+    return false;
+  }
+}
+
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) { http_response_code(404); exit('Not found'); }
 
 $stmt = $pdo->prepare("
-  SELECT id,title,slug,body,image_path,published_at,is_active
+  SELECT id,title," . (has_col($pdo, 'news', 'title_en') ? "title_en" : "'' AS title_en") . ",
+         slug,body," . (has_col($pdo, 'news', 'body_en') ? "body_en" : "'' AS body_en") . ",
+         image_path,published_at,is_active
   FROM news
   WHERE id=? LIMIT 1
 ");
@@ -44,6 +58,10 @@ function fmt_date(?string $dt): string {
   if (!$ts) return $dt;
   return date('Y-m-d H:i', $ts);
 }
+
+$titleEn = (string)($n['title_en'] ?? '');
+$bodyText = (string)($n['body'] ?? '');
+$bodyTextEn = (string)($n['body_en'] ?? '');
 ?>
 <!doctype html>
 <html lang="ka">
@@ -68,20 +86,18 @@ function fmt_date(?string $dt): string {
     <a class="btn" href="javascript:history.back()">← Back</a>
 
 
-    <h1 style="margin:14px 0"><?=h($n['title'])?></h1>
+    <h1 style="margin:14px 0" data-i18n-text data-text-ka="<?=h((string)$n['title'])?>" data-text-en="<?=h($titleEn)?>"><?=h($n['title'])?></h1>
     <div class="meta"><?=h(fmt_date($n['published_at'] ?? ''))?></div>
 
     <?php if (!empty($n['image_path'])): ?>
       <img class="heroimg" src="/youthagency/<?=h($n['image_path'])?>" alt="">
     <?php endif; ?>
 
-    <?php if (!empty($n['body'])): ?>
-      <div style="margin-top:18px;line-height:1.7">
-        <?=nl2br(h($n['body']))?>
-      </div>
+    <?php if ($bodyText !== '' || $bodyTextEn !== ''): ?>
+      <div style="margin-top:18px;line-height:1.7;white-space:pre-wrap" data-i18n-text data-text-ka="<?=h($bodyText)?>" data-text-en="<?=h($bodyTextEn)?>"><?=h($bodyText !== '' ? $bodyText : $bodyTextEn)?></div>
     <?php endif; ?>
 
-    <?php if (!empty($gallery)): ?>
+  <?php if (!empty($gallery)): ?>
       <h3 style="margin-top:22px">Gallery</h3>
       <div class="gallery">
         <?php foreach($gallery as $img): ?>
@@ -90,5 +106,7 @@ function fmt_date(?string $dt): string {
       </div>
     <?php endif; ?>
   </div>
+
+  <script src="/youthagency/app.js?v=2"></script>
 </body>
 </html>

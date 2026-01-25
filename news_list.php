@@ -2,6 +2,18 @@
 require_once __DIR__ . '/admin/config.php';
 $pdo = db();
 
+function has_col(PDO $pdo, string $table, string $col): bool {
+  $table = preg_replace('/[^a-zA-Z0-9_]+/', '', $table);
+  $col   = preg_replace('/[^a-zA-Z0-9_]+/', '', $col);
+  if ($table === '' || $col === '') return false;
+  try{
+    $q = $pdo->query("SHOW COLUMNS FROM `$table` LIKE " . $pdo->quote($col));
+    return (bool)$q->fetch(PDO::FETCH_ASSOC);
+  }catch(Throwable $e){
+    return false;
+  }
+}
+
 function fmt_date(?string $dt): string {
   if (!$dt) return '';
   $ts = strtotime($dt);
@@ -21,7 +33,8 @@ function news_url(array $n): string {
 }
 
 $items = $pdo->query("
-  SELECT id, title, slug, body, image_path, published_at
+  SELECT id, title, " . (has_col($pdo, 'news', 'title_en') ? "title_en" : "'' AS title_en") . ", slug,
+         body, " . (has_col($pdo, 'news', 'body_en') ? "body_en" : "'' AS body_en") . ", image_path, published_at
   FROM news
   WHERE is_active=1
   ORDER BY sort_order ASC, id DESC
@@ -54,6 +67,8 @@ $list = array_slice($items, 1, 4);
       $fImg  = trim((string)($featured['image_path'] ?? ''));
       $fDate = fmt_date($featured['published_at'] ?? '');
       $fDesc = excerpt($featured['body'] ?? '', 200);
+      $fTitleEn = (string)($featured['title_en'] ?? '');
+      $fDescEn = excerpt($featured['body_en'] ?? '', 200);
     ?>
 
     <div class="mag-grid">
@@ -73,8 +88,10 @@ $list = array_slice($items, 1, 4);
 
           <div class="mag-feature__body">
             <?php if ($fDate): ?><div class="mag-date"><?=h($fDate)?></div><?php endif; ?>
-            <h3 class="mag-feature__title"><?=h($featured['title'])?></h3>
-            <?php if ($fDesc): ?><p class="mag-feature__desc"><?=h($fDesc)?></p><?php endif; ?>
+            <h3 class="mag-feature__title" data-i18n-text data-text-ka="<?=h((string)$featured['title'])?>" data-text-en="<?=h($fTitleEn)?>"><?=h($featured['title'])?></h3>
+            <?php if ($fDesc !== '' || $fDescEn !== ''): ?>
+              <p class="mag-feature__desc" data-i18n-text data-text-ka="<?=h($fDesc)?>" data-text-en="<?=h($fDescEn)?>"><?=h($fDesc !== '' ? $fDesc : $fDescEn)?></p>
+            <?php endif; ?>
 
             <div class="mag-feature__cta">
               <span class="mag-cta" data-i18n="news.cta">გაიგე მეტი</span>
@@ -95,6 +112,8 @@ $list = array_slice($items, 1, 4);
               $img  = trim((string)($n['image_path'] ?? ''));
               $date = fmt_date($n['published_at'] ?? '');
               $desc = excerpt($n['body'] ?? '', 95);
+              $titleEn = (string)($n['title_en'] ?? '');
+              $descEn = excerpt($n['body_en'] ?? '', 95);
             ?>
             <article class="mag-mini">
               <a class="mag-mini__link" href="<?=h($url)?>">
@@ -108,8 +127,10 @@ $list = array_slice($items, 1, 4);
 
                 <div class="mag-mini__body">
                   <?php if ($date): ?><div class="mag-mini__meta"><?=h($date)?></div><?php endif; ?>
-                  <div class="mag-mini__title"><?=h($n['title'])?></div>
-                  <?php if ($desc): ?><div class="mag-mini__desc"><?=h($desc)?></div><?php endif; ?>
+                  <div class="mag-mini__title" data-i18n-text data-text-ka="<?=h((string)$n['title'])?>" data-text-en="<?=h($titleEn)?>"><?=h($n['title'])?></div>
+                  <?php if ($desc !== '' || $descEn !== ''): ?>
+                    <div class="mag-mini__desc" data-i18n-text data-text-ka="<?=h($desc)?>" data-text-en="<?=h($descEn)?>"><?=h($desc !== '' ? $desc : $descEn)?></div>
+                  <?php endif; ?>
                 </div>
 
                 <div class="mag-mini__go">→</div>

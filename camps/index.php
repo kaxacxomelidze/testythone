@@ -10,6 +10,18 @@ if (!function_exists('h')) {
   function h($s): string { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 }
 
+function has_col(PDO $pdo, string $table, string $col): bool {
+  $table = preg_replace('/[^a-zA-Z0-9_]+/', '', $table);
+  $col   = preg_replace('/[^a-zA-Z0-9_]+/', '', $col);
+  if ($table === '' || $col === '') return false;
+  try{
+    $q = $pdo->query("SHOW COLUMNS FROM `$table` LIKE " . $pdo->quote($col));
+    return (bool)$q->fetch(PDO::FETCH_ASSOC);
+  }catch(Throwable $e){
+    return false;
+  }
+}
+
 function fmtDate(?string $d): string {
   $d = trim((string)$d);
   if ($d === '') return '';
@@ -60,8 +72,10 @@ function campStatus(array $c): string {
   return 'open';
 }
 
+$nameEnSelect = has_col($pdo, 'camps', 'name_en') ? 'name_en' : "'' AS name_en";
+$cardTextEnSelect = has_col($pdo, 'camps', 'card_text_en') ? 'card_text_en' : "'' AS card_text_en";
 $stmt = $pdo->query("
-  SELECT id,name,slug,cover,card_text,start_date,end_date,closed
+  SELECT id,name,{$nameEnSelect},slug,cover,card_text,{$cardTextEnSelect},start_date,end_date,closed
   FROM camps
   ORDER BY id DESC
   LIMIT 200
@@ -359,7 +373,9 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
           $url = "/youthagency/camps/$id/" . rawurlencode($slug);
 
           $name  = (string)($c['name'] ?? '');
+          $nameEn  = (string)($c['name_en'] ?? '');
           $desc  = (string)($c['card_text'] ?? '');
+          $descEn  = (string)($c['card_text_en'] ?? '');
           $start = fmtDate((string)($c['start_date'] ?? ''));
           $end   = fmtDate((string)($c['end_date'] ?? ''));
           $cover = (string)($c['cover'] ?? '');
@@ -369,7 +385,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
           $statusLabelKey = ($status === 'closed') ? 'camps.statusClosed' : (($status === 'upcoming') ? 'camps.statusUpcoming' : 'camps.statusOpen');
           $statusLabel = ($status === 'closed') ? 'დახურულია' : (($status === 'upcoming') ? 'მალე' : 'ღია');
 
-          $search = mb_strtolower(trim($name.' '.$desc.' '.$start.' '.$end.' '.$statusLabel), 'UTF-8');
+          $search = mb_strtolower(trim($name.' '.$nameEn.' '.$desc.' '.$descEn.' '.$start.' '.$end.' '.$statusLabel), 'UTF-8');
         ?>
         <a class="card"
            href="<?=h($url)?>"
@@ -383,7 +399,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
           <div class="p">
             <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
-              <div class="name"><?=h($name)?></div>
+              <div class="name" data-i18n-text data-text-ka="<?=h($name)?>" data-text-en="<?=h($nameEn)?>"><?=h($name)?></div>
 
               <span class="pill <?=h($status)?>">
                 <?php if ($status === 'closed'): ?>
@@ -397,8 +413,8 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
               </span>
             </div>
 
-            <?php if ($desc !== ''): ?>
-              <div class="desc"><?=h($desc)?></div>
+            <?php if ($desc !== '' || $descEn !== ''): ?>
+              <div class="desc" data-i18n-text data-text-ka="<?=h($desc)?>" data-text-en="<?=h($descEn)?>"><?=h($desc !== '' ? $desc : $descEn)?></div>
             <?php endif; ?>
 
             <div class="meta">
@@ -429,14 +445,14 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <script>
     async function inject(id, file) {
       const el = document.getElementById(id);
-      const res = await fetch(file + (file.includes('?') ? '&' : '?') + 'v=1');
+      const res = await fetch(file + (file.includes('?') ? '&' : '?') + 'v=2');
       if (res.ok) el.innerHTML = await res.text();
     }
 
     async function loadScript(src) {
       return new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = src + (src.includes('?') ? '&' : '?') + 'v=1';
+      const s = document.createElement('script');
+      s.src = src + (src.includes('?') ? '&' : '?') + 'v=2';
         s.onload = resolve;
         s.onerror = () => reject(new Error(`Failed to load script: ${src}`));
         document.body.appendChild(s);

@@ -61,8 +61,14 @@ if ($grantId <= 0) { http_response_code(404); echo "Grant not found"; exit; }
 
 /* ---------- load grant (with optional max_budget if exists) ---------- */
 $hasMaxBudget = has_col($pdo, 'grants', 'max_budget');
+$hasTitleEn = has_col($pdo, 'grants', 'title_en');
+$hasDescEn = has_col($pdo, 'grants', 'description_en');
+$hasBodyEn = has_col($pdo, 'grants', 'body_en');
 
-$sql = "SELECT id,title,slug,description,body,deadline,status,is_active,image_path,apply_url";
+$sql = "SELECT id,title," . ($hasTitleEn ? "title_en" : "'' AS title_en") . ",
+        slug,description," . ($hasDescEn ? "description_en" : "'' AS description_en") . ",
+        body," . ($hasBodyEn ? "body_en" : "'' AS body_en") . ",
+        deadline,status,is_active,image_path,apply_url";
 if ($hasMaxBudget) $sql .= ", max_budget";
 $sql .= " FROM grants WHERE id=? LIMIT 1";
 
@@ -135,8 +141,11 @@ $payload = [
   'grant' => [
     'id' => (int)$grant['id'],
     'title' => (string)$grant['title'],
+    'title_en' => (string)($grant['title_en'] ?? ''),
     'description' => (string)($grant['description'] ?? ''),
+    'description_en' => (string)($grant['description_en'] ?? ''),
     'body' => (string)($grant['body'] ?? ''),
+    'body_en' => (string)($grant['body_en'] ?? ''),
     'deadline' => (string)($grant['deadline'] ?? ''),
     'status' => (string)($grant['status'] ?? 'current'),
     'is_active' => (int)($grant['is_active'] ?? 0),
@@ -246,8 +255,12 @@ $payload = [
   <div class="wrap">
     <div class="banner">
       <div>
-        <h1><?= h((string)$grant['title']) ?></h1>
-        <p><?= h((string)($grant['description'] ?? '')) ?></p>
+        <h1 data-i18n-text data-text-ka="<?=h((string)$grant['title'])?>" data-text-en="<?=h((string)($grant['title_en'] ?? ''))?>">
+          <?= h((string)$grant['title']) ?>
+        </h1>
+        <p data-i18n-text data-text-ka="<?=h((string)($grant['description'] ?? ''))?>" data-text-en="<?=h((string)($grant['description_en'] ?? ''))?>">
+          <?= h((string)($grant['description'] ?? '')) ?>
+        </p>
         <div class="row">
           <span class="pill <?= $open ? 'open' : 'closed' ?>">
             <span data-i18n="<?= $open ? 'grantsApply.statusOpen' : 'grantsApply.statusClosed' ?>"><?= $open ? 'მიმდინარე' : 'დახურული' ?></span>
@@ -274,6 +287,8 @@ $payload = [
       </div>
     <?php endif; ?>
   </div>
+
+  <div id="siteFooterMount"></div>
 
 <script>
 const DATA = <?= json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
@@ -1349,6 +1364,24 @@ function bindFields(activeDbStep, fields, idx, isFiles){
     });
   }
 }
-</script>
+  </script>
+
+  <script>
+    async function injectFooter() {
+      const el = document.getElementById('siteFooterMount');
+      if (!el) return;
+      const res = await fetch('/youthagency/footer.html?v=2');
+      if (res.ok) el.innerHTML = await res.text();
+    }
+    (async () => {
+      const s = document.createElement('script');
+      s.src = '/youthagency/app.js?v=2';
+      s.onload = () => {
+        if (typeof window.initHeader === 'function') window.initHeader();
+      };
+      document.body.appendChild(s);
+      await injectFooter();
+    })();
+  </script>
 </body>
 </html>

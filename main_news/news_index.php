@@ -56,6 +56,8 @@ function public_url(string $path): string {
 $hasImagePath = has_col($pdo, 'news', 'image_path'); // ✅ your admin uses this
 $hasCover     = has_col($pdo, 'news', 'cover');      // fallback for older DBs
 $hasBody      = has_col($pdo, 'news', 'body');
+$hasTitleEn   = has_col($pdo, 'news', 'title_en');
+$hasBodyEn    = has_col($pdo, 'news', 'body_en');
 $hasActive    = has_col($pdo, 'news', 'is_active');
 $hasSort      = has_col($pdo, 'news', 'sort_order');
 $hasCreated   = has_col($pdo, 'news', 'created_at');
@@ -74,14 +76,21 @@ $params = [];
 if ($hasActive) $where[] = "is_active=1";
 
 if ($q !== '') {
+  $parts = ["title LIKE ?"];
+  $params[] = "%$q%";
   if ($hasBody) {
-    $where[] = "(title LIKE ? OR body LIKE ?)";
-    $params[] = "%$q%";
-    $params[] = "%$q%";
-  } else {
-    $where[] = "(title LIKE ?)";
+    $parts[] = "body LIKE ?";
     $params[] = "%$q%";
   }
+  if ($hasTitleEn) {
+    $parts[] = "title_en LIKE ?";
+    $params[] = "%$q%";
+  }
+  if ($hasBodyEn) {
+    $parts[] = "body_en LIKE ?";
+    $params[] = "%$q%";
+  }
+  $where[] = "(" . implode(" OR ", $parts) . ")";
 }
 $whereSql = $where ? "WHERE ".implode(" AND ", $where) : "";
 
@@ -100,7 +109,9 @@ $totalPages = max(1, (int)ceil($total / $perPage));
 
 /* SELECT */
 $cols = ['id','title','slug'];
+if ($hasTitleEn) $cols[] = 'title_en'; else $cols[] = "'' AS title_en";
 if ($hasBody)      $cols[] = 'body';
+if ($hasBodyEn)    $cols[] = 'body_en'; else $cols[] = "'' AS body_en";
 if ($hasCreated)   $cols[] = 'created_at';
 if ($hasImagePath) $cols[] = 'image_path';
 if ($hasCover)     $cols[] = 'cover';
@@ -521,14 +532,24 @@ $placeholder = "data:image/svg+xml;charset=UTF-8," . rawurlencode(
             </a>
 
             <div class="content">
-              <h2 class="title"><a href="<?=h($url)?>"><?=h($n['title'])?></a></h2>
+              <h2 class="title">
+                <a href="<?=h($url)?>" data-i18n-text data-text-ka="<?=h((string)$n['title'])?>" data-text-en="<?=h((string)($n['title_en'] ?? ''))?>">
+                  <?=h($n['title'])?>
+                </a>
+              </h2>
 
               <div class="meta">
                 <span class="chip"><?= $dateText !== '' ? h($dateText) : ('ID: '.(int)$n['id']) ?></span>
               </div>
 
-              <?php if ($hasBody && !empty($n['body'])): ?>
-                <div class="text"><?=h(excerpt((string)$n['body'], 240))?></div>
+              <?php
+                $bodyText = (string)($n['body'] ?? '');
+                $bodyTextEn = (string)($n['body_en'] ?? '');
+                $excerptKa = ($hasBody && $bodyText !== '') ? excerpt($bodyText, 240) : '';
+                $excerptEn = ($hasBodyEn && $bodyTextEn !== '') ? excerpt($bodyTextEn, 240) : '';
+              ?>
+              <?php if ($excerptKa !== '' || $excerptEn !== ''): ?>
+                <div class="text" data-i18n-text data-text-ka="<?=h($excerptKa)?>" data-text-en="<?=h($excerptEn)?>"><?=h($excerptKa !== '' ? $excerptKa : $excerptEn)?></div>
               <?php else: ?>
                 <div class="text" style="color:#64748b;" data-i18n="newsIndex.noBody">Click to read the full article.</div>
               <?php endif; ?>
@@ -571,7 +592,7 @@ $placeholder = "data:image/svg+xml;charset=UTF-8," . rawurlencode(
     async function inject(id, url) {
       const el = document.getElementById(id);
       if (!el) throw new Error(`Mount element not found: #${id}`);
-      const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'v=1');
+      const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'v=2');
       if (!res.ok) throw new Error(`${url} not found. Status: ${res.status}`);
       el.innerHTML = await res.text();
     }
@@ -579,7 +600,7 @@ $placeholder = "data:image/svg+xml;charset=UTF-8," . rawurlencode(
     async function loadScript(url) {
       return new Promise((resolve, reject) => {
         const s = document.createElement('script');
-        s.src = url + (url.includes('?') ? '&' : '?') + 'v=1';
+        s.src = url + (url.includes('?') ? '&' : '?') + 'v=2';
         s.onload = resolve;
         s.onerror = () => reject(new Error(`Failed to load script: ${url}`));
         document.body.appendChild(s);

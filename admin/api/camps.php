@@ -44,6 +44,38 @@ function json_in(): array {
   return is_array($j) ? $j : [];
 }
 
+function has_col(PDO $pdo, string $table, string $col): bool {
+  $table = preg_replace('/[^a-zA-Z0-9_]+/', '', $table);
+  $col   = preg_replace('/[^a-zA-Z0-9_]+/', '', $col);
+  if ($table === '' || $col === '') return false;
+  try{
+    $q = $pdo->query("SHOW COLUMNS FROM `$table` LIKE " . $pdo->quote($col));
+    return (bool)$q->fetch(PDO::FETCH_ASSOC);
+  }catch(Throwable $e){
+    return false;
+  }
+}
+function add_col(PDO $pdo, string $table, string $sql): void {
+  $pdo->exec("ALTER TABLE `$table` $sql");
+}
+function ensure_camps_i18n(PDO $pdo): void {
+  if (!has_col($pdo, 'camps', 'name_en')) {
+    try { add_col($pdo, 'camps', "ADD COLUMN name_en VARCHAR(255) NULL AFTER name"); } catch(Throwable $e) {}
+  }
+  if (!has_col($pdo, 'camps', 'card_text_en')) {
+    try { add_col($pdo, 'camps', "ADD COLUMN card_text_en TEXT NULL AFTER card_text"); } catch(Throwable $e) {}
+  }
+  if (!has_col($pdo, 'camps_fields', 'label_en')) {
+    try { add_col($pdo, 'camps_fields', "ADD COLUMN label_en VARCHAR(255) NULL AFTER label"); } catch(Throwable $e) {}
+  }
+  if (!has_col($pdo, 'camps_posts', 'title_en')) {
+    try { add_col($pdo, 'camps_posts', "ADD COLUMN title_en VARCHAR(255) NULL AFTER title"); } catch(Throwable $e) {}
+  }
+  if (!has_col($pdo, 'camps_posts', 'body_en')) {
+    try { add_col($pdo, 'camps_posts', "ADD COLUMN body_en MEDIUMTEXT NULL AFTER body"); } catch(Throwable $e) {}
+  }
+}
+
 function upload_image(string $fieldName, string $subdir, array $allowedExt = ['jpg','jpeg','png','webp','gif']): string {
   if (empty($_FILES[$fieldName]) || ($_FILES[$fieldName]['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) return '';
 
@@ -131,6 +163,7 @@ function guess_field_key(string $type, string $label): string {
 }
 
 try {
+  ensure_camps_i18n($pdo);
 
   /* ========= LIST ========= */
   if ($action === 'list') {
@@ -164,7 +197,9 @@ try {
       $r['closed'] = (int)$r['closed'] === 1;
       $r['windowDays'] = (int)$r['window_days'];
       $r['cardText'] = (string)($r['card_text'] ?? '');
+      $r['cardTextEn'] = (string)($r['card_text_en'] ?? '');
       $r['cover'] = (string)($r['cover'] ?? '');
+      $r['nameEn'] = (string)($r['name_en'] ?? '');
       unset($r['card_text'], $r['window_days']);
     }
     ok(["camps"=>$rows]);
@@ -182,7 +217,7 @@ try {
     if (!$c) fail("Not found", 404);
 
     // include field_key
-    $f = $pdo->prepare("SELECT id,label,type,required,options_json,field_key
+    $f = $pdo->prepare("SELECT id,label,label_en,type,required,options_json,field_key
                         FROM camps_fields WHERE camp_id=? ORDER BY sort_order ASC, id ASC");
     $f->execute([$id]);
     $fields = $f->fetchAll(PDO::FETCH_ASSOC);
@@ -192,6 +227,7 @@ try {
       $form[] = [
         "id" => (int)$x["id"],
         "label" => (string)$x["label"],
+        "label_en" => (string)($x["label_en"] ?? ""),
         "type" => (string)$x["type"],
         "req" => (int)$x["required"] === 1,
         "options" => (string)($x["options_json"] ?? ""),
@@ -200,7 +236,7 @@ try {
     }
 
     // posts
-    $p = $pdo->prepare("SELECT id,title,cover,body,created_at FROM camps_posts WHERE camp_id=? ORDER BY id DESC");
+    $p = $pdo->prepare("SELECT id,title,title_en,cover,body,body_en,created_at FROM camps_posts WHERE camp_id=? ORDER BY id DESC");
     $p->execute([$id]);
     $posts = $p->fetchAll(PDO::FETCH_ASSOC);
 
@@ -235,9 +271,11 @@ try {
     $camp = [
       "id" => (int)$c["id"],
       "name" => (string)$c["name"],
+      "nameEn" => (string)($c["name_en"] ?? ""),
       "slug" => (string)($c["slug"] ?? ""),
       "cover" => (string)($c["cover"] ?? ""),
       "cardText" => (string)($c["card_text"] ?? ""),
+      "cardTextEn" => (string)($c["card_text_en"] ?? ""),
       "start" => (string)$c["start_date"],
       "end" => (string)$c["end_date"],
       "closed" => (int)$c["closed"] === 1,
@@ -253,7 +291,9 @@ try {
     $id = isset($_POST['id']) && $_POST['id'] !== '' ? (int)$_POST['id'] : 0;
 
     $name = trim((string)($_POST['name'] ?? ''));
+    $nameEn = trim((string)($_POST['name_en'] ?? ''));
     $cardText = trim((string)($_POST['cardText'] ?? ''));
+    $cardTextEn = trim((string)($_POST['cardText_en'] ?? ''));
     $start = (string)($_POST['start'] ?? '');
     $end = (string)($_POST['end'] ?? '');
     $closed = ((string)($_POST['closed'] ?? '0') === '1') ? 1 : 0;
@@ -278,17 +318,25 @@ try {
 
     if ($id > 0) {
       $stmt = $pdo->prepare("
-        UPDATE camps SET name=?, slug=?, cover=?, card_text=?, start_date=?, end_date=?, window_days=?, closed=?
+        UPDATE camps SET name=?, name_en=?, slug=?, cover=?, card_text=?, card_text_en=?, start_date=?, end_date=?, window_days=?, closed=?
         WHERE id=?
       ");
-      $stmt->execute([$name,$slug,$coverPath,$cardText,$start,$end,$windowDays,$closed,$id]);
+      $stmt->execute([
+        $name, ($nameEn !== '' ? $nameEn : null),
+        $slug, $coverPath, $cardText, ($cardTextEn !== '' ? $cardTextEn : null),
+        $start, $end, $windowDays, $closed, $id
+      ]);
       ok(["id"=>$id]);
     } else {
       $stmt = $pdo->prepare("
-        INSERT INTO camps(name,slug,cover,card_text,start_date,end_date,window_days,closed,created_at)
-        VALUES(?,?,?,?,?,?,?,?,NOW())
+        INSERT INTO camps(name,name_en,slug,cover,card_text,card_text_en,start_date,end_date,window_days,closed,created_at)
+        VALUES(?,?,?,?,?,?,?,?,?,?,NOW())
       ");
-      $stmt->execute([$name,$slug,$coverPath,$cardText,$start,$end,$windowDays,$closed]);
+      $stmt->execute([
+        $name, ($nameEn !== '' ? $nameEn : null),
+        $slug, $coverPath, $cardText, ($cardTextEn !== '' ? $cardTextEn : null),
+        $start, $end, $windowDays, $closed
+      ]);
       ok(["id"=>(int)$pdo->lastInsertId()]);
     }
   }
@@ -319,12 +367,13 @@ try {
 
     $sort = 1;
     $stmt = $pdo->prepare("
-      INSERT INTO camps_fields(camp_id,sort_order,label,type,required,options_json,field_key)
-      VALUES(?,?,?,?,?,?,?)
+      INSERT INTO camps_fields(camp_id,sort_order,label,label_en,type,required,options_json,field_key)
+      VALUES(?,?,?,?,?,?,?,?)
     ");
 
     foreach ($fields as $f) {
       $label = trim((string)($f['label'] ?? ''));
+      $labelEn = trim((string)($f['label_en'] ?? ''));
       $type  = (string)($f['type'] ?? 'text');
       $req   = !empty($f['req']) ? 1 : 0;
       $opts  = trim((string)($f['options'] ?? ''));
@@ -340,7 +389,16 @@ try {
       if ($fk === '') $fk = guess_field_key($type, $label);
 
       if ($label === '') continue;
-      $stmt->execute([$campId,$sort++,$label,$type,$req,$opts,($fk !== '' ? $fk : null)]);
+      $stmt->execute([
+        $campId,
+        $sort++,
+        $label,
+        ($labelEn !== '' ? $labelEn : null),
+        $type,
+        $req,
+        $opts,
+        ($fk !== '' ? $fk : null)
+      ]);
     }
     ok();
   }
@@ -350,7 +408,9 @@ try {
     $campId = (int)($_POST['campId'] ?? 0);
     $id = (int)($_POST['id'] ?? 0);
     $title = trim((string)($_POST['title'] ?? ''));
+    $titleEn = trim((string)($_POST['title_en'] ?? ''));
     $body  = trim((string)($_POST['body'] ?? ''));
+    $bodyEn  = trim((string)($_POST['body_en'] ?? ''));
     if ($campId<=0 || $title==='' || $body==='') fail("campId/title/body required");
 
     $oldCover = '';
@@ -367,12 +427,16 @@ try {
     if ($newCover !== '') $coverPath = $newCover;
 
     if ($id > 0) {
-      $pdo->prepare("UPDATE camps_posts SET title=?, cover=?, body=? WHERE id=? AND camp_id=?")
-          ->execute([$title,$coverPath,$body,$id,$campId]);
+      $pdo->prepare("UPDATE camps_posts SET title=?, title_en=?, cover=?, body=?, body_en=? WHERE id=? AND camp_id=?")
+          ->execute([
+            $title, ($titleEn !== '' ? $titleEn : null),
+            $coverPath, $body, ($bodyEn !== '' ? $bodyEn : null),
+            $id, $campId
+          ]);
       $postId = $id;
     } else {
-      $pdo->prepare("INSERT INTO camps_posts(camp_id,title,cover,body,created_at) VALUES(?,?,?,?,NOW())")
-          ->execute([$campId,$title,$coverPath,$body]);
+      $pdo->prepare("INSERT INTO camps_posts(camp_id,title,title_en,cover,body,body_en,created_at) VALUES(?,?,?,?,?,?,NOW())")
+          ->execute([$campId,$title,($titleEn !== '' ? $titleEn : null),$coverPath,$body,($bodyEn !== '' ? $bodyEn : null)]);
       $postId = (int)$pdo->lastInsertId();
     }
 

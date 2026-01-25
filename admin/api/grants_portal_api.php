@@ -175,9 +175,12 @@ function ensure_schema(PDO $pdo): void {
     CREATE TABLE IF NOT EXISTS grants (
       id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
       title VARCHAR(255) NOT NULL,
+      title_en VARCHAR(255) NULL,
       slug VARCHAR(255) NOT NULL,
       description VARCHAR(255) NULL,
+      description_en VARCHAR(255) NULL,
       body MEDIUMTEXT NOT NULL,
+      body_en MEDIUMTEXT NULL,
       deadline DATE NULL,
       status VARCHAR(20) NOT NULL DEFAULT 'current',
       apply_url VARCHAR(255) NULL,
@@ -197,6 +200,9 @@ function ensure_schema(PDO $pdo): void {
 
   if (!has_col($pdo, 'grants', 'max_amount_person')) { try { add_col($pdo, 'grants', "ADD COLUMN max_amount_person DECIMAL(12,2) NULL AFTER apply_url"); } catch(Throwable $e) {} }
   if (!has_col($pdo, 'grants', 'max_amount_org'))    { try { add_col($pdo, 'grants', "ADD COLUMN max_amount_org DECIMAL(12,2) NULL AFTER max_amount_person"); } catch(Throwable $e) {} }
+  if (!has_col($pdo, 'grants', 'title_en'))          { try { add_col($pdo, 'grants', "ADD COLUMN title_en VARCHAR(255) NULL AFTER title"); } catch(Throwable $e) {} }
+  if (!has_col($pdo, 'grants', 'description_en'))    { try { add_col($pdo, 'grants', "ADD COLUMN description_en VARCHAR(255) NULL AFTER description"); } catch(Throwable $e) {} }
+  if (!has_col($pdo, 'grants', 'body_en'))           { try { add_col($pdo, 'grants', "ADD COLUMN body_en MEDIUMTEXT NULL AFTER body"); } catch(Throwable $e) {} }
 
   $pdo->exec("
     CREATE TABLE IF NOT EXISTS grant_steps (
@@ -696,7 +702,7 @@ try {
       $params[] = $status;
     }
 
-    $sql = "SELECT id,title,slug,description,body,deadline,status,apply_url,
+    $sql = "SELECT id,title,title_en,slug,description,description_en,body,body_en,deadline,status,apply_url,
                    max_amount_person,max_amount_org,
                    sort_order,is_active,image_path,created_at,updated_at
             FROM grants";
@@ -714,14 +720,17 @@ try {
   if ($action === 'grants_save') {
     $id = (int)($_POST['id'] ?? 0);
     $title = trim((string)($_POST['title'] ?? ''));
+    $title_en = trim((string)($_POST['title_en'] ?? ''));
     $slug  = trim((string)($_POST['slug'] ?? ''));
     $desc  = trim((string)($_POST['description'] ?? ''));
+    $desc_en  = trim((string)($_POST['description_en'] ?? ''));
     $deadline = (string)($_POST['deadline'] ?? '');
     $status = (string)($_POST['status'] ?? 'current');
     $apply_url = trim((string)($_POST['apply_url'] ?? ''));
     $sort_order = (int)($_POST['sort_order'] ?? 0);
     $is_active = (int)($_POST['is_active'] ?? 1);
     $body = trim((string)($_POST['body'] ?? ''));
+    $body_en = trim((string)($_POST['body_en'] ?? ''));
     $existing = trim((string)($_POST['existing_image_path'] ?? ''));
 
     $maxP = trim((string)($_POST['max_amount_person'] ?? ''));
@@ -750,12 +759,14 @@ try {
 
     if ($id > 0) {
       $st = $pdo->prepare("UPDATE grants
-        SET title=?, slug=?, description=?, body=?, deadline=?, status=?, apply_url=?,
+        SET title=?, title_en=?, slug=?, description=?, description_en=?, body=?, body_en=?, deadline=?, status=?, apply_url=?,
             max_amount_person=?, max_amount_org=?,
             sort_order=?, is_active=?, image_path=?
         WHERE id=?");
       $st->execute([
-        $title, $slug, ($desc !== '' ? $desc : null), $body,
+        $title, ($title_en !== '' ? $title_en : null), $slug,
+        ($desc !== '' ? $desc : null), ($desc_en !== '' ? $desc_en : null),
+        $body, ($body_en !== '' ? $body_en : null),
         $deadlineSql, $status, ($apply_url !== '' ? $apply_url : null),
         $max_amount_person, $max_amount_org,
         $sort_order, $is_active ? 1 : 0, ($image_path !== '' ? $image_path : null),
@@ -763,12 +774,14 @@ try {
       ]);
     } else {
       $st = $pdo->prepare("INSERT INTO grants(
-          title,slug,description,body,deadline,status,apply_url,
+          title,title_en,slug,description,description_en,body,body_en,deadline,status,apply_url,
           max_amount_person,max_amount_org,
           sort_order,is_active,image_path
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
       $st->execute([
-        $title, $slug, ($desc !== '' ? $desc : null), $body,
+        $title, ($title_en !== '' ? $title_en : null), $slug,
+        ($desc !== '' ? $desc : null), ($desc_en !== '' ? $desc_en : null),
+        $body, ($body_en !== '' ? $body_en : null),
         $deadlineSql, $status, ($apply_url !== '' ? $apply_url : null),
         $max_amount_person, $max_amount_org,
         $sort_order, $is_active ? 1 : 0, ($image_path !== '' ? $image_path : null)
