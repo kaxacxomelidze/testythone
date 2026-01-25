@@ -9,6 +9,17 @@ $pdo = db();
 if (!function_exists('h')) {
   function h($s): string { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 }
+function has_col(PDO $pdo, string $table, string $col): bool {
+  $table = preg_replace('/[^a-zA-Z0-9_]+/', '', $table);
+  $col   = preg_replace('/[^a-zA-Z0-9_]+/', '', $col);
+  if ($table === '' || $col === '') return false;
+  try{
+    $q = $pdo->query("SHOW COLUMNS FROM `$table` LIKE " . $pdo->quote($col));
+    return (bool)$q->fetch(PDO::FETCH_ASSOC);
+  }catch(Throwable $e){
+    return false;
+  }
+}
 
 /* ------------------ HELPERS ------------------ */
 function fmtDate(?string $d): string {
@@ -134,7 +145,7 @@ if (!$camp) { http_response_code(404); echo "Not found"; exit; }
 
 /* ------------------ LOAD FIELDS ------------------ */
 $fieldsSt = $pdo->prepare("
-  SELECT id,label,type,required,options_json,field_key
+  SELECT id,label," . (has_col($pdo, 'camps_fields', 'label_en') ? "label_en" : "'' AS label_en") . ",type,required,options_json,field_key
   FROM camps_fields
   WHERE camp_id=?
   ORDER BY sort_order ASC, id ASC
@@ -144,7 +155,8 @@ $fields = $fieldsSt->fetchAll(PDO::FETCH_ASSOC);
 
 /* ------------------ LOAD POSTS ------------------ */
 $postsSt = $pdo->prepare("
-  SELECT id,title,cover,body,created_at
+  SELECT id,title," . (has_col($pdo, 'camps_posts', 'title_en') ? "title_en" : "'' AS title_en") . ",
+         cover,body," . (has_col($pdo, 'camps_posts', 'body_en') ? "body_en" : "'' AS body_en") . ",created_at
   FROM camps_posts
   WHERE camp_id=?
   ORDER BY id DESC
@@ -316,7 +328,9 @@ if (isset($_GET['ok']) && $_GET['ok'] === '1') {
 }
 
 $campName  = (string)($camp['name'] ?? '');
+$campNameEn  = (string)($camp['name_en'] ?? '');
 $campText  = (string)($camp['card_text'] ?? '');
+$campTextEn  = (string)($camp['card_text_en'] ?? '');
 $campCover = (string)($camp['cover'] ?? '');
 $campStart = fmtDate((string)($camp['start_date'] ?? ''));
 $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
@@ -623,9 +637,9 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
         </div>
 
         <div>
-          <h1 class="title"><?=h($campName)?></h1>
-          <?php if ($campText !== ''): ?>
-            <div class="muted" style="margin-top:6px"><?=h($campText)?></div>
+          <h1 class="title" data-i18n-text data-text-ka="<?=h($campName)?>" data-text-en="<?=h($campNameEn)?>"><?=h($campName)?></h1>
+          <?php if ($campText !== '' || $campTextEn !== ''): ?>
+            <div class="muted" style="margin-top:6px" data-i18n-text data-text-ka="<?=h($campText)?>" data-text-en="<?=h($campTextEn)?>"><?=h($campText !== '' ? $campText : $campTextEn)?></div>
           <?php endif; ?>
 
           <div class="meta">
@@ -648,6 +662,12 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
         <div class="muted" style="margin-top:10px" data-i18n="campsView.postsEmpty">პოსტები ჯერ არ დამატებულა.</div>
       <?php else: ?>
         <?php foreach ($posts as $p): $pid=(int)$p['id']; ?>
+          <?php
+            $postTitle = (string)($p['title'] ?? '');
+            $postTitleEn = (string)($p['title_en'] ?? '');
+            $postBody = (string)($p['body'] ?? '');
+            $postBodyEn = (string)($p['body_en'] ?? '');
+          ?>
           <article class="post">
             <div class="postTop">
               <?php if (!empty($p['cover'])): ?>
@@ -655,13 +675,13 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
               <?php endif; ?>
 
               <div>
-                <div class="postTitle"><?=h((string)$p['title'])?></div>
+                <div class="postTitle" data-i18n-text data-text-ka="<?=h($postTitle)?>" data-text-en="<?=h($postTitleEn)?>"><?=h($postTitle)?></div>
                 <div class="muted postDate"><?=h(fmtDateTime((string)$p['created_at']))?></div>
               </div>
             </div>
 
-            <?php if (!empty($p['body'])): ?>
-              <div class="postBody"><?=h((string)$p['body'])?></div>
+            <?php if ($postBody !== '' || $postBodyEn !== ''): ?>
+              <div class="postBody" data-i18n-text data-text-ka="<?=h($postBody)?>" data-text-en="<?=h($postBodyEn)?>"><?=h($postBody !== '' ? $postBody : $postBodyEn)?></div>
             <?php endif; ?>
 
             <?php $g = $mediaByPost[$pid] ?? []; if ($g): ?>
@@ -696,6 +716,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
             <?php foreach ($fields as $f):
               $id    = (int)$f['id'];
               $label = (string)$f['label'];
+              $labelEn = (string)($f['label_en'] ?? '');
               $type  = (string)$f['type'];
               $req   = (int)$f['required'] === 1;
               $autofill = field_autofill_key($f);
@@ -704,7 +725,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
             ?>
               <div>
                 <label for="<?=h($inputId)?>">
-                  <?=h($label)?> <?= $req ? '<span class="req">*</span>' : '' ?>
+                  <span data-i18n-text data-text-ka="<?=h($label)?>" data-text-en="<?=h($labelEn)?>"><?=h($label)?></span> <?= $req ? '<span class="req">*</span>' : '' ?>
                 </label>
 
                 <?php if ($type === 'select'): ?>

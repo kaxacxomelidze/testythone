@@ -203,6 +203,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <input id="gTitle" required>
 
           <div style="height:10px"></div>
+          <label class="small">სათაური (EN)</label>
+          <input id="gTitleEn">
+
+          <div style="height:10px"></div>
           <label class="small">Slug (optional)</label>
           <input id="gSlug" placeholder="ავტომატურადაც შეიძლება">
           <div class="small" style="margin-top:6px">TIP: თუ ცარიელია, backend თვითონ გააკეთებს slug-ს.</div>
@@ -210,6 +214,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div style="height:10px"></div>
           <label class="small">მოკლე აღწერა</label>
           <input id="gDesc">
+
+          <div style="height:10px"></div>
+          <label class="small">მოკლე აღწერა (EN)</label>
+          <input id="gDescEn">
 
           <div style="height:10px"></div>
           <label class="small">ქავერის სურათი (upload)</label>
@@ -273,6 +281,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="card" style="margin-top:12px">
         <label class="small">სრული აღწერა *</label>
         <textarea id="gBodyText" required></textarea>
+
+        <div style="height:10px"></div>
+        <label class="small">სრული აღწერა (EN)</label>
+        <textarea id="gBodyTextEn"></textarea>
       </div>
 
       <div class="actions" style="margin-top:12px">
@@ -528,14 +540,17 @@ function editGrant(g){
   document.getElementById('gmTitle').textContent = "გრანტის რედაქტირება";
   document.getElementById('gid').value = String(g.id || 0);
   document.getElementById('gTitle').value = g.title || '';
+  document.getElementById('gTitleEn').value = g.title_en || '';
   document.getElementById('gSlug').value = g.slug || '';
   document.getElementById('gDesc').value = g.description || '';
+  document.getElementById('gDescEn').value = g.description_en || '';
   document.getElementById('gDeadline').value = g.deadline || '';
   document.getElementById('gStatus').value = g.status || 'current';
   document.getElementById('gApplyUrl').value = g.apply_url || '';
   document.getElementById('gSort').value = String(Number(g.sort_order || 0));
   document.getElementById('gActive').value = String(g.is_active) === '1' ? '1' : '0';
   document.getElementById('gBodyText').value = g.body || '';
+  document.getElementById('gBodyTextEn').value = g.body_en || '';
   document.getElementById('gImgPath').value = g.image_path || '';
   document.getElementById('gImgFile').value = '';
   document.getElementById('gMaxPerson').value = (g.max_amount_person ?? '') === null ? '' : String(g.max_amount_person ?? '');
@@ -558,14 +573,17 @@ async function saveGrant(ev){
     const fd = new FormData();
     fd.append("id", String(id));
     fd.append("title", document.getElementById('gTitle').value.trim());
+    fd.append("title_en", document.getElementById('gTitleEn').value.trim());
     fd.append("slug", document.getElementById('gSlug').value.trim());
     fd.append("description", document.getElementById('gDesc').value.trim());
+    fd.append("description_en", document.getElementById('gDescEn').value.trim());
     fd.append("deadline", document.getElementById('gDeadline').value || '');
     fd.append("status", document.getElementById('gStatus').value);
     fd.append("apply_url", document.getElementById('gApplyUrl').value.trim());
     fd.append("sort_order", String(Number(document.getElementById('gSort').value || 0)));
     fd.append("is_active", document.getElementById('gActive').value === '1' ? "1" : "0");
     fd.append("body", document.getElementById('gBodyText').value.trim());
+    fd.append("body_en", document.getElementById('gBodyTextEn').value.trim());
     fd.append("existing_image_path", document.getElementById('gImgPath').value.trim());
     fd.append("max_amount_person", (document.getElementById('gMaxPerson').value || '').trim());
     fd.append("max_amount_org", (document.getElementById('gMaxOrg').value || '').trim());

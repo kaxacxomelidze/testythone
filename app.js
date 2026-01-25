@@ -147,7 +147,7 @@
       'campsView.submitted': 'გაიგზავნა ✅',
       'campsView.submit': 'გაგზავნა',
       'campsView.errorRequired': 'გთხოვ შეავსო სავალდებულო ველები (*)',
-      'campsView.submitting': 'იგზავნება...'
+      'campsView.submitting': 'იგზავნება...',
       'newsIndex.paginationAria': 'გვერდები'
     },
 
@@ -287,7 +287,7 @@
       'campsView.submitted': 'Submitted ✅',
       'campsView.submit': 'Submit',
       'campsView.errorRequired': 'Please fill the required fields (*)',
-      'campsView.submitting': 'Submitting...'
+      'campsView.submitting': 'Submitting...',
       'newsIndex.paginationAria': 'Pagination'
     }
   };
@@ -311,6 +311,14 @@
   function applyTranslations(lang) {
     const dict = translations[lang] || translations.ka;
     document.documentElement.lang = lang;
+    const decode = (() => {
+      const el = document.createElement('textarea');
+      return (value) => {
+        if (value === null || value === undefined) return '';
+        el.innerHTML = String(value);
+        return el.value;
+      };
+    })();
 
     // textContent
     document.querySelectorAll('[data-i18n]').forEach((el) => {
@@ -334,6 +342,14 @@
       if (key && Object.prototype.hasOwnProperty.call(dict, key)) {
         el.setAttribute('aria-label', dict[key]);
       }
+    });
+
+    // dynamic text content (db-driven)
+    document.querySelectorAll('[data-i18n-text]').forEach((el) => {
+      const primary = el.getAttribute(lang === 'en' ? 'data-text-en' : 'data-text-ka');
+      const fallback = el.getAttribute(lang === 'en' ? 'data-text-ka' : 'data-text-en');
+      const value = (primary !== null && primary !== '') ? primary : (fallback ?? '');
+      if (value !== null) el.textContent = decode(value);
     });
 
     syncLangButtons(lang);

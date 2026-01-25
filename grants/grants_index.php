@@ -9,6 +9,17 @@ $pdo = db();
 if (!function_exists('h')) {
   function h($s): string { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 }
+function has_col(PDO $pdo, string $table, string $col): bool {
+  $table = preg_replace('/[^a-zA-Z0-9_]+/', '', $table);
+  $col   = preg_replace('/[^a-zA-Z0-9_]+/', '', $col);
+  if ($table === '' || $col === '') return false;
+  try{
+    $q = $pdo->query("SHOW COLUMNS FROM `$table` LIKE " . $pdo->quote($col));
+    return (bool)$q->fetch(PDO::FETCH_ASSOC);
+  }catch(Throwable $e){
+    return false;
+  }
+}
 
 function grants_url(array $g): string {
   $id = (int)($g['id'] ?? 0);
@@ -52,6 +63,9 @@ function is_deadline_passed(?string $deadline): bool {
 }
 
 $applyDefault = "/youthagency/grants/grants_apply.php";
+$hasTitleEn = has_col($pdo, 'grants', 'title_en');
+$hasDescEn = has_col($pdo, 'grants', 'description_en');
+$hasBodyEn = has_col($pdo, 'grants', 'body_en');
 
 $page    = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 9;
@@ -74,7 +88,9 @@ $totalPages = max(1, (int)ceil($total / $perPage));
  * ✅ List items
  */
 $st = $pdo->prepare("
-  SELECT id,title,slug,description,body,deadline,status,apply_url,sort_order
+  SELECT id,title," . ($hasTitleEn ? "title_en" : "'' AS title_en") . ",
+         slug,description," . ($hasDescEn ? "description_en" : "'' AS description_en") . ",
+         body," . ($hasBodyEn ? "body_en" : "'' AS body_en") . ",deadline,status,apply_url,sort_order
   FROM grants
   $where
   ORDER BY sort_order ASC, deadline ASC, id DESC
@@ -381,12 +397,17 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
             $descSrc = (string)($g['description'] ?? '');
             if ($descSrc === '' && !empty($g['body'])) $descSrc = (string)$g['body'];
             $desc = excerpt($descSrc, 170);
+            $descSrcEn = (string)($g['description_en'] ?? '');
+            if ($descSrcEn === '' && !empty($g['body_en'])) $descSrcEn = (string)$g['body_en'];
+            $descEn = excerpt($descSrcEn, 170);
 
             $url = grants_url($g);
           ?>
           <article class="card">
             <div class="card-top">
-              <h3 class="card-title"><?=h((string)$g['title'])?></h3>
+              <h3 class="card-title" data-i18n-text data-text-ka="<?=h((string)$g['title'])?>" data-text-en="<?=h((string)($g['title_en'] ?? ''))?>">
+                <?=h((string)$g['title'])?>
+              </h3>
 
               <span class="pill <?=h($pillClass)?>">
                 <i class="fa-solid fa-circle" style="font-size:8px;opacity:.8"></i>
@@ -394,7 +415,7 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
               </span>
             </div>
 
-            <div class="card-desc"><?=h($desc)?></div>
+            <div class="card-desc" data-i18n-text data-text-ka="<?=h($desc)?>" data-text-en="<?=h($descEn)?>"><?=h($desc !== '' ? $desc : $descEn)?></div>
 
             <div class="meta">
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">

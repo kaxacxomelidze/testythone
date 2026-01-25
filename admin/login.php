@@ -42,6 +42,29 @@ function rl_write(array $data): void {
   @file_put_contents($tmp, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
   @rename($tmp, $p);
 }
+function register_failed_attempt(array &$rl, string $ip, array &$entry, int $now, int $MAX_ATTEMPTS, int $LOCK_SEC): void {
+  $entry['count'] = (int)($entry['count'] ?? 0) + 1;
+  $entry['last']  = $now;
+
+  if ($entry['count'] >= $MAX_ATTEMPTS) {
+    $entry['lock_until'] = $now + $LOCK_SEC;
+  }
+
+  $rl[$ip] = $entry;
+  rl_write($rl);
+}
+
+function new_login_captcha(): array {
+  $a = random_int(2, 9);
+  $b = random_int(1, 9);
+  $_SESSION['login_captcha'] = [
+    'a' => $a,
+    'b' => $b,
+    'answer' => $a + $b,
+    'ts' => time(),
+  ];
+  return $_SESSION['login_captcha'];
+}
 
 $ip  = client_ip();
 $now = time();
@@ -56,6 +79,7 @@ $isLocked = ((int)($entry['lock_until'] ?? 0) > $now);
 
 $error = '';
 $genericError = 'მომხმარებელი ან პაროლი არასწორია.';
+$captcha = $_SESSION['login_captcha'] ?? new_login_captcha();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -77,19 +101,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       $u = trim((string)($_POST['user'] ?? ''));
       $p = (string)($_POST['pass'] ?? '');
+      $cap = (string)($_POST['captcha'] ?? '');
+      $captchaAnswer = (int)($captcha['answer'] ?? -1);
+      $captchaOk = ($cap !== '' && (int)$cap === $captchaAnswer);
 
       // DB lookup (prepared statement)
-      $stmt = $pdo->prepare("SELECT id, username, password_hash, role, is_active FROM admin_users WHERE username = ? LIMIT 1");
-      $stmt->execute([$u]);
-      $user = $stmt->fetch();
-
       $ok = false;
-
-      if ($user && (int)$user['is_active'] === 1) {
-        $ok = password_verify($p, (string)$user['password_hash']);
+      if (!$captchaOk) {
+        $error = 'კოდს ვერ ვადასტურებთ. სცადე თავიდან.';
+        register_failed_attempt($rl, $ip, $entry, $now, $MAX_ATTEMPTS, $LOCK_SEC);
       } else {
-        // timing noise to avoid user enumeration timing
-        password_verify($p, password_hash('dummy', PASSWORD_DEFAULT));
+        $stmt = $pdo->prepare("SELECT id, username, password_hash, role, is_active FROM admin_users WHERE username = ? LIMIT 1");
+        $stmt->execute([$u]);
+        $user = $stmt->fetch();
+
+        if ($user && (int)$user['is_active'] === 1) {
+          $ok = password_verify($p, (string)$user['password_hash']);
+        } else {
+          // timing noise to avoid user enumeration timing
+          password_verify($p, password_hash('dummy', PASSWORD_DEFAULT));
+        }
       }
 
       if ($ok) {
@@ -121,22 +152,15 @@ if (function_exists('log_admin')) {
         exit;
       }
 
-      // fail -> limiter
-      $entry['count'] = (int)$entry['count'] + 1;
-      $entry['last']  = $now;
-
-      if ($entry['count'] >= $MAX_ATTEMPTS) {
-        $entry['lock_until'] = $now + $LOCK_SEC;
+      if (!$ok && $error === '') {
+        register_failed_attempt($rl, $ip, $entry, $now, $MAX_ATTEMPTS, $LOCK_SEC);
+        $error = $genericError;
       }
-
-      $rl[$ip] = $entry;
-      rl_write($rl);
-
-      $error = $genericError;
     }
   }
 }
 
+$captcha = new_login_captcha();
 $isLocked = ((int)($entry['lock_until'] ?? 0) > $now);
 ?>
 <!doctype html>
@@ -234,6 +258,11 @@ $isLocked = ((int)($entry['lock_until'] ?? 0) > $now);
         <label class="muted" for="pass">პაროლი</label>
         <input id="pass" name="pass" type="password" placeholder="Password" required>
       </div>
+    </div>
+
+    <div style="margin-top:12px">
+      <label class="muted" for="captcha">უსაფრთხოების კოდი: <?= h((string)$captcha['a']) ?> + <?= h((string)$captcha['b']) ?> = ?</label>
+      <input id="captcha" name="captcha" inputmode="numeric" pattern="[0-9]*" placeholder="შეიყვანე პასუხი" required>
     </div>
 
     <div class="right">
