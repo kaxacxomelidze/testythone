@@ -1276,8 +1276,8 @@ function renderStep(){
 
 function bindFields(activeDbStep, fields, idx, isFiles){
   document.querySelectorAll("[data-field]").forEach(el=>{
-    el.addEventListener("input", ()=>{
-      const k = el.getAttribute("data-field");
+    const k = el.getAttribute("data-field");
+    const syncValue = ()=>{
       state.form_data[k] = el.value;
 
       const tf = findApplicantTypeField();
@@ -1286,14 +1286,17 @@ function bindFields(activeDbStep, fields, idx, isFiles){
         state.applicantType = t || "person";
         renderStep();
       }
-    });
-    const k = el.getAttribute("data-field");
-    if(state.form_data[k] == null && el.value) state.form_data[k] = el.value;
+    };
+
+    el.addEventListener("input", syncValue);
+    el.addEventListener("change", syncValue);
+
+    if(state.form_data[k] == null) state.form_data[k] = el.value ?? "";
   });
 
   document.querySelectorAll("[data-group]").forEach(el=>{
-    el.addEventListener("change", ()=>{
-      const k = el.getAttribute("data-group");
+    const k = el.getAttribute("data-group");
+    const syncGroup = ()=>{
       const list = Array.from(document.querySelectorAll(`input[data-group="${k}"]`));
       const isRadio = list.some(x => x.type === "radio");
       if(isRadio){
@@ -1302,7 +1305,10 @@ function bindFields(activeDbStep, fields, idx, isFiles){
       } else {
         state.form_data[k] = list.filter(x => x.checked).map(x => x.value);
       }
-    });
+    };
+
+    el.addEventListener("change", syncGroup);
+    if(state.form_data[k] == null) syncGroup();
   });
 
   document.querySelectorAll("[data-file-field]").forEach(inp=>{
