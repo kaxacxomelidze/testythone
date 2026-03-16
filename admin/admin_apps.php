@@ -657,6 +657,7 @@ let ACTIVE_APP_ID = 0;
 
 /* cache field labels per grant */
 const FIELD_LABELS = new Map(); // grant_id -> { field_89: "სახელი", ... }
+const FIELD_TYPES  = new Map(); // grant_id -> { field_89: "text"|"budget_table"|... }
 function looksLikeFieldKey(k){
   const s = String(k || "");
   return /^field_\d+$/i.test(s) || /^f_\d+$/i.test(s) || /^\d+$/.test(s);
@@ -703,13 +704,22 @@ function getSubmissionMeta(formData){
 async function ensureFieldLabels(grantId){
   grantId = Number(grantId || 0);
   if(!grantId) return;
-  if(FIELD_LABELS.has(grantId)) return;
+  if(FIELD_LABELS.has(grantId) && FIELD_TYPES.has(grantId)) return;
   try{
     const j = await api("grant_fields_map", {grant_id: grantId});
     FIELD_LABELS.set(grantId, j.map || {});
+
+    const types = {};
+    const fields = (j && typeof j.fields === "object" && j.fields) ? j.fields : {};
+    for(const [k,v] of Object.entries(fields)){
+      const nk = normalizeFieldKey(k);
+      types[nk] = String(v?.type || "").toLowerCase();
+    }
+    FIELD_TYPES.set(grantId, types);
   }catch(e){
     console.warn("No fields map:", e?.message);
     FIELD_LABELS.set(grantId, {});
+    FIELD_TYPES.set(grantId, {});
   }
 }
 
@@ -916,11 +926,72 @@ function fmtMoney(n){
 }
 function looksLikeBudgetRow(r){
   if(!r || typeof r !== "object") return false;
-  const a = Number(r.amount ?? r.sum ?? r.total ?? 0);
-  const cat = (r.cat ?? r.category ?? "").toString().trim();
-  const desc = (r.desc ?? r.description ?? "").toString().trim();
-  // ✅ allow amount too
-  return (!Number.isNaN(a) && a > 0) || !!cat || !!desc;
+
+  const entries = Object.entries(r)
+    .filter(([k]) => String(k) !== "__meta")
+    .map(([k,v]) => [String(k), parseJsonMaybe(v)]);
+
+  if(!entries.length) return false;
+
+  const hasScalar = entries.some(([,v]) => {
+    if(v === null || v === undefined) return false;
+    if(typeof v === "string") return v.trim() !== "";
+    if(typeof v === "number") return !Number.isNaN(v);
+    if(typeof v === "boolean") return true;
+    return false;
+  });
+
+  return hasScalar;
+}
+
+function findBudgetAmountKey(rowObj){
+  if(!rowObj || typeof rowObj !== "object") return "";
+  const keys = Object.keys(rowObj);
+  const byName = keys.find(k => /(^|_)(amount|sum|total|price|cost)(_|$)|თანხ/i.test(String(k)));
+  if(byName) return byName;
+  const byNumeric = keys.find(k => {
+    const v = Number(rowObj[k]);
+    return !Number.isNaN(v) && Number.isFinite(v);
+  });
+  return byNumeric || "";
+}
+
+function normalizeBudgetRow(rowObj){
+  rowObj = parseJsonMaybe(rowObj);
+  if(!rowObj || typeof rowObj !== "object") return null;
+
+  const amountKey = findBudgetAmountKey(rowObj);
+  const amount = amountKey ? Number(rowObj[amountKey] ?? 0) : 0;
+
+  const keys = Object.keys(rowObj).filter(k => String(k) !== "__meta");
+  const catKey = keys.find(k => /(^|_)(cat|category|item|name|title)(_|$)|კატეგ|დასახელებ/i.test(String(k)));
+  const descKey = keys.find(k => /(^|_)(desc|description|details|note)(_|$)|აღწერ|დეტალ/i.test(String(k)));
+
+  const cat = catKey ? String(rowObj[catKey] ?? "").trim() : "";
+  const desc = descKey ? String(rowObj[descKey] ?? "").trim() : "";
+
+  const extras = [];
+  let hasContent = false;
+  for(const k of keys){
+    if(k === amountKey || k === catKey || k === descKey) continue;
+    const v = rowObj[k];
+    if(v === null || v === undefined) continue;
+    const txt = (typeof v === "string") ? v.trim() : (typeof v === "object" ? JSON.stringify(v) : String(v));
+    if(!txt) continue;
+    hasContent = true;
+    extras.push(`${k}: ${txt}`);
+  }
+
+  if(cat) hasContent = true;
+  if(desc) hasContent = true;
+  if(amountKey) hasContent = true;
+
+  return {
+    cat,
+    desc: desc || extras.join(" • "),
+    amount: Number.isFinite(amount) ? amount : 0,
+    hasContent,
+  };
 }
 
 /* ✅ NEW: smart detect "budget table value" object */
@@ -941,8 +1012,31 @@ function looksLikeBudgetValue(v){
   return false;
 }
 
+function isBudgetFieldType(t){
+  const s = String(t || "").toLowerCase();
+  return s === "budget_table" || s === "budget" || s.includes("budget");
+}
+
+function fieldTypeForKey(grantId, key){
+  const map = FIELD_TYPES.get(Number(grantId)) || {};
+  return String(map[normalizeFieldKey(key)] || "").toLowerCase();
+}
+
+function rowsFromBudgetValue(v){
+  const pv = parseJsonMaybe(v);
+  if(!pv) return null;
+
+  if(Array.isArray(pv) && pv.some(x => normalizeBudgetRow(x)?.hasContent)) return pv;
+  if(typeof pv === "object"){
+    if(Array.isArray(pv.rows) && pv.rows.some(x => normalizeBudgetRow(x)?.hasContent)) return pv.rows;
+    if(normalizeBudgetRow(pv)?.hasContent) return [pv];
+  }
+
+  return null;
+}
+
 /* ✅ NEW: deep search that also checks "field_*" values JSON */
-function deepFindBudgetRows(obj, depth=0){
+function deepFindBudgetRows(obj, depth=0, grantId=0){
   if(depth > 7) return null;
   obj = parseJsonMaybe(obj);
   if(!obj) return null;
@@ -951,7 +1045,7 @@ function deepFindBudgetRows(obj, depth=0){
   if(Array.isArray(obj)){
     if(obj.some(x => looksLikeBudgetRow(parseJsonMaybe(x)))) return obj;
     for(const v of obj){
-      const r = deepFindBudgetRows(v, depth+1);
+      const r = deepFindBudgetRows(v, depth+1, grantId);
       if(r) return r;
     }
     return null;
@@ -969,15 +1063,15 @@ function deepFindBudgetRows(obj, depth=0){
   // case: object has rows itself
   if(Array.isArray(obj.rows) && obj.rows.some(x => looksLikeBudgetRow(parseJsonMaybe(x)))) return obj.rows;
 
-  // ✅ case: field_123 contains {"rows":[...]} or rows array
+  // ✅ case: field_123 can be budget by type OR by key hints
   for(const [k,v] of Object.entries(obj)){
     const kk = String(k).toLowerCase();
-    if(kk.startsWith("field_") || kk.startsWith("f_") || kk.includes("budget") || kk.includes("ბიუჯ")){
-      const pv = parseJsonMaybe(v);
-      if(looksLikeBudgetValue(pv)){
-        if(Array.isArray(pv)) return pv;
-        if(pv && typeof pv === "object" && Array.isArray(pv.rows)) return pv.rows;
-      }
+    const isFieldKey = kk.startsWith("field_") || kk.startsWith("f_") || /^\d+$/.test(kk);
+    const typedBudget = isFieldKey && isBudgetFieldType(fieldTypeForKey(grantId, kk));
+
+    if(typedBudget || kk.includes("budget") || kk.includes("ბიუჯ")){
+      const rows = rowsFromBudgetValue(v);
+      if(rows) return rows;
     }
   }
 
@@ -985,12 +1079,12 @@ function deepFindBudgetRows(obj, depth=0){
   for(const [k,v] of Object.entries(obj)){
     const kk = String(k).toLowerCase();
     if(kk.includes("budget") || kk.includes("ბიუჯ")){
-      const r = deepFindBudgetRows(v, depth+1);
+      const r = deepFindBudgetRows(v, depth+1, grantId);
       if(r) return r;
     }
   }
   for(const v of Object.values(obj)){
-    const r = deepFindBudgetRows(v, depth+1);
+    const r = deepFindBudgetRows(v, depth+1, grantId);
     if(r) return r;
   }
 
@@ -1005,7 +1099,7 @@ function showBudgetInModal(formData, rowsHint=null){
   if(!wrap || !body || !totalEl) return;
 
   // ✅ prefer rowsHint (from resolved); fallback deep search in raw formData
-  const rows = Array.isArray(rowsHint) ? rowsHint : deepFindBudgetRows(formData);
+  const rows = Array.isArray(rowsHint) ? rowsHint : deepFindBudgetRows(formData, 0, Number(window.__activeGrantIdForBudget || 0));
 
   if(!rows){
     wrap.style.display = "none";
@@ -1015,14 +1109,9 @@ function showBudgetInModal(formData, rowsHint=null){
     return;
   }
 
-  const norm = rows.map(r=>{
-    r = parseJsonMaybe(r) || {};
-    return {
-      cat: (r.cat ?? r.category ?? "").toString(),
-      desc: (r.desc ?? r.description ?? "").toString(),
-      amount: Number(r.amount ?? r.sum ?? r.total ?? 0)
-    };
-  }).filter(r => (r.cat || r.desc || Number(r.amount||0) > 0));
+  const norm = rows
+    .map(r => normalizeBudgetRow(r))
+    .filter(r => r && r.hasContent);
 
   const total = norm.reduce((s,r)=>s + Number(r.amount||0), 0);
 
@@ -1046,10 +1135,11 @@ function showBudgetInModal(formData, rowsHint=null){
 function extractBudgetRowsFromResolved(resolved){
   if(!Array.isArray(resolved)) return null;
   for(const row of resolved){
-    if(!row || row.type !== "budget_table") continue;
+    const rowType = String(row?.type || "").toLowerCase();
+    if(!row || (!rowType.includes("budget") && rowType !== "budget_table")) continue;
     const val = parseJsonMaybe(row.value);
-    if(val && typeof val === "object" && Array.isArray(val.rows) && val.rows.some(x=>looksLikeBudgetRow(parseJsonMaybe(x)))) return val.rows;
-    if(Array.isArray(val) && val.some(x=>looksLikeBudgetRow(parseJsonMaybe(x)))) return val;
+    const rows = rowsFromBudgetValue(val);
+    if(rows) return rows;
   }
   return null;
 }
@@ -1083,8 +1173,9 @@ function flattenObject(obj, prefix="", out=[]){
     for(const [k,v] of Object.entries(obj)){
       if(String(k) === "__meta") continue;
       const key = prefix ? `${prefix}.${k}` : k;
-      if(v && typeof v === "object"){
-        flattenObject(v, key, out);
+      const pv = parseJsonMaybe(v);
+      if(pv && typeof pv === "object"){
+        flattenObject(pv, key, out);
       }else{
         out.push([key, valToText(v)]);
       }
@@ -1114,6 +1205,14 @@ function resolveLabelForKey(grantId, key){
   return k;
 }
 
+function valueToDisplayText(v){
+  if(v === null || v === undefined) return "—";
+  if(typeof v === "boolean") return v ? "true" : "false";
+  if(typeof v === "number") return Number.isFinite(v) ? String(v) : "—";
+  const txt = String(v);
+  return txt.trim() === "" ? "—" : txt;
+}
+
 function renderPretty(formData, app){
   const box = document.getElementById("amPretty");
   if(!box) return;
@@ -1135,7 +1234,7 @@ function renderPretty(formData, app){
 
     const label = resolveLabelForKey(grantId, kk);
     const normalizedValue = normalizeAnswerValue(label, v);
-    rows.push({label, value: normalizedValue, rawKey: kk});
+    rows.push({label, value: valueToDisplayText(normalizedValue), rawKey: kk});
   }
 
   box.innerHTML = rows.map(row=>{
@@ -1143,7 +1242,7 @@ function renderPretty(formData, app){
     return `
       <div class="answerCard" data-label="${escAttr(row.label)}" data-key="${escAttr(row.rawKey)}">
         <div class="answerLabel">${esc(row.label)}</div>
-        <div class="answerValue">${esc(row.value || "—")}</div>
+        <div class="answerValue">${esc(row.value)}</div>
         ${showMeta ? `<div class="answerMeta">path: ${esc(row.rawKey)}</div>` : ""}
       </div>
     `;
@@ -1389,7 +1488,11 @@ async function openApp(id, grantIdHint=0){
     if(meta && meta.field_labels){
       FIELD_LABELS.set(Number(a.grant_id || 0), meta.field_labels);
     }
+    if(meta && meta.field_types && typeof meta.field_types === "object"){
+      FIELD_TYPES.set(Number(a.grant_id || 0), meta.field_types);
+    }
 
+    window.__activeGrantIdForBudget = Number(a.grant_id || 0);
     renderApplicantTypePill(fd);
     renderPretty(fd, a);
     renderUploads(a.uploads || [], fd, Number(a.grant_id || 0));
