@@ -916,11 +916,65 @@ function fmtMoney(n){
 }
 function looksLikeBudgetRow(r){
   if(!r || typeof r !== "object") return false;
-  const a = Number(r.amount ?? r.sum ?? r.total ?? 0);
-  const cat = (r.cat ?? r.category ?? "").toString().trim();
-  const desc = (r.desc ?? r.description ?? "").toString().trim();
-  // ✅ allow amount too
-  return (!Number.isNaN(a) && a > 0) || !!cat || !!desc;
+
+  const entries = Object.entries(r)
+    .filter(([k]) => String(k) !== "__meta")
+    .map(([k,v]) => [String(k), parseJsonMaybe(v)]);
+
+  if(!entries.length) return false;
+
+  const hasScalar = entries.some(([,v]) => {
+    if(v === null || v === undefined) return false;
+    if(typeof v === "string") return v.trim() !== "";
+    if(typeof v === "number") return !Number.isNaN(v);
+    if(typeof v === "boolean") return true;
+    return false;
+  });
+
+  return hasScalar;
+}
+
+function findBudgetAmountKey(rowObj){
+  if(!rowObj || typeof rowObj !== "object") return "";
+  const keys = Object.keys(rowObj);
+  const byName = keys.find(k => /(^|_)(amount|sum|total|price|cost)(_|$)|თანხ/i.test(String(k)));
+  if(byName) return byName;
+  const byNumeric = keys.find(k => {
+    const v = Number(rowObj[k]);
+    return !Number.isNaN(v) && Number.isFinite(v);
+  });
+  return byNumeric || "";
+}
+
+function normalizeBudgetRow(rowObj){
+  rowObj = parseJsonMaybe(rowObj);
+  if(!rowObj || typeof rowObj !== "object") return null;
+
+  const amountKey = findBudgetAmountKey(rowObj);
+  const amount = amountKey ? Number(rowObj[amountKey] ?? 0) : 0;
+
+  const keys = Object.keys(rowObj).filter(k => String(k) !== "__meta");
+  const catKey = keys.find(k => /(^|_)(cat|category|item|name|title)(_|$)|კატეგ|დასახელებ/i.test(String(k)));
+  const descKey = keys.find(k => /(^|_)(desc|description|details|note)(_|$)|აღწერ|დეტალ/i.test(String(k)));
+
+  const cat = catKey ? String(rowObj[catKey] ?? "").trim() : "";
+  const desc = descKey ? String(rowObj[descKey] ?? "").trim() : "";
+
+  const extras = [];
+  for(const k of keys){
+    if(k === amountKey || k === catKey || k === descKey) continue;
+    const v = rowObj[k];
+    if(v === null || v === undefined) continue;
+    const txt = (typeof v === "string") ? v.trim() : (typeof v === "object" ? JSON.stringify(v) : String(v));
+    if(!txt) continue;
+    extras.push(`${k}: ${txt}`);
+  }
+
+  return {
+    cat,
+    desc: desc || extras.join(" • "),
+    amount: Number.isFinite(amount) ? amount : 0,
+  };
 }
 
 /* ✅ NEW: smart detect "budget table value" object */
@@ -1015,14 +1069,9 @@ function showBudgetInModal(formData, rowsHint=null){
     return;
   }
 
-  const norm = rows.map(r=>{
-    r = parseJsonMaybe(r) || {};
-    return {
-      cat: (r.cat ?? r.category ?? "").toString(),
-      desc: (r.desc ?? r.description ?? "").toString(),
-      amount: Number(r.amount ?? r.sum ?? r.total ?? 0)
-    };
-  }).filter(r => (r.cat || r.desc || Number(r.amount||0) > 0));
+  const norm = rows
+    .map(r => normalizeBudgetRow(r))
+    .filter(r => r && (r.cat || r.desc || Number(r.amount||0) > 0));
 
   const total = norm.reduce((s,r)=>s + Number(r.amount||0), 0);
 
@@ -1046,7 +1095,8 @@ function showBudgetInModal(formData, rowsHint=null){
 function extractBudgetRowsFromResolved(resolved){
   if(!Array.isArray(resolved)) return null;
   for(const row of resolved){
-    if(!row || row.type !== "budget_table") continue;
+    const rowType = String(row?.type || "").toLowerCase();
+    if(!row || rowType !== "budget_table") continue;
     const val = parseJsonMaybe(row.value);
     if(val && typeof val === "object" && Array.isArray(val.rows) && val.rows.some(x=>looksLikeBudgetRow(parseJsonMaybe(x)))) return val.rows;
     if(Array.isArray(val) && val.some(x=>looksLikeBudgetRow(parseJsonMaybe(x)))) return val;
