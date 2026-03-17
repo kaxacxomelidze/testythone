@@ -1263,6 +1263,40 @@ function budgetFieldKeysForGrant(grantId){
 function collectRawBudgetPayloads(formData, grantId){
   const fd = parseJsonMaybe(formData);
   if(!fd || typeof fd !== "object") return [];
+<<<<<<< codex/improve-grants-management-for-users-and-admins-k8fagj
+
+  const typedKeys = new Set(budgetFieldKeysForGrant(grantId));
+  const out = [];
+  const seen = new Set();
+
+  const push = (k, v)=>{
+    const key = String(k || "");
+    const pv = parseJsonMaybe(v);
+    if(!pv || typeof pv !== "object") return;
+    const sig = key + "::" + JSON.stringify(pv);
+    if(seen.has(sig)) return;
+    seen.add(sig);
+    out.push({ key, value: pv });
+  };
+
+  // 1) typed budget keys from builder map
+  for(const k of typedKeys){
+    if(k in fd) push(k, fd[k]);
+  }
+
+  // 2) generic fallback: any field_* / budget-like key with usable budget shape
+  for(const [k,v] of Object.entries(fd)){
+    const kk = String(k).toLowerCase();
+    const isFieldKey = kk.startsWith("field_") || kk.startsWith("f_") || /^\d+$/.test(kk);
+    const budgetishKey = kk.includes("budget") || kk.includes("ბიუჯ") || typedKeys.has(k);
+
+    const pv = parseJsonMaybe(v);
+    const usable = !!rowsFromBudgetValue(pv) || (!!pv && typeof pv === "object" && (Array.isArray(pv.rows) || Array.isArray(pv.columns)));
+
+    if((isFieldKey || budgetishKey) && usable) push(k, v);
+  }
+
+=======
   const keys = budgetFieldKeysForGrant(grantId);
   const out = [];
   for(const k of keys){
@@ -1271,6 +1305,7 @@ function collectRawBudgetPayloads(formData, grantId){
     if(v === null || v === undefined) continue;
     out.push({ key:k, value:v });
   }
+>>>>>>> main
   return out;
 }
 
