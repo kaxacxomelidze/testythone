@@ -1266,7 +1266,7 @@ function showBudgetInModal(formData, rowsHint=null){
   const hintRows = Array.isArray(rowsHint) ? rowsHint : null;
   const budgetValue = deepFindBudgetValue(formData, 0, gid);
   const valueRows = rowsFromBudgetValue(budgetValue);
-  const rows = hintRows || valueRows || deepFindBudgetRows(formData, 0, gid);
+  const rows = valueRows || hintRows || deepFindBudgetRows(formData, 0, gid);
 
   if(!rows){
     wrap.style.display = "none";
