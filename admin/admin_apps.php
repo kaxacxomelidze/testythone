@@ -1263,6 +1263,7 @@ function budgetFieldKeysForGrant(grantId){
 function collectRawBudgetPayloads(formData, grantId){
   const fd = parseJsonMaybe(formData);
   if(!fd || typeof fd !== "object") return [];
+<<<<<<< codex/improve-grants-management-for-users-and-admins-k8fagj
 
   const typedKeys = new Set(budgetFieldKeysForGrant(grantId));
   const out = [];
@@ -1295,6 +1296,16 @@ function collectRawBudgetPayloads(formData, grantId){
     if((isFieldKey || budgetishKey) && usable) push(k, v);
   }
 
+=======
+  const keys = budgetFieldKeysForGrant(grantId);
+  const out = [];
+  for(const k of keys){
+    if(!(k in fd)) continue;
+    const v = parseJsonMaybe(fd[k]);
+    if(v === null || v === undefined) continue;
+    out.push({ key:k, value:v });
+  }
+>>>>>>> main
   return out;
 }
 
