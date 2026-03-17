@@ -1117,6 +1117,58 @@ function rowsFromColumnsAndRows(valueObj){
   return mapped.length ? mapped : null;
 }
 
+function columnsFromBudgetValue(v){
+  const pv = parseJsonMaybe(v);
+  if(!pv || typeof pv !== "object") return [];
+  return normalizeBudgetColumns(pv.columns);
+}
+
+function budgetValueLooksUsable(v){
+  return !!rowsFromBudgetValue(v);
+}
+
+function deepFindBudgetValue(obj, depth=0, grantId=0){
+  if(depth > 7) return null;
+  obj = parseJsonMaybe(obj);
+  if(!obj) return null;
+
+  if(Array.isArray(obj)){
+    if(budgetValueLooksUsable(obj)) return obj;
+    for(const v of obj){
+      const r = deepFindBudgetValue(v, depth+1, grantId);
+      if(r) return r;
+    }
+    return null;
+  }
+
+  if(typeof obj !== "object") return null;
+
+  const candidates = [];
+  if(obj.budget !== undefined) candidates.push(obj.budget);
+  if(obj.budget_table !== undefined) candidates.push(obj.budget_table);
+  if(obj.rows !== undefined) candidates.push(obj);
+
+  for(const [k,v] of Object.entries(obj)){
+    const kk = String(k).toLowerCase();
+    const isFieldKey = kk.startsWith("field_") || kk.startsWith("f_") || /^\d+$/.test(kk);
+    const typedBudget = isFieldKey && isBudgetFieldType(fieldTypeForKey(grantId, kk));
+    if(typedBudget || kk.includes("budget") || kk.includes("ბიუჯ") || isFieldKey){
+      candidates.push(v);
+    }
+  }
+
+  for(const c of candidates){
+    if(budgetValueLooksUsable(c)) return c;
+  }
+
+  for(const v of Object.values(obj)){
+    const r = deepFindBudgetValue(v, depth+1, grantId);
+    if(r) return r;
+  }
+
+  return null;
+}
+
 function rowsFromBudgetValue(v){
   const pv = parseJsonMaybe(v);
   if(!pv) return null;
@@ -1210,8 +1262,11 @@ function showBudgetInModal(formData, rowsHint=null){
   const pill = document.getElementById("amBudgetPill");
   if(!wrap || !body || !totalEl) return;
 
-  // ✅ prefer rowsHint (from resolved); fallback deep search in raw formData
-  const rows = Array.isArray(rowsHint) ? rowsHint : deepFindBudgetRows(formData, 0, Number(window.__activeGrantIdForBudget || 0));
+  const gid = Number(window.__activeGrantIdForBudget || 0);
+  const hintRows = Array.isArray(rowsHint) ? rowsHint : null;
+  const budgetValue = deepFindBudgetValue(formData, 0, gid);
+  const valueRows = rowsFromBudgetValue(budgetValue);
+  const rows = hintRows || valueRows || deepFindBudgetRows(formData, 0, gid);
 
   if(!rows){
     wrap.style.display = "none";
@@ -1226,14 +1281,24 @@ function showBudgetInModal(formData, rowsHint=null){
     .filter(r => r && r.hasContent);
 
   const total = norm.reduce((s,r)=>s + Number(r.amount||0), 0);
+  const dynCols = columnsFromBudgetValue(budgetValue);
 
-  body.innerHTML = norm.map(r=>`
-    <tr>
-      <td><b>${esc(r.cat || "-")}</b></td>
-      <td>${esc(r.desc || "-")}</td>
-      <td><b>${fmtMoney(r.amount)}</b></td>
-    </tr>
-  `).join("") || `<tr><td colspan="3" class="small">ბიუჯეტის ჩანაწერი არ არის.</td></tr>`;
+  if(dynCols.length){
+    const header = `<tr>${dynCols.map(c=>`<th>${esc(c.label || c.key)}</th>`).join("")}</tr>`;
+    const rowsHtml = rows.map(rr=>{
+      const rowObj = parseJsonMaybe(rr) || {};
+      return `<tr>${dynCols.map(c=>`<td>${esc(String(rowObj?.[c.key] ?? "-"))}</td>`).join("")}</tr>`;
+    }).join("") || `<tr><td colspan="${dynCols.length}" class="small">ბიუჯეტის ჩანაწერი არ არის.</td></tr>`;
+    body.innerHTML = header + rowsHtml;
+  } else {
+    body.innerHTML = norm.map(r=>`
+      <tr>
+        <td><b>${esc(r.cat || "-")}</b></td>
+        <td>${esc(r.desc || "-")}</td>
+        <td><b>${fmtMoney(r.amount)}</b></td>
+      </tr>
+    `).join("") || `<tr><td colspan="3" class="small">ბიუჯეტის ჩანაწერი არ არის.</td></tr>`;
+  }
 
   totalEl.textContent = fmtMoney(total);
   wrap.style.display = "block";

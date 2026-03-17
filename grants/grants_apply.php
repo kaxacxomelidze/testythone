@@ -989,6 +989,19 @@ function buildSubmissionMeta(applicant){
   };
 }
 
+function budgetPayloadForField(field){
+  const opt = field ? readBudgetOptionsFromField(field) : budgetDefaultOptions();
+  const cols = Array.isArray(opt.columns) ? opt.columns : [];
+  return {
+    rows: (state.data.budget.rows || []),
+    columns: cols.map(c => ({
+      key: String(c?.key || ''),
+      label: String(c?.label || c?.key || ''),
+      type: String(c?.type || 'text')
+    })).filter(c => c.key)
+  };
+}
+
 function bindSubmit(){
   const back = document.getElementById("btnBackS");
   if(back){
@@ -1023,13 +1036,13 @@ function bindSubmit(){
         if(t) state.applicantType = t;
       }
 
-      // sync budget rows into ALL budget_table fields
+      // sync budget rows/columns into ALL budget_table fields
       const all = getAllFieldsFlat();
       const budgetFields = all.filter(f => f.type === "budget_table");
       if(budgetFields.length){
         for(const bf of budgetFields){
           const k = "field_" + bf.id;
-          state.form_data[k] = {rows: (state.data.budget.rows || [])};
+          state.form_data[k] = budgetPayloadForField(bf);
         }
       }
 
@@ -1245,10 +1258,10 @@ function renderStep(){
         renderStep();
       },
       () => {
-        // store rows into budget field if exists
+        // store rows/columns into budget field if exists
         if(budgetField){
           const k = "field_" + budgetField.id;
-          state.form_data[k] = {rows: (state.data.budget.rows || [])};
+          state.form_data[k] = budgetPayloadForField(budgetField);
         }
         state.validByStep[state.currentKey] = true;
         state.currentKey = steps[Math.min(steps.length-1, idx+1)].key;
