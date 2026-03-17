@@ -200,6 +200,7 @@ function ensure_schema(PDO $pdo): void {
 
   if (!has_col($pdo, 'grants', 'max_amount_person')) { try { add_col($pdo, 'grants', "ADD COLUMN max_amount_person DECIMAL(12,2) NULL AFTER apply_url"); } catch(Throwable $e) {} }
   if (!has_col($pdo, 'grants', 'max_amount_org'))    { try { add_col($pdo, 'grants', "ADD COLUMN max_amount_org DECIMAL(12,2) NULL AFTER max_amount_person"); } catch(Throwable $e) {} }
+  if (!has_col($pdo, 'grants', 'max_budget'))       { try { add_col($pdo, 'grants', "ADD COLUMN max_budget DECIMAL(12,2) NULL AFTER max_amount_org"); } catch(Throwable $e) {} }
   if (!has_col($pdo, 'grants', 'title_en'))          { try { add_col($pdo, 'grants', "ADD COLUMN title_en VARCHAR(255) NULL AFTER title"); } catch(Throwable $e) {} }
   if (!has_col($pdo, 'grants', 'description_en'))    { try { add_col($pdo, 'grants', "ADD COLUMN description_en VARCHAR(255) NULL AFTER description"); } catch(Throwable $e) {} }
   if (!has_col($pdo, 'grants', 'body_en'))           { try { add_col($pdo, 'grants', "ADD COLUMN body_en MEDIUMTEXT NULL AFTER body"); } catch(Throwable $e) {} }
@@ -703,7 +704,7 @@ try {
     }
 
     $sql = "SELECT id,title,title_en,slug,description,description_en,body,body_en,deadline,status,apply_url,
-                   max_amount_person,max_amount_org,
+                   max_amount_person,max_amount_org,max_budget,
                    sort_order,is_active,image_path,created_at,updated_at
             FROM grants";
     if ($where) $sql .= " WHERE " . implode(" AND ", $where);
@@ -737,6 +738,8 @@ try {
     $maxO = trim((string)($_POST['max_amount_org'] ?? ''));
     $max_amount_person = ($maxP === '' ? null : (float)$maxP);
     $max_amount_org    = ($maxO === '' ? null : (float)$maxO);
+    $maxB = trim((string)($_POST['max_budget'] ?? ''));
+    $max_budget = ($maxB === '' ? null : (float)$maxB);
 
     if ($title === '') json_err('სათაური სავალდებულოა');
     if ($body === '') json_err('სრული აღწერა სავალდებულოა');
@@ -760,7 +763,7 @@ try {
     if ($id > 0) {
       $st = $pdo->prepare("UPDATE grants
         SET title=?, title_en=?, slug=?, description=?, description_en=?, body=?, body_en=?, deadline=?, status=?, apply_url=?,
-            max_amount_person=?, max_amount_org=?,
+            max_amount_person=?, max_amount_org=?, max_budget=?,
             sort_order=?, is_active=?, image_path=?
         WHERE id=?");
       $st->execute([
@@ -768,22 +771,22 @@ try {
         ($desc !== '' ? $desc : null), ($desc_en !== '' ? $desc_en : null),
         $body, ($body_en !== '' ? $body_en : null),
         $deadlineSql, $status, ($apply_url !== '' ? $apply_url : null),
-        $max_amount_person, $max_amount_org,
+        $max_amount_person, $max_amount_org, $max_budget,
         $sort_order, $is_active ? 1 : 0, ($image_path !== '' ? $image_path : null),
         $id
       ]);
     } else {
       $st = $pdo->prepare("INSERT INTO grants(
           title,title_en,slug,description,description_en,body,body_en,deadline,status,apply_url,
-          max_amount_person,max_amount_org,
+          max_amount_person,max_amount_org,max_budget,
           sort_order,is_active,image_path
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
       $st->execute([
         $title, ($title_en !== '' ? $title_en : null), $slug,
         ($desc !== '' ? $desc : null), ($desc_en !== '' ? $desc_en : null),
         $body, ($body_en !== '' ? $body_en : null),
         $deadlineSql, $status, ($apply_url !== '' ? $apply_url : null),
-        $max_amount_person, $max_amount_org,
+        $max_amount_person, $max_amount_org, $max_budget,
         $sort_order, $is_active ? 1 : 0, ($image_path !== '' ? $image_path : null)
       ]);
       $id = (int)$pdo->lastInsertId();
@@ -1157,6 +1160,20 @@ try {
       }
     }
 
+    $budget_payloads = [];
+    foreach ($fd as $k => $v) {
+      $key = (string)$k;
+      if (!isset($fieldMap[$key])) continue;
+      $t = strtolower((string)($fieldMap[$key]['type'] ?? ''));
+      if ($t !== 'budget_table' && strpos($t, 'budget') === false) continue;
+      $budget_payloads[] = [
+        'key' => $key,
+        'label' => (string)($fieldMap[$key]['label'] ?? $key),
+        'type' => (string)($fieldMap[$key]['type'] ?? 'budget_table'),
+        'value' => $v,
+      ];
+    }
+
     $up = $pdo->prepare("
       SELECT id, file_path, original_name, stored_name, size_bytes, mime_type,
              requirement_id, field_id, field_name, created_at
@@ -1181,6 +1198,7 @@ try {
       'updated_at' => $a['updated_at'],
       'form_data' => $fd,
       'form_data_resolved' => $fdResolved,
+      'budget_payloads' => $budget_payloads,
       'uploads' => $uploads
     ]]);
   }
@@ -1189,14 +1207,18 @@ try {
     $grant_id = (int)($json['grant_id'] ?? 0);
     if ($grant_id <= 0) json_err('grant_id არასწორია');
 
-    $stF = $pdo->prepare("SELECT id,label FROM grant_fields WHERE grant_id=?");
+    $stF = $pdo->prepare("SELECT id,label,type FROM grant_fields WHERE grant_id=?");
     $stF->execute([$grant_id]);
     $map = [];
+    $fields = [];
     foreach ($stF->fetchAll(PDO::FETCH_ASSOC) as $r) {
       $key = 'field_' . (int)$r['id'];
-      $map[$key] = (string)($r['label'] ?? '');
+      $label = (string)($r['label'] ?? '');
+      $type = (string)($r['type'] ?? 'text');
+      $map[$key] = $label;
+      $fields[$key] = ['label' => $label, 'type' => $type];
     }
-    json_ok(['map' => $map]);
+    json_ok(['map' => $map, 'fields' => $fields]);
   }
 
   if ($action === 'app_update_meta') {

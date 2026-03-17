@@ -255,6 +255,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
               <label class="small">მაქს. თანხა — ორგანიზაცია</label>
               <input id="gMaxOrg" type="number" min="0" step="0.01" placeholder="მაგ: 15000">
             </div>
+            <div class="tight">
+              <label class="small">მაქს. ბიუჯეტი (საერთო)</label>
+              <input id="gMaxBudget" type="number" min="0" step="0.01" placeholder="მაგ: 10000">
+            </div>
           </div>
 
           <div style="height:10px"></div>
@@ -465,7 +469,7 @@ function renderGrants(){
               <div class="small">slug: ${esc(g.slug || '')}</div>
               ${g.description ? `<div class="small" title="${esc(g.description)}">${esc(g.description)}</div>` : ``}
               <div class="small">
-                მაქს. თანხა — ფიზ: <b>${fmtMoney(g.max_amount_person)}</b> • ორგ: <b>${fmtMoney(g.max_amount_org)}</b>
+                მაქს. თანხა — ფიზ: <b>${fmtMoney(g.max_amount_person)}</b> • ორგ: <b>${fmtMoney(g.max_amount_org)}</b> • ბიუჯეტი: <b>${fmtMoney(g.max_budget)}</b>
               </div>
             </div>
           </div>
@@ -504,6 +508,7 @@ function openGrantModal(){
   document.getElementById('gImgFile').value = '';
   document.getElementById('gMaxPerson').value = '';
   document.getElementById('gMaxOrg').value = '';
+  document.getElementById('gMaxBudget').value = '';
   setCoverPreview("");
   document.getElementById('grantModal').classList.add('show');
 
@@ -555,6 +560,7 @@ function editGrant(g){
   document.getElementById('gImgFile').value = '';
   document.getElementById('gMaxPerson').value = (g.max_amount_person ?? '') === null ? '' : String(g.max_amount_person ?? '');
   document.getElementById('gMaxOrg').value = (g.max_amount_org ?? '') === null ? '' : String(g.max_amount_org ?? '');
+  document.getElementById('gMaxBudget').value = (g.max_budget ?? '') === null ? '' : String(g.max_budget ?? '');
 
   setCoverPreview(g.image_path || "");
   document.getElementById('grantModal').classList.add('show');
@@ -587,6 +593,7 @@ async function saveGrant(ev){
     fd.append("existing_image_path", document.getElementById('gImgPath').value.trim());
     fd.append("max_amount_person", (document.getElementById('gMaxPerson').value || '').trim());
     fd.append("max_amount_org", (document.getElementById('gMaxOrg').value || '').trim());
+    fd.append("max_budget", (document.getElementById('gMaxBudget').value || '').trim());
 
     const fi = document.getElementById('gImgFile');
     const file = fi && fi.files && fi.files[0] ? fi.files[0] : null;

@@ -165,6 +165,10 @@ $payload = [
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><?= h((string)$grant['title']) ?> • Grant Portal</title>
 
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="/youthagency/assets.css?v=1">
+
   <style>
     :root{
       --bg:#0b1220; --panel:#0f172a; --card:#111827; --line:#22314a;
@@ -172,7 +176,7 @@ $payload = [
       --warn:#f59e0b; --bad:#dc2626; --radius:14px;
     }
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Arial;background:var(--bg);color:var(--text)}
+    body{margin:0;font-family:'Noto Sans Georgian',system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
     a{color:inherit;text-decoration:none}
     .wrap{max-width:1160px;margin:0 auto;padding:18px}
     .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
@@ -252,6 +256,8 @@ $payload = [
 </head>
 
 <body>
+  <div id="siteHeaderMount"></div>
+
   <div class="wrap">
     <div class="banner">
       <div>
@@ -952,8 +958,11 @@ function buildSubmissionMeta(applicant){
   }));
 
   const fieldLabels = {};
+  const fieldTypes = {};
   fields.forEach(f => {
-    fieldLabels["field_" + f.id] = String(f.label || '');
+    const key = "field_" + f.id;
+    fieldLabels[key] = String(f.label || '');
+    fieldTypes[key] = String(f.type || 'text').toLowerCase();
   });
 
   return {
@@ -965,6 +974,7 @@ function buildSubmissionMeta(applicant){
     applicant_email: applicant.email || '',
     applicant_phone: applicant.phone || '',
     field_labels: fieldLabels,
+    field_types: fieldTypes,
     requirements: reqs.map(r => ({
       id: String(r.id),
       name: String(r.name || ''),
@@ -977,6 +987,58 @@ function buildSubmissionMeta(applicant){
       total_count: reqFiles.length + fieldFiles.length + otherFiles.length
     }
   };
+}
+
+function budgetPayloadForField(field){
+  const opt = field ? readBudgetOptionsFromField(field) : budgetDefaultOptions();
+  const cols = Array.isArray(opt.columns) ? opt.columns : [];
+  return {
+    rows: (state.data.budget.rows || []),
+    columns: cols.map(c => ({
+      key: String(c?.key || ''),
+      label: String(c?.label || c?.key || ''),
+      type: String(c?.type || 'text')
+    })).filter(c => c.key)
+  };
+}
+
+function syncVisibleDomToState(){
+  document.querySelectorAll("[data-field]").forEach(el=>{
+    const k = el.getAttribute("data-field");
+    if(!k) return;
+    state.form_data[k] = el.value ?? "";
+  });
+
+  const groups = new Set(Array.from(document.querySelectorAll("[data-group]"))
+    .map(el => String(el.getAttribute("data-group") || "").trim())
+    .filter(Boolean));
+
+  groups.forEach(k=>{
+    const list = Array.from(document.querySelectorAll(`input[data-group="${k}"]`));
+    const isRadio = list.some(x => x.type === "radio");
+    if(isRadio){
+      const chosen = list.find(x => x.checked);
+      state.form_data[k] = chosen ? chosen.value : "";
+    }else{
+      state.form_data[k] = list.filter(x => x.checked).map(x => x.value);
+    }
+  });
+
+  const budgetInputs = Array.from(document.querySelectorAll("[data-brow][data-bkey]"));
+  if(budgetInputs.length){
+    budgetInputs.forEach(inp=>{
+      const i = Number(inp.getAttribute("data-brow"));
+      const k = String(inp.getAttribute("data-bkey") || "");
+      if(!Number.isFinite(i) || i < 0 || !k) return;
+      state.data.budget.rows[i] = state.data.budget.rows[i] || {};
+      const col = (readBudgetOptionsFromField(findAnyBudgetTableField()).columns||[]).find(c => c.key === k);
+      if(col && col.type === "number"){
+        state.data.budget.rows[i][k] = Number(inp.value||0);
+      }else{
+        state.data.budget.rows[i][k] = inp.value;
+      }
+    });
+  }
 }
 
 function bindSubmit(){
@@ -995,6 +1057,7 @@ function bindSubmit(){
   btn.addEventListener("click", async ()=>{
     try{
       btn.disabled = true;
+      syncVisibleDomToState();
 
       // final budget guard
       const anyBudgetField = findAnyBudgetTableField();
@@ -1013,13 +1076,13 @@ function bindSubmit(){
         if(t) state.applicantType = t;
       }
 
-      // sync budget rows into ALL budget_table fields
+      // sync budget rows/columns into ALL budget_table fields
       const all = getAllFieldsFlat();
       const budgetFields = all.filter(f => f.type === "budget_table");
       if(budgetFields.length){
         for(const bf of budgetFields){
           const k = "field_" + bf.id;
-          state.form_data[k] = {rows: (state.data.budget.rows || [])};
+          state.form_data[k] = budgetPayloadForField(bf);
         }
       }
 
@@ -1235,10 +1298,10 @@ function renderStep(){
         renderStep();
       },
       () => {
-        // store rows into budget field if exists
+        // store rows/columns into budget field if exists
         if(budgetField){
           const k = "field_" + budgetField.id;
-          state.form_data[k] = {rows: (state.data.budget.rows || [])};
+          state.form_data[k] = budgetPayloadForField(budgetField);
         }
         state.validByStep[state.currentKey] = true;
         state.currentKey = steps[Math.min(steps.length-1, idx+1)].key;
@@ -1270,8 +1333,8 @@ function renderStep(){
 
 function bindFields(activeDbStep, fields, idx, isFiles){
   document.querySelectorAll("[data-field]").forEach(el=>{
-    el.addEventListener("input", ()=>{
-      const k = el.getAttribute("data-field");
+    const k = el.getAttribute("data-field");
+    const syncValue = ()=>{
       state.form_data[k] = el.value;
 
       const tf = findApplicantTypeField();
@@ -1280,14 +1343,17 @@ function bindFields(activeDbStep, fields, idx, isFiles){
         state.applicantType = t || "person";
         renderStep();
       }
-    });
-    const k = el.getAttribute("data-field");
-    if(state.form_data[k] == null && el.value) state.form_data[k] = el.value;
+    };
+
+    el.addEventListener("input", syncValue);
+    el.addEventListener("change", syncValue);
+
+    if(state.form_data[k] == null) state.form_data[k] = el.value ?? "";
   });
 
   document.querySelectorAll("[data-group]").forEach(el=>{
-    el.addEventListener("change", ()=>{
-      const k = el.getAttribute("data-group");
+    const k = el.getAttribute("data-group");
+    const syncGroup = ()=>{
       const list = Array.from(document.querySelectorAll(`input[data-group="${k}"]`));
       const isRadio = list.some(x => x.type === "radio");
       if(isRadio){
@@ -1296,7 +1362,10 @@ function bindFields(activeDbStep, fields, idx, isFiles){
       } else {
         state.form_data[k] = list.filter(x => x.checked).map(x => x.value);
       }
-    });
+    };
+
+    el.addEventListener("change", syncGroup);
+    if(state.form_data[k] == null) syncGroup();
   });
 
   document.querySelectorAll("[data-file-field]").forEach(inp=>{
@@ -1350,6 +1419,7 @@ function bindFields(activeDbStep, fields, idx, isFiles){
 
   if(next){
     next.addEventListener("click", ()=>{
+      syncVisibleDomToState();
       const ok = validateStep(activeDbStep);
       state.validByStep[state.currentKey] = ok;
 
@@ -1367,20 +1437,29 @@ function bindFields(activeDbStep, fields, idx, isFiles){
   </script>
 
   <script>
-    async function injectFooter() {
-      const el = document.getElementById('siteFooterMount');
+    async function inject(id, file) {
+      const el = document.getElementById(id);
       if (!el) return;
-      const res = await fetch('/youthagency/footer.html?v=2');
-      if (res.ok) el.innerHTML = await res.text();
+      const res = await fetch(file + (file.includes('?') ? '&' : '?') + 'v=2');
+      if (!res.ok) return;
+      el.innerHTML = await res.text();
     }
+
+    async function loadScript(src) {
+      return new Promise((resolve) => {
+        const s = document.createElement('script');
+        s.src = src + (src.includes('?') ? '&' : '?') + 'v=2';
+        s.onload = resolve;
+        s.onerror = resolve;
+        document.body.appendChild(s);
+      });
+    }
+
     (async () => {
-      const s = document.createElement('script');
-      s.src = '/youthagency/app.js?v=2';
-      s.onload = () => {
-        if (typeof window.initHeader === 'function') window.initHeader();
-      };
-      document.body.appendChild(s);
-      await injectFooter();
+      await inject('siteHeaderMount', '/youthagency/header.html');
+      await loadScript('/youthagency/app.js');
+      if (typeof window.initHeader === 'function') window.initHeader();
+      await inject('siteFooterMount', '/youthagency/footer.html');
     })();
   </script>
 </body>
