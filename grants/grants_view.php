@@ -46,11 +46,27 @@ function build_apply_url(int $grantId, string $dbUrl): string {
     $url = '/youthagency/' . ltrim($url, '/');
   }
 
-  // Ensure grant id is present (id=)
-  $sep = (str_contains($url, '?')) ? '&' : '?';
-  $urlWithId = $url . $sep . 'id=' . $grantId;
+  // Ensure grant id is present (id=) once
+  if (!preg_match('/(?:^|[?&])id=\d+(?:&|$)/', $url)) {
+    $sep = (str_contains($url, '?')) ? '&' : '?';
+    $url .= $sep . 'id=' . $grantId;
+  }
 
-  return $urlWithId;
+  return $url;
+}
+
+function is_deadline_passed(?string $deadline): bool {
+  $deadlineRaw = trim((string)$deadline);
+  if ($deadlineRaw === '') return false;
+
+  $ts = strtotime($deadlineRaw);
+  if (!$ts) return false;
+
+  if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $deadlineRaw)) {
+    $ts += 86399;
+  }
+
+  return time() > $ts;
 }
 
 $id = (int)($_GET['id'] ?? 0);
@@ -65,11 +81,11 @@ $st->execute([$id]);
 $g = $st->fetch(PDO::FETCH_ASSOC);
 if (!$g) { http_response_code(404); exit('Not found'); }
 
-$isClosed = (($g['status'] ?? 'current') === 'closed');
+$isClosed = (($g['status'] ?? 'current') === 'closed') || is_deadline_passed((string)($g['deadline'] ?? ''));
 $statusLabel = $isClosed ? 'დახურული' : 'მიმდინარე';
 
 // ✅ FIXED APPLY URL (always /youthagency/grants_apply.php?id=ID)
-$applyUrl = build_apply_url($id, (string)($g['grants/apply_url'] ?? ''));
+$applyUrl = build_apply_url($id, (string)($g['apply_url'] ?? ''));
 
 $img = trim((string)($g['image_path'] ?? ''));
 if ($img === '') {
