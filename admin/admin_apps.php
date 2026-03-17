@@ -1255,6 +1255,25 @@ function deepFindBudgetRows(obj, depth=0, grantId=0){
   return null;
 }
 
+function budgetFieldKeysForGrant(grantId){
+  const types = FIELD_TYPES.get(Number(grantId)) || {};
+  return Object.keys(types).filter(k => isBudgetFieldType(types[k]));
+}
+
+function collectRawBudgetPayloads(formData, grantId){
+  const fd = parseJsonMaybe(formData);
+  if(!fd || typeof fd !== "object") return [];
+  const keys = budgetFieldKeysForGrant(grantId);
+  const out = [];
+  for(const k of keys){
+    if(!(k in fd)) continue;
+    const v = parseJsonMaybe(fd[k]);
+    if(v === null || v === undefined) continue;
+    out.push({ key:k, value:v });
+  }
+  return out;
+}
+
 function showBudgetInModal(formData, rowsHint=null){
   const wrap = document.getElementById("amBudgetWrap");
   const body = document.getElementById("amBudgetBody");
@@ -1269,10 +1288,31 @@ function showBudgetInModal(formData, rowsHint=null){
   const rows = valueRows || hintRows || deepFindBudgetRows(formData, 0, gid);
 
   if(!rows){
-    wrap.style.display = "none";
-    body.innerHTML = "";
+    const rawPayloads = collectRawBudgetPayloads(formData, gid);
+    if(!rawPayloads.length){
+      wrap.style.display = "none";
+      body.innerHTML = "";
+      totalEl.textContent = "0";
+      if(pill){ pill.style.display="none"; pill.textContent=""; }
+      return;
+    }
+
+    const rawRows = rawPayloads.map(x=>`
+      <tr>
+        <td colspan="3">
+          <div class="small" style="font-weight:900;margin-bottom:6px">${esc(x.key)}</div>
+          <pre class="small mono" style="white-space:pre-wrap;margin:0">${esc(JSON.stringify(x.value, null, 2))}</pre>
+        </td>
+      </tr>
+    `).join("");
+
+    body.innerHTML = rawRows;
     totalEl.textContent = "0";
-    if(pill){ pill.style.display="none"; pill.textContent=""; }
+    wrap.style.display = "block";
+    if(pill){
+      pill.style.display="inline-flex";
+      pill.textContent = `ბიუჯეტი: მონაცემი ნაპოვნია`;
+    }
     return;
   }
 
@@ -1306,6 +1346,20 @@ function showBudgetInModal(formData, rowsHint=null){
   if(pill){
     pill.style.display="inline-flex";
     pill.textContent = `ბიუჯეტი: ${fmtMoney(total)} ₾`;
+  }
+
+  const rawPayloads = collectRawBudgetPayloads(formData, gid);
+  if(rawPayloads.length){
+    body.innerHTML += rawPayloads.map(x=>`
+      <tr>
+        <td colspan="${dynCols.length || 3}">
+          <details class="rawToggle" style="margin-top:6px">
+            <summary>RAW ${esc(x.key)}</summary>
+            <pre class="small mono" style="white-space:pre-wrap;margin-top:8px">${esc(JSON.stringify(x.value, null, 2))}</pre>
+          </details>
+        </td>
+      </tr>
+    `).join("");
   }
 }
 
