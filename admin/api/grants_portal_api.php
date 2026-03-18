@@ -56,17 +56,12 @@ function get_csrf_from_headers(): string {
 
 /* ----------------------------- AUTH (API friendly) ----------------------------- */
 
-/**
- * ✅ API should NEVER redirect to HTML login.
- * This function returns JSON 401 instead.
- */
 function require_login_api(): void {
   if (function_exists('is_logged_in')) {
     if (!is_logged_in()) json_err('Unauthorized (login required)', 401);
     return;
   }
 
-  // fallback session keys (change if your project uses different ones)
   $ok =
     !empty($_SESSION['user_id']) ||
     !empty($_SESSION['admin_id']) ||
@@ -154,11 +149,6 @@ function has_index(PDO $pdo, string $table, string $keyName): bool {
 
 /* ----------------------------- schema ----------------------------- */
 
-/**
- * ✅ Perf improvement:
- * Don’t run ensure_schema on every request.
- * Default: once per session per day. Force with ?debug_schema=1
- */
 function should_ensure_schema(): bool {
   if (!empty($_GET['debug_schema'])) return true;
 
@@ -257,7 +247,6 @@ function ensure_schema(PDO $pdo): void {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   ");
 
-  /* ✅ MIGRATIONS (for older DBs) - safe add missing columns */
   if (!has_col($pdo, 'grant_steps', 'is_enabled')) { try { add_col($pdo, 'grant_steps', "ADD COLUMN is_enabled TINYINT(1) NOT NULL DEFAULT 1 AFTER sort_order"); } catch(Throwable $e) {} }
   if (!has_col($pdo, 'grant_fields', 'is_enabled')) { try { add_col($pdo, 'grant_fields', "ADD COLUMN is_enabled TINYINT(1) NOT NULL DEFAULT 1 AFTER sort_order"); } catch(Throwable $e) {} }
   if (!has_col($pdo, 'grant_file_requirements', 'is_enabled')) { try { add_col($pdo, 'grant_file_requirements', "ADD COLUMN is_enabled TINYINT(1) NOT NULL DEFAULT 1 AFTER sort_order"); } catch(Throwable $e) {} }
@@ -265,7 +254,6 @@ function ensure_schema(PDO $pdo): void {
   if (!has_col($pdo, 'grant_steps', 'step_key')) { try { add_col($pdo, 'grant_steps', "ADD COLUMN step_key VARCHAR(255) NOT NULL DEFAULT '' AFTER name"); } catch(Throwable $e) {} }
   if (!has_col($pdo, 'grant_fields', 'options_json')) { try { add_col($pdo, 'grant_fields', "ADD COLUMN options_json MEDIUMTEXT NULL AFTER show_for"); } catch(Throwable $e) {} }
 
-  // legacy migrate from old table if exists
   if (has_table($pdo, 'grant_requirements')) {
     try{
       $c1 = (int)($pdo->query("SELECT COUNT(*) FROM grant_file_requirements")->fetchColumn() ?: 0);
@@ -583,6 +571,179 @@ function save_application_uploads(PDO $pdo, int $grantId, int $appId): array {
   return $saved;
 }
 
+/* ----------------------------- budget helpers ----------------------------- */
+
+function budget_amount_to_float($value): float {
+  if (is_int($value) || is_float($value)) return (float)$value;
+
+  if (is_string($value)) {
+    $s = trim($value);
+    if ($s === '') return 0.0;
+    $s = str_replace(["\u{00A0}", " "], '', $s);
+    $s = str_replace(['₾', '$', '€', ','], '', $s);
+    $s = preg_replace('~[^0-9.\-]~', '', $s);
+    if ($s === '' || $s === '-' || $s === '.') return 0.0;
+    return is_numeric($s) ? (float)$s : 0.0;
+  }
+
+  return 0.0;
+}
+
+function normalize_budget_payload($raw): ?array {
+  if ($raw === null) return null;
+
+  if (is_string($raw)) {
+    $raw = trim($raw);
+    if ($raw === '') return null;
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) return null;
+    $raw = $decoded;
+  }
+
+  if (!is_array($raw)) return null;
+
+  $sourceRows = null;
+
+  if (isset($raw['rows']) && is_array($raw['rows'])) {
+    $sourceRows = $raw['rows'];
+  } else {
+    $keys = array_keys($raw);
+    $isList = ($keys === range(0, count($raw) - 1));
+    if ($isList) $sourceRows = $raw;
+  }
+
+  if (!is_array($sourceRows)) return null;
+
+  $rows = [];
+  foreach ($sourceRows as $row) {
+    if (is_string($row)) {
+      $tmp = json_decode($row, true);
+      if (is_array($tmp)) $row = $tmp;
+    }
+    if (!is_array($row)) continue;
+
+    $cat  = trim((string)($row['cat']  ?? $row['category']    ?? ''));
+    $desc = trim((string)($row['desc'] ?? $row['description'] ?? ''));
+    $amount = budget_amount_to_float($row['amount'] ?? $row['sum'] ?? $row['total'] ?? 0);
+
+    if ($cat === '' && $desc === '' && $amount <= 0) continue;
+
+    $rows[] = [
+      'cat' => $cat,
+      'desc' => $desc,
+      'amount' => $amount,
+    ];
+  }
+
+  $total = 0.0;
+  foreach ($rows as $r) {
+    $total += (float)($r['amount'] ?? 0);
+  }
+
+  return [
+    'rows' => $rows,
+    'total' => $total,
+  ];
+}
+
+function first_budget_from_request(array $json): ?array {
+  $candidates = [
+    $_POST['budget_json'] ?? null,
+    $_POST['budget'] ?? null,
+    $json['budget_json'] ?? null,
+    $json['budget'] ?? null,
+  ];
+
+  foreach ($candidates as $candidate) {
+    $parsed = normalize_budget_payload($candidate);
+    if ($parsed !== null) return $parsed;
+  }
+
+  return null;
+}
+
+/* ----------------------------- contact fallback helpers ----------------------------- */
+
+function gp_parse_json_maybe($v) {
+  if ($v === null) return null;
+  if (is_string($v)) {
+    $t = trim($v);
+    if ($t === '') return null;
+    $j = json_decode($t, true);
+    return is_array($j) ? $j : null;
+  }
+  return is_array($v) ? $v : null;
+}
+
+function gp_find_contact_fallback(array $formData): array {
+  $meta = gp_parse_json_maybe($formData['__meta'] ?? null);
+
+  $name  = trim((string)($meta['applicant_name'] ?? ''));
+  $email = trim((string)($meta['applicant_email'] ?? ''));
+  $phone = trim((string)($meta['applicant_phone'] ?? ''));
+
+  if ($name !== '' && $email !== '' && $phone !== '') {
+    return ['name' => $name, 'email' => $email, 'phone' => $phone];
+  }
+
+  $fieldLabels = is_array($meta['field_labels'] ?? null) ? $meta['field_labels'] : [];
+
+  foreach ($formData as $k => $v) {
+    if ((string)$k === '__meta') continue;
+    if (is_array($v)) continue;
+
+    $value = trim((string)$v);
+    if ($value === '') continue;
+
+    $label = trim((string)($fieldLabels[$k] ?? $k));
+    $labelLower = mb_strtolower($label, 'UTF-8');
+    $normalized = preg_replace('/[\s\.\-_]+/u', '', $labelLower);
+
+    if (
+      $name === '' &&
+      (
+        str_contains($labelLower, 'სახელი') ||
+        str_contains($normalized, 'fullname') ||
+        str_contains($normalized, 'contactname')
+      )
+    ) {
+      $name = $value;
+      continue;
+    }
+
+    if (
+      $email === '' &&
+      (
+        str_contains($labelLower, 'ელ.ფოსტ') ||
+        str_contains($labelLower, 'ელ-ფოსტ') ||
+        str_contains($labelLower, 'ელ ფოსტ') ||
+        str_contains($normalized, 'ელფოსტ') ||
+        str_contains($labelLower, 'იმეილ') ||
+        str_contains($normalized, 'email') ||
+        str_contains($normalized, 'mail')
+      )
+    ) {
+      $email = $value;
+      continue;
+    }
+
+    if (
+      $phone === '' &&
+      (
+        str_contains($labelLower, 'ტელ') ||
+        str_contains($normalized, 'phone') ||
+        str_contains($normalized, 'mobile') ||
+        str_contains($normalized, 'mob')
+      )
+    ) {
+      $phone = $value;
+      continue;
+    }
+  }
+
+  return ['name' => $name, 'email' => $email, 'phone' => $phone];
+}
+
 /* ----------------------------- API BOOT ----------------------------- */
 
 function api_boot(string $action): array {
@@ -596,10 +757,8 @@ function api_boot(string $action): array {
 
   $json = read_json_body_once();
 
-  // submit is public, others require admin
   if ($action !== 'submit') require_login_api();
 
-  // CSRF required for ALL actions (including submit)
   csrf_check_api($json);
 
   return $json;
@@ -640,19 +799,51 @@ try {
     if ($rawForm !== null) {
       $decoded = json_decode($rawForm, true);
       $formData = is_array($decoded) ? $decoded : null;
-      if ($formData === null && $rawForm !== '') $formData = ['raw' => $rawForm];
-    } elseif (isset($json['form_data']) && is_array($json['form_data'])) {
-      $formData = $json['form_data'];
+      if ($formData === null && $rawForm !== '') {
+        $formData = ['raw' => $rawForm];
+      }
+    } elseif (isset($json['form_data'])) {
+      if (is_array($json['form_data'])) {
+        $formData = $json['form_data'];
+      } elseif (is_string($json['form_data'])) {
+        $decoded = json_decode((string)$json['form_data'], true);
+        $formData = is_array($decoded) ? $decoded : null;
+      }
     } elseif (isset($json['form_json'])) {
       $decoded = json_decode((string)$json['form_json'], true);
       $formData = is_array($decoded) ? $decoded : null;
     } else {
       $tmp = $_POST ?: [];
-      unset($tmp['csrf'], $tmp['grant_id'], $tmp['applicant_name'], $tmp['email'], $tmp['phone'], $tmp['form_data'], $tmp['form_json']);
+      unset(
+        $tmp['csrf'],
+        $tmp['grant_id'],
+        $tmp['applicant_name'],
+        $tmp['email'],
+        $tmp['phone'],
+        $tmp['form_data'],
+        $tmp['form_json'],
+        $tmp['budget_json'],
+        $tmp['budget']
+      );
       if ($tmp) $formData = $tmp;
     }
 
-    $form_json = $formData ? json_encode($formData, JSON_UNESCAPED_UNICODE) : null;
+    if ($formData === null) $formData = [];
+    if (!is_array($formData)) $formData = ['raw' => (string)$formData];
+
+    if (isset($formData['budget'])) {
+      $normalizedExistingBudget = normalize_budget_payload($formData['budget']);
+      if ($normalizedExistingBudget !== null) {
+        $formData['budget'] = $normalizedExistingBudget;
+      }
+    }
+
+    $incomingBudget = first_budget_from_request($json);
+    if ($incomingBudget !== null) {
+      $formData['budget'] = $incomingBudget;
+    }
+
+    $form_json = !empty($formData) ? json_encode($formData, JSON_UNESCAPED_UNICODE) : null;
 
     $pdo->beginTransaction();
     try{
@@ -814,7 +1005,6 @@ try {
     $grant_id = (int)($json['grant_id'] ?? 0);
     if ($grant_id <= 0) json_err('grant_id არასწორია');
 
-    // ✅ SAFE SELECT: if column missing, use constant 1 AS is_enabled
     $stepsIsEnabled = has_col($pdo, 'grant_steps', 'is_enabled') ? 'is_enabled' : '1 AS is_enabled';
     $fieldsIsEnabled = has_col($pdo, 'grant_fields', 'is_enabled') ? 'is_enabled' : '1 AS is_enabled';
     $reqIsEnabled = has_col($pdo, 'grant_file_requirements', 'is_enabled') ? 'is_enabled' : '1 AS is_enabled';
@@ -1093,20 +1283,43 @@ try {
     $where = ["a.deleted_at IS NULL"];
     $params = [];
 
-    if ($grant_id > 0) { $where[] = "a.grant_id=?"; $params[] = $grant_id; }
-    if ($status !== 'all' && $status !== '') { $where[] = "a.status=?"; $params[] = $status; }
+    if ($grant_id > 0) {
+      $where[] = "a.grant_id=?";
+      $params[] = $grant_id;
+    }
+
+    if ($status !== 'all' && $status !== '') {
+      $where[] = "a.status=?";
+      $params[] = $status;
+    }
 
     if ($q !== '') {
-      $where[] = "(a.applicant_name LIKE ? OR a.email LIKE ? OR a.phone LIKE ? OR CAST(a.id AS CHAR) LIKE ?)";
-      $params[] = "%$q%"; $params[] = "%$q%"; $params[] = "%$q%"; $params[] = "%$q%";
+      $where[] = "(
+        a.applicant_name LIKE ? OR
+        a.email LIKE ? OR
+        a.phone LIKE ? OR
+        CAST(a.id AS CHAR) LIKE ? OR
+        a.form_data_json LIKE ?
+      )";
+      $params[] = "%$q%";
+      $params[] = "%$q%";
+      $params[] = "%$q%";
+      $params[] = "%$q%";
+      $params[] = "%$q%";
     }
 
     $sql = "
       SELECT
-        a.id, a.grant_id,
+        a.id,
+        a.grant_id,
         g.title AS grant_title,
-        a.applicant_name, a.email, a.phone,
-        a.status, a.rating, a.created_at
+        a.applicant_name,
+        a.email,
+        a.phone,
+        a.status,
+        a.rating,
+        a.created_at,
+        a.form_data_json
       FROM grant_applications a
       LEFT JOIN grants g ON g.id = a.grant_id
       WHERE " . implode(" AND ", $where) . "
@@ -1116,7 +1329,32 @@ try {
 
     $st = $pdo->prepare($sql);
     $st->execute($params);
-    json_ok(['items' => $st->fetchAll(PDO::FETCH_ASSOC) ?: []]);
+    $items = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+    foreach ($items as &$row) {
+      $fd = [];
+      if (!empty($row['form_data_json'])) {
+        $tmp = json_decode((string)$row['form_data_json'], true);
+        if (is_array($tmp)) $fd = $tmp;
+      }
+
+      $fallback = gp_find_contact_fallback($fd);
+
+      if (trim((string)($row['applicant_name'] ?? '')) === '' && $fallback['name'] !== '') {
+        $row['applicant_name'] = $fallback['name'];
+      }
+      if (trim((string)($row['email'] ?? '')) === '' && $fallback['email'] !== '') {
+        $row['email'] = $fallback['email'];
+      }
+      if (trim((string)($row['phone'] ?? '')) === '' && $fallback['phone'] !== '') {
+        $row['phone'] = $fallback['phone'];
+      }
+
+      unset($row['form_data_json']);
+    }
+    unset($row);
+
+    json_ok(['items' => $items]);
   }
 
   if ($action === 'app_get') {
