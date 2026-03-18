@@ -248,7 +248,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ");
     $bst->execute([$pidValue, $campId]);
     if ($bst->fetch(PDO::FETCH_ASSOC)) {
-      redirect_same(['err' => 'blocked']);
+      // Keep response indistinguishable from successful submit, but do not save.
+      redirect_same(['ok' => '1']);
     }
   }
 
@@ -321,7 +322,6 @@ if (isset($_GET['ok']) && $_GET['ok'] === '1') {
 } elseif (isset($_GET['err'])) {
   $e = (string)$_GET['err'];
   if ($e === 'closed')   $msg = "რეგისტრაცია დახურულია.";
-  if ($e === 'blocked')  $msg = "რეგისტრაცია აკრძალულია (PID ბლოკშია).";
   if ($e === 'required') $msg = "გთხოვ შეავსო სავალდებულო ველები (*)";
   if ($e === 'already')  $msg = "ამ მონაცემებით უკვე დარეგისტრირებული ხარ.";
   if ($e === 'unikey')   $msg = "ფორმაში აუცილებელია PID ან Email ან Phone ველი.";

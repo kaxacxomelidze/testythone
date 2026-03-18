@@ -257,7 +257,8 @@ if ($hasPidBlocklist && $pid !== "") {
     $b = $pdo->prepare("SELECT id FROM {$pidBlockTable} WHERE pid = ? AND (camp_id IS NULL OR camp_id = ?) LIMIT 1");
     $b->execute([$pid, $campId]);
     if ($b->fetch(PDO::FETCH_ASSOC)) {
-      json_out(["ok" => false, "error" => "You are blocked from registering (PID)."], 400);
+      // Do not expose block status to end users. Pretend success, but do not save.
+      json_out(["ok" => true, "id" => null, "message" => "You registered ✅"]);
     }
   } catch (Throwable $e) {
     // if blocklist table schema differs, ignore safely

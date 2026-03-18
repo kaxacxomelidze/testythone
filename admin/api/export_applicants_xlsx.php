@@ -17,23 +17,12 @@ $q      = trim((string)($_GET['q'] ?? ''));
 
 if ($campId <= 0) { http_response_code(400); exit('Bad campId'); }
 
-/* ------------------ COMPOSER AUTOLOAD (fallback) ------------------ */
-$autoload1 = __DIR__ . '/../vendor/autoload.php';        // /admin/vendor/autoload.php
-$autoload2 = __DIR__ . '/../../vendor/autoload.php';     // /youthagency/vendor/autoload.php
-
-if (is_file($autoload1)) require $autoload1;
-elseif (is_file($autoload2)) require $autoload2;
-else { http_response_code(500); exit('Composer autoload.php not found'); }
-
 /* ------------------ PHP 7 COMPAT: str_contains ------------------ */
 if (!function_exists('str_contains')) {
   function str_contains(string $haystack, string $needle): bool {
     return $needle === '' || strpos($haystack, $needle) !== false;
   }
 }
-
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 function asArrayValues($values): array {
   if (!$values) return [];
@@ -82,49 +71,42 @@ try {
     }));
   }
 
-  /* ------------------- BUILD XLSX ------------------- */
-  $spreadsheet = new Spreadsheet();
-  $sheet = $spreadsheet->getActiveSheet();
-  $sheet->setTitle("Applicants");
-
-  $headers = ["ID","Created","Unique","Status","Note"];
-  foreach ($fields as $f) $headers[] = (string)$f['label'];
-
-  $sheet->fromArray($headers, null, 'A1');
-
-  $r = 2;
-  foreach ($rows as $row) {
-    $vals = asArrayValues($row['values_json'] ?? '');
-
-    $base = [
-      $row['id'] ?? '',
-      $row['created_at'] ?? '',
-      $row['unique_key'] ?? '',
-      $row['status'] ?? '',
-      $row['admin_note'] ?? '',
-    ];
-
-    $extra = [];
-    for ($i=0; $i<count($fields); $i++) $extra[] = isset($vals[$i]) ? (string)$vals[$i] : '';
-
-    $sheet->fromArray(array_merge($base, $extra), null, 'A'.$r);
-    $r++;
-  }
-
-  // (Optional) autosize can be slow on huge sheets, but ok for <= 1000 rows
-  $highestColIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($sheet->getHighestColumn());
-  for ($i = 1; $i <= $highestColIndex; $i++) {
-    $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
-    $sheet->getColumnDimension($col)->setAutoSize(true);
-  }
-
-  $filename = "applicants_{$campId}_" . date("Ymd_His") . ".xlsx";
-  header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  /* ------------------- BUILD EXCEL-COMPATIBLE TSV ------------------- */
+  $filename = "applicants_{$campId}_" . date("Ymd_His") . ".xls";
+  header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
   header('Content-Disposition: attachment; filename="'.$filename.'"');
   header('Cache-Control: max-age=0');
 
-  $writer = new Xlsx($spreadsheet);
-  $writer->save('php://output');
+  $out = fopen('php://output', 'wb');
+  if ($out === false) {
+    throw new RuntimeException('Cannot open output stream');
+  }
+
+  // UTF-8 BOM helps Excel open Georgian text correctly
+  fwrite($out, "\xEF\xBB\xBF");
+
+  $headers = ["ID","Created","Unique","Status","Note"];
+  foreach ($fields as $f) $headers[] = (string)$f['label'];
+  fputcsv($out, $headers, "\t");
+
+  foreach ($rows as $row) {
+    $vals = asArrayValues($row['values_json'] ?? '');
+    $line = [
+      (string)($row['id'] ?? ''),
+      (string)($row['created_at'] ?? ''),
+      (string)($row['unique_key'] ?? ''),
+      (string)($row['status'] ?? ''),
+      (string)($row['admin_note'] ?? ''),
+    ];
+
+    for ($i=0; $i<count($fields); $i++) {
+      $line[] = isset($vals[$i]) ? (string)$vals[$i] : '';
+    }
+
+    fputcsv($out, $line, "\t");
+  }
+
+  fclose($out);
   exit;
 
 } catch (Throwable $e) {

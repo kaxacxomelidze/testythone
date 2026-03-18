@@ -77,12 +77,14 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
 .modal.show{display:flex}
-.box{width:min(1100px,100%);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
+.box{width:min(980px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
 .head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .close{width:44px;height:44px;border-radius:14px}
 
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:980px){.grid2{grid-template-columns:1fr}}
+#grantModal .tight{flex:1 1 220px;min-width:0}
+#grantModal .row > *{min-width:0}
 
 .spin{
   width:16px;height:16px;border-radius:999px;
@@ -254,6 +256,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
             <div class="tight">
               <label class="small">მაქს. თანხა — ორგანიზაცია</label>
               <input id="gMaxOrg" type="number" min="0" step="0.01" placeholder="მაგ: 15000">
+            </div>
+            <div class="tight">
+              <label class="small">მაქს. ბიუჯეტი (საერთო)</label>
+              <input id="gMaxBudget" type="number" min="0" step="0.01" placeholder="მაგ: 10000">
             </div>
           </div>
 
@@ -465,7 +471,7 @@ function renderGrants(){
               <div class="small">slug: ${esc(g.slug || '')}</div>
               ${g.description ? `<div class="small" title="${esc(g.description)}">${esc(g.description)}</div>` : ``}
               <div class="small">
-                მაქს. თანხა — ფიზ: <b>${fmtMoney(g.max_amount_person)}</b> • ორგ: <b>${fmtMoney(g.max_amount_org)}</b>
+                მაქს. თანხა — ფიზ: <b>${fmtMoney(g.max_amount_person)}</b> • ორგ: <b>${fmtMoney(g.max_amount_org)}</b> • ბიუჯეტი: <b>${fmtMoney(g.max_budget)}</b>
               </div>
             </div>
           </div>
@@ -504,6 +510,7 @@ function openGrantModal(){
   document.getElementById('gImgFile').value = '';
   document.getElementById('gMaxPerson').value = '';
   document.getElementById('gMaxOrg').value = '';
+  document.getElementById('gMaxBudget').value = '';
   setCoverPreview("");
   document.getElementById('grantModal').classList.add('show');
 
@@ -555,6 +562,7 @@ function editGrant(g){
   document.getElementById('gImgFile').value = '';
   document.getElementById('gMaxPerson').value = (g.max_amount_person ?? '') === null ? '' : String(g.max_amount_person ?? '');
   document.getElementById('gMaxOrg').value = (g.max_amount_org ?? '') === null ? '' : String(g.max_amount_org ?? '');
+  document.getElementById('gMaxBudget').value = (g.max_budget ?? '') === null ? '' : String(g.max_budget ?? '');
 
   setCoverPreview(g.image_path || "");
   document.getElementById('grantModal').classList.add('show');
@@ -587,6 +595,7 @@ async function saveGrant(ev){
     fd.append("existing_image_path", document.getElementById('gImgPath').value.trim());
     fd.append("max_amount_person", (document.getElementById('gMaxPerson').value || '').trim());
     fd.append("max_amount_org", (document.getElementById('gMaxOrg').value || '').trim());
+    fd.append("max_budget", (document.getElementById('gMaxBudget').value || '').trim());
 
     const fi = document.getElementById('gImgFile');
     const file = fi && fi.files && fi.files[0] ? fi.files[0] : null;
