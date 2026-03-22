@@ -6,14 +6,12 @@
  * - Dynamic multi-step application form from DB
  * - Submits to: ../admin/api/grants_portal_api.php?action=submit (multipart/form-data)
  *
- * ✅ FIXED: Requirements loaded from grant_file_requirements (admin compatible)
- * ✅ Uses is_enabled column if exists (safe check)
- * ✅ Budget step detection: based on budget_table field (not only step_key)
- * ✅ Budget options_json support: currency/min_rows/columns/max_total
- * ✅ Max budget validation: shows "მაქსიმალური ბიუჯეტი არის X"
- * ✅ Prevent step jump / next if missing required; shows missing list
- * ✅ submit fills ALL budget_table fields
- * ✅ sends req_file + other_files + field_file correctly
+ * ✅ FIXED: Requirements loaded from grant_file_requirements
+ * ✅ FIXED: Budget rows are serialized and sent
+ * ✅ FIXED: budget_json hidden input + request payload
+ * ✅ FIXED: form_data.budget saved
+ * ✅ FIXED: applicant name/email/phone label detection
+ * ✅ FIXED: budget buttons use type="button"
  */
 
 declare(strict_types=1);
@@ -40,9 +38,6 @@ function is_open_grant(array $g): bool {
   return true;
 }
 
-/**
- * safe column existence check (no placeholders for identifiers)
- */
 function has_col(PDO $pdo, string $table, string $col): bool {
   $table = preg_replace('/[^a-zA-Z0-9_]+/', '', $table);
   $col   = preg_replace('/[^a-zA-Z0-9_]+/', '', $col);
@@ -65,7 +60,7 @@ function grant_apply_clean_url(int $grantId, string $slug = ''): string {
 $grantId = (int)($_GET['id'] ?? 0);
 if ($grantId <= 0) { http_response_code(404); echo "Grant not found"; exit; }
 
-/* ---------- load grant (with optional max_budget if exists) ---------- */
+/* ---------- load grant ---------- */
 $hasMaxBudget = has_col($pdo, 'grants', 'max_budget');
 $hasTitleEn = has_col($pdo, 'grants', 'title_en');
 $hasDescEn = has_col($pdo, 'grants', 'description_en');
@@ -122,7 +117,7 @@ if ($steps) {
   }
 }
 
-/* ---------- load requirements (FIXED TABLE) ---------- */
+/* ---------- requirements ---------- */
 $reqs = [];
 $reqTable = 'grant_file_requirements';
 $reqHasEnabled = has_col($pdo, $reqTable, 'is_enabled');
@@ -135,7 +130,7 @@ $st = $pdo->prepare($reqSql);
 $st->execute([$grantId]);
 $reqs = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-/* ---------- fallback if builder empty ---------- */
+/* ---------- fallback ---------- */
 if (!$steps) {
   $steps = [
     ['id'=>0,'step_key'=>'applicant','name'=>'განმცხადებელი','sort_order'=>0,'is_enabled'=>1],
@@ -147,7 +142,7 @@ if (!$steps) {
 
 $open = is_open_grant($grant);
 
-/* ---------- payload to JS ---------- */
+/* ---------- payload ---------- */
 $payload = [
   'csrf' => $csrf,
   'grant' => [
@@ -294,6 +289,7 @@ $payload = [
         <div class="notice" data-i18n="grantsApply.closedNotice">ამ საგრანტო პროგრამაზე განაცხადების მიღება დასრულებულია ან გამორთულია.</div>
       </div>
     <?php else: ?>
+      <input type="hidden" name="budget_json" id="budget_json" value="">
       <div class="portal">
         <div class="card steps">
           <b data-i18n="grantsApply.stepsTitle">ნაბიჯები</b>
@@ -348,11 +344,11 @@ const state = {
   form_data: {},
   applicantType: "person",
 
-  reqUploads: {},   // { reqId: File }
-  otherUploads: [], // File[]
-  fieldUploads: {}, // { fieldId: File }
+  reqUploads: {},
+  otherUploads: [],
+  fieldUploads: {},
 
-  data: { budget: { rows: [{}] } },
+  data: { budget: { rows: [{}], total: 0 } },
   lastBudgetError: "",
 
   budgetTotal(){
@@ -398,52 +394,51 @@ function findBudgetTableFieldForStep(stepId){
 function findAnyBudgetTableField(){
   return getAllFieldsFlat().find(f => f.type === "budget_table") || null;
 }
-
-/* ✅ Budget step detection */
+function isBudgetLikeField(field){
+  const t = String(field?.type || "").toLowerCase();
+  const l = String(field?.label || "").toLowerCase();
+  return t === "budget_table" || t.includes("budget") || l.includes("ბიუჯ") || l.includes("budget");
+}
 function isBudgetStep(dbStep){
   if(!dbStep) return false;
-
   const key = String(dbStep?.step_key || "").toLowerCase();
   const name = String(dbStep?.name || "").toLowerCase();
   if(key.includes("budget") || name.includes("ბიუჯ")) return true;
-
   const sid = Number(dbStep.id || 0);
   if(sid && findBudgetTableFieldForStep(sid)) return true;
-
-  // fallback: if local step key is "budget"
   if(state.currentKey === "budget") return true;
-
   return false;
 }
-
-/* ✅ Files step detection */
+function hasConfiguredBudgetStep(){
+  return (DATA.steps || []).some(s => {
+    const key = String(s?.step_key || "").toLowerCase();
+    const name = String(s?.name || "").toLowerCase();
+    if(key.includes("budget") || name.includes("ბიუჯ")) return true;
+    const sid = Number(s?.id || 0);
+    return !!(sid && findBudgetTableFieldForStep(sid));
+  });
+}
 function isFilesStep(dbStep, localKey){
   const nm = String(dbStep?.name || "").toLowerCase();
   const ky = String(dbStep?.step_key || "").toLowerCase();
   return localKey === "files" || nm.includes("ფაილ") || ky.includes("file");
 }
-
-/* resolve active DB step by key */
 function resolveDbStepByKey(key){
   const dbSteps = (DATA.steps || []).filter(s => Number(s.id||0) > 0);
   if(!dbSteps.length) return null;
-
   let s = dbSteps.find(x => String(x.step_key||"") === key) || null;
   if(s) return s;
-
   const nonSubmit = steps.filter(x=>x.key!=="submit");
   const localIdx = nonSubmit.findIndex(x=>x.key===key);
   return dbSteps[localIdx] || dbSteps[0] || null;
 }
 
-/* =========================
-     BUDGET TABLE OPTIONS
-========================= */
+/* ========= budget options ========= */
 function budgetDefaultOptions(){
   return {
     currency: "₾",
     min_rows: 1,
-    max_total: 0, // 0 => no limit
+    max_total: 0,
     columns: [
       {key:"cat",   label:"კატეგორია *", type:"text",   required:true, placeholder:"მაგ: აღჭურვილობა"},
       {key:"desc",  label:"აღწერა *",    type:"text",   required:true, placeholder:"დანიშნულება"},
@@ -522,7 +517,7 @@ function validateBudgetWithOptions(rows, opt){
     return false;
   }
 
-  const total = state.budgetTotal();
+  const total = rows.reduce((s,r)=> s + Number(r?.amount || 0), 0);
   if(maxTotal > 0 && total > maxTotal){
     state.lastBudgetError = `მაქსიმალური ბიუჯეტი არის ${formatMoney(maxTotal)} ${currency}`;
     return false;
@@ -530,9 +525,61 @@ function validateBudgetWithOptions(rows, opt){
   return true;
 }
 
-/* =========================
-     BUDGET STEP (VIEW)
-========================= */
+/* ========= budget serialization ========= */
+function normalizeBudgetRowForSubmit(row){
+  const raw = row && typeof row === "object" ? row : {};
+  const cat  = String(raw.cat ?? raw.category ?? raw.name ?? "").trim();
+  const desc = String(raw.desc ?? raw.description ?? raw.details ?? "").trim();
+  const amount = Number(raw.amount ?? raw.sum ?? raw.total ?? 0);
+  const clean = { cat, desc, amount: Number.isFinite(amount) ? amount : 0 };
+  const hasContent = !!clean.cat || !!clean.desc || clean.amount > 0;
+  return hasContent ? clean : null;
+}
+function collectBudgetRowsFromTable(){
+  const trList = Array.from(document.querySelectorAll("#budgetStep tbody tr"));
+  let rows = [];
+
+  if(trList.length){
+    rows = trList.map(tr => {
+      const data = {};
+      const inputs = Array.from(tr.querySelectorAll("input[data-bkey], textarea[data-bkey], select[data-bkey], input[data-k], textarea[data-k], select[data-k]"));
+      inputs.forEach(inp => {
+        const key = String(inp.getAttribute("data-bkey") || inp.getAttribute("data-k") || "").trim();
+        if(!key) return;
+        let val = inp.value;
+        if(inp.type === "number") val = Number(val || 0);
+        data[key] = val;
+      });
+      return normalizeBudgetRowForSubmit(data);
+    }).filter(Boolean);
+  } else {
+    rows = (Array.isArray(state.data.budget.rows) ? state.data.budget.rows : [])
+      .map(normalizeBudgetRowForSubmit)
+      .filter(Boolean);
+  }
+
+  const total = rows.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+  return { rows, total };
+}
+function syncBudgetHiddenInput(){
+  const budget = collectBudgetRowsFromTable();
+  state.data.budget.rows = budget.rows;
+  state.data.budget.total = budget.total;
+  const hidden = document.getElementById("budget_json");
+  if(hidden) hidden.value = JSON.stringify(budget);
+  return budget;
+}
+function applyBudgetToFormData(){
+  const budget = syncBudgetHiddenInput();
+  state.form_data.budget = budget;
+  const budgetTargets = getAllFieldsFlat().filter(isBudgetLikeField);
+  budgetTargets.forEach(f => {
+    state.form_data["field_" + f.id] = budget;
+  });
+  return budget;
+}
+
+/* ========= budget view ========= */
 function viewBudget(state, opt){
   const rows = state.data.budget.rows || [];
   const total = state.budgetTotal();
@@ -566,7 +613,7 @@ function viewBudget(state, opt){
                 const ph = c.placeholder ? `placeholder="${escAttr(c.placeholder)}"` : "";
                 const min = (t==="number" && c.min != null) ? `min="${Number(c.min)}"` : (t==="number" ? `min="0"` : "");
                 const val = (t==="number") ? Number(r?.[k]||0) : escAttr(r?.[k] ?? "");
-                return `<td><input data-row data-i="${i}" data-k="${escAttr(k)}" type="${t}" ${min} ${ph} value="${val}"></td>`;
+                return `<td><input data-row data-brow="${i}" data-i="${i}" data-bkey="${escAttr(k)}" data-k="${escAttr(k)}" type="${t}" ${min} ${ph} value="${val}"></td>`;
               }).join("")}
               <td><button class="btn btn-bad" data-del="${i}" type="button">X</button></td>
             </tr>
@@ -580,32 +627,37 @@ function viewBudget(state, opt){
     </div>
 
     <div class="row" style="margin-top:14px;justify-content:space-between">
-      <button class="btn btn-ghost" id="btnBackB">უკან</button>
-      <button class="btn btn-ac" id="btnNextB">შემდეგი</button>
+      <button class="btn btn-ghost" id="btnBackB" type="button">უკან</button>
+      <button class="btn btn-ac" id="btnNextB" type="button">შემდეგი</button>
     </div>
   `;
 }
 function bindBudget(state, opt, onBack, onNext){
-  document.getElementById("btnBackB").onclick = () => onBack?.();
+  const backBtn = document.getElementById("btnBackB");
+  if(backBtn) backBtn.onclick = () => onBack?.();
 
-  document.getElementById("btnAddRow").onclick = () => {
-    state.data.budget.rows.push({});
-    renderBudget(state, opt, onBack, onNext);
-  };
+  const addBtn = document.getElementById("btnAddRow");
+  if(addBtn){
+    addBtn.onclick = () => {
+      state.data.budget.rows.push({});
+      renderBudget(state, opt, onBack, onNext);
+    };
+  }
 
-  document.querySelectorAll("[data-row]").forEach(inp=>{
+  document.querySelectorAll("[data-brow][data-bkey]").forEach(inp=>{
     inp.oninput = () => {
-      const i = Number(inp.getAttribute("data-i"));
-      const k = inp.getAttribute("data-k");
+      const i = Number(inp.getAttribute("data-brow"));
+      const k = inp.getAttribute("data-bkey");
       state.data.budget.rows[i] = state.data.budget.rows[i] || {};
-
       const col = (opt.columns||[]).find(c => c.key === k);
       if(col && col.type === "number"){
         state.data.budget.rows[i][k] = Number(inp.value||0);
       }else{
         state.data.budget.rows[i][k] = inp.value;
       }
-      document.getElementById("budgetTotal").textContent = formatMoney(state.budgetTotal());
+      const budget = syncBudgetHiddenInput();
+      const totalEl = document.getElementById("budgetTotal");
+      if(totalEl) totalEl.textContent = formatMoney(budget.total);
     };
   });
 
@@ -619,23 +671,27 @@ function bindBudget(state, opt, onBack, onNext){
     };
   });
 
-  document.getElementById("btnNextB").onclick = () => {
-    if(validateBudgetWithOptions(state.data.budget.rows, opt)){
-      onNext?.();
-    } else {
-      alert(state.lastBudgetError || "ბიუჯეტის შეცდომა");
-    }
-  };
+  const nextBtn = document.getElementById("btnNextB");
+  if(nextBtn){
+    nextBtn.onclick = () => {
+      const budget = applyBudgetToFormData();
+      if(validateBudgetWithOptions(budget.rows, opt)){
+        onNext?.();
+      } else {
+        alert(state.lastBudgetError || "ბიუჯეტის შეცდომა");
+      }
+    };
+  }
 }
 function renderBudget(state, opt, onBack, onNext){
   const wrap = document.getElementById("budgetStep");
   if(!wrap) return;
-
   const minRows = Math.max(1, Number(opt.min_rows||1));
   state.data.budget.rows = Array.isArray(state.data.budget.rows) ? state.data.budget.rows : [];
   while(state.data.budget.rows.length < minRows) state.data.budget.rows.push({});
   wrap.innerHTML = viewBudget(state, opt);
   bindBudget(state, opt, onBack, onNext);
+  syncBudgetHiddenInput();
 }
 
 /* ========== init ========== */
@@ -659,14 +715,12 @@ function renderBudget(state, opt, onBack, onNext){
       const idx = steps.findIndex(x=>x.key===key);
       const cur = steps.findIndex(x=>x.key===state.currentKey);
 
-      // always allow back
       if(idx <= cur){
         state.currentKey = key;
         renderStep();
         return;
       }
 
-      // allow only next step, if current validates
       if(idx === cur + 1){
         const activeDbStep = resolveDbStepByKey(state.currentKey);
         if(activeDbStep){
@@ -687,8 +741,8 @@ function renderBudget(state, opt, onBack, onNext){
   renderStep();
 })();
 
-/* ========== Files step UI ========== */
-const MAX_FILE_MB = 25; // match server (suggested)
+/* ========= files ========= */
+const MAX_FILE_MB = 25;
 function validateClientFile(f){
   if(!f) return true;
   if(bytesToMB(f.size) > MAX_FILE_MB){
@@ -697,7 +751,6 @@ function validateClientFile(f){
   }
   return true;
 }
-
 function renderFilesStep(){
   const reqs = DATA.requirements || [];
   const required = reqs.filter(r => Number(r.is_required||0) === 1);
@@ -765,13 +818,12 @@ function renderFilesStep(){
   `;
 }
 
-/* ========== validation ========= */
+/* ========= validation ========= */
 function validateRequirements(){
   const reqs = DATA.requirements || [];
   const required = reqs.filter(r => Number(r.is_required||0) === 1);
   return required.every(r => !!state.reqUploads[String(r.id)]);
 }
-
 function validateField(f, budgetOpt){
   const k = "field_" + f.id;
   const req = f.is_required === 1;
@@ -782,7 +834,8 @@ function validateField(f, budgetOpt){
   if(!req) return true;
 
   if(f.type === "budget_table"){
-    return validateBudgetWithOptions(state.data.budget.rows, budgetOpt || budgetDefaultOptions());
+    const budget = syncBudgetHiddenInput();
+    return validateBudgetWithOptions(budget.rows, budgetOpt || budgetDefaultOptions());
   }
   if(f.type === "checkbox"){
     const v = state.form_data[k];
@@ -794,12 +847,10 @@ function validateField(f, budgetOpt){
   const v = state.form_data[k];
   return !!String(v ?? "").trim();
 }
-
 function validateStep(activeDbStep){
   const stepId = Number(activeDbStep?.id || 0);
   const fields = stepId ? getFieldsForStep(stepId) : [];
 
-  // applicant type sync
   const tf = findApplicantTypeField();
   if(tf){
     const kk = "field_" + tf.id;
@@ -807,14 +858,13 @@ function validateStep(activeDbStep){
     if(t) state.applicantType = t;
   }
 
-  // budget guard
   const budgetField = stepId ? findBudgetTableFieldForStep(stepId) : null;
   const budgetOpt = budgetField ? readBudgetOptionsFromField(budgetField) : budgetDefaultOptions();
   if(isBudgetStep(activeDbStep)){
-    if(!validateBudgetWithOptions(state.data.budget.rows, budgetOpt)) return false;
+    const budget = applyBudgetToFormData();
+    if(!validateBudgetWithOptions(budget.rows, budgetOpt)) return false;
   }
 
-  // files guard
   if(isFilesStep(activeDbStep, state.currentKey)){
     if(!validateRequirements()) return false;
   }
@@ -824,7 +874,6 @@ function validateStep(activeDbStep){
   }
   return true;
 }
-
 function missingFieldsForStep(activeDbStep){
   const stepId = Number(activeDbStep?.id || 0);
   const fields = stepId ? getFieldsForStep(stepId) : [];
@@ -834,7 +883,8 @@ function missingFieldsForStep(activeDbStep){
   const budgetOpt = budgetField ? readBudgetOptionsFromField(budgetField) : budgetDefaultOptions();
 
   if(isBudgetStep(activeDbStep)){
-    if(!validateBudgetWithOptions(state.data.budget.rows, budgetOpt)){
+    const budget = applyBudgetToFormData();
+    if(!validateBudgetWithOptions(budget.rows, budgetOpt)){
       miss.push(state.lastBudgetError || "ხარჯების ცხრილი (ბიუჯეტი)");
     }
   }
@@ -875,7 +925,7 @@ function blockIfMissing(activeDbStep){
   return false;
 }
 
-/* ========== submit step ========= */
+/* ========= submit ========= */
 function renderSubmit(){
   const dbSteps = (DATA.steps || []).filter(s => Number(s.id||0) > 0);
   let allOk = true;
@@ -883,16 +933,20 @@ function renderSubmit(){
   for(const s of dbSteps){
     const stepId = Number(s.id||0);
     const fields = getFieldsForStep(stepId);
-
     const budField = findBudgetTableFieldForStep(stepId);
     const budOpt = budField ? readBudgetOptionsFromField(budField) : budgetDefaultOptions();
 
-    if(isBudgetStep(s) && !validateBudgetWithOptions(state.data.budget.rows, budOpt)){ allOk = false; break; }
+    if(isBudgetStep(s)){
+      const budget = applyBudgetToFormData();
+      if(!validateBudgetWithOptions(budget.rows, budOpt)){ allOk = false; break; }
+    }
+
     for(const f of fields){
       if(!validateField(f, budOpt)) { allOk = false; break; }
     }
     if(!allOk) break;
   }
+
   if(!validateRequirements()) allOk = false;
 
   return `
@@ -918,16 +972,56 @@ function pickApplicantMeta(){
   let name = "", email = "", phone = "";
 
   for(const f of all){
-    const label = String(f.label||"").toLowerCase();
+    const label = String(f.label || "").trim().toLowerCase();
+    const normalizedLabel = label
+      .replace(/\./g, "")
+      .replace(/-/g, "")
+      .replace(/\s+/g, "");
+
     const k = "field_" + f.id;
     const v = state.form_data[k];
     const val = (v == null) ? "" : String(v).trim();
     if(!val) continue;
 
-    if(!name && (label.includes("სახელი") || label.includes("fullname") || label.includes("full name") || label.includes("contact name"))) name = val;
-    if(!email && (label.includes("ელ-ფოსტ") || label.includes("იმეილ") || label.includes("email"))) email = val;
-    if(!phone && (label.includes("ტელ") || label.includes("phone") || label.includes("მობ"))) phone = val;
+    if(
+      !name &&
+      (
+        label.includes("სახელი") ||
+        normalizedLabel.includes("fullname") ||
+        normalizedLabel.includes("contactname")
+      )
+    ){
+      name = val;
+    }
+
+    if(
+      !email &&
+      (
+        label.includes("ელ.ფოსტ") ||
+        label.includes("ელ-ფოსტ") ||
+        label.includes("ელ ფოსტ") ||
+        normalizedLabel.includes("ელფოსტ") ||
+        label.includes("იმეილ") ||
+        normalizedLabel.includes("email") ||
+        normalizedLabel.includes("mail")
+      )
+    ){
+      email = val;
+    }
+
+    if(
+      !phone &&
+      (
+        label.includes("ტელ") ||
+        normalizedLabel.includes("phone") ||
+        normalizedLabel.includes("mobile") ||
+        normalizedLabel.includes("mob")
+      )
+    ){
+      phone = val;
+    }
   }
+
   return { name, email, phone };
 }
 
@@ -936,6 +1030,7 @@ function buildSubmissionMeta(applicant){
   const reqs = DATA.requirements || [];
   const fieldMap = new Map(fields.map(f => [String(f.id), f]));
   const reqMap = new Map(reqs.map(r => [String(r.id), r]));
+
   const reqFiles = Object.keys(state.reqUploads).map(reqId => {
     const f = state.reqUploads[reqId];
     if (!f) return null;
@@ -999,6 +1094,168 @@ function buildSubmissionMeta(applicant){
       total_count: reqFiles.length + fieldFiles.length + otherFiles.length
     }
   };
+}
+function syncVisibleDomToState(){
+  document.querySelectorAll("[data-field]").forEach(el=>{
+    const k = el.getAttribute("data-field");
+    if(!k) return;
+    state.form_data[k] = el.value ?? "";
+  });
+
+function budgetPayloadForField(field){
+  const opt = field ? readBudgetOptionsFromField(field) : budgetDefaultOptions();
+  const cols = Array.isArray(opt.columns) ? opt.columns : [];
+  return {
+    rows: (state.data.budget.rows || []),
+    columns: cols.map(c => ({
+      key: String(c?.key || ''),
+      label: String(c?.label || c?.key || ''),
+      type: String(c?.type || 'text')
+    })).filter(c => c.key)
+  };
+}
+
+function syncVisibleDomToState(){
+  document.querySelectorAll("[data-field]").forEach(el=>{
+    const k = el.getAttribute("data-field");
+    if(!k) return;
+    state.form_data[k] = el.value ?? "";
+  });
+
+  const groups = new Set(Array.from(document.querySelectorAll("[data-group]"))
+    .map(el => String(el.getAttribute("data-group") || "").trim())
+    .filter(Boolean));
+
+  groups.forEach(k=>{
+    const list = Array.from(document.querySelectorAll(`input[data-group="${k}"]`));
+    const isRadio = list.some(x => x.type === "radio");
+    if(isRadio){
+      const chosen = list.find(x => x.checked);
+      state.form_data[k] = chosen ? chosen.value : "";
+    }else{
+      state.form_data[k] = list.filter(x => x.checked).map(x => x.value);
+    }
+  });
+
+  const budgetInputs = Array.from(document.querySelectorAll("[data-brow][data-bkey]"));
+  if(budgetInputs.length){
+    budgetInputs.forEach(inp=>{
+      const i = Number(inp.getAttribute("data-brow"));
+      const k = String(inp.getAttribute("data-bkey") || "");
+      if(!Number.isFinite(i) || i < 0 || !k) return;
+      state.data.budget.rows[i] = state.data.budget.rows[i] || {};
+      const col = (readBudgetOptionsFromField(findAnyBudgetTableField()).columns||[]).find(c => c.key === k);
+      if(col && col.type === "number"){
+        state.data.budget.rows[i][k] = Number(inp.value||0);
+      }else{
+        state.data.budget.rows[i][k] = inp.value;
+      }
+    });
+  }
+}
+
+function budgetPayloadForField(field){
+  const opt = field ? readBudgetOptionsFromField(field) : budgetDefaultOptions();
+  const cols = Array.isArray(opt.columns) ? opt.columns : [];
+  return {
+    rows: (state.data.budget.rows || []),
+    columns: cols.map(c => ({
+      key: String(c?.key || ''),
+      label: String(c?.label || c?.key || ''),
+      type: String(c?.type || 'text')
+    })).filter(c => c.key)
+  };
+}
+
+function syncVisibleDomToState(){
+  document.querySelectorAll("[data-field]").forEach(el=>{
+    const k = el.getAttribute("data-field");
+    if(!k) return;
+    state.form_data[k] = el.value ?? "";
+  });
+
+  const groups = new Set(Array.from(document.querySelectorAll("[data-group]"))
+    .map(el => String(el.getAttribute("data-group") || "").trim())
+    .filter(Boolean));
+
+  groups.forEach(k=>{
+    const list = Array.from(document.querySelectorAll(`input[data-group="${k}"]`));
+    const isRadio = list.some(x => x.type === "radio");
+    if(isRadio){
+      const chosen = list.find(x => x.checked);
+      state.form_data[k] = chosen ? chosen.value : "";
+    }else{
+      state.form_data[k] = list.filter(x => x.checked).map(x => x.value);
+    }
+  });
+
+  const budgetInputs = Array.from(document.querySelectorAll("[data-brow][data-bkey]"));
+  if(budgetInputs.length){
+    budgetInputs.forEach(inp=>{
+      const i = Number(inp.getAttribute("data-brow"));
+      const k = String(inp.getAttribute("data-bkey") || "");
+      if(!Number.isFinite(i) || i < 0 || !k) return;
+      state.data.budget.rows[i] = state.data.budget.rows[i] || {};
+      const col = (readBudgetOptionsFromField(findAnyBudgetTableField()).columns||[]).find(c => c.key === k);
+      if(col && col.type === "number"){
+        state.data.budget.rows[i][k] = Number(inp.value||0);
+      }else{
+        state.data.budget.rows[i][k] = inp.value;
+      }
+    });
+  }
+}
+
+function budgetPayloadForField(field){
+  const opt = field ? readBudgetOptionsFromField(field) : budgetDefaultOptions();
+  const cols = Array.isArray(opt.columns) ? opt.columns : [];
+  return {
+    rows: (state.data.budget.rows || []),
+    columns: cols.map(c => ({
+      key: String(c?.key || ''),
+      label: String(c?.label || c?.key || ''),
+      type: String(c?.type || 'text')
+    })).filter(c => c.key)
+  };
+}
+
+function syncVisibleDomToState(){
+  document.querySelectorAll("[data-field]").forEach(el=>{
+    const k = el.getAttribute("data-field");
+    if(!k) return;
+    state.form_data[k] = el.value ?? "";
+  });
+
+  const groups = new Set(Array.from(document.querySelectorAll("[data-group]"))
+    .map(el => String(el.getAttribute("data-group") || "").trim())
+    .filter(Boolean));
+
+  groups.forEach(k=>{
+    const list = Array.from(document.querySelectorAll(`input[data-group="${k}"]`));
+    const isRadio = list.some(x => x.type === "radio");
+    if(isRadio){
+      const chosen = list.find(x => x.checked);
+      state.form_data[k] = chosen ? chosen.value : "";
+    }else{
+      state.form_data[k] = list.filter(x => x.checked).map(x => x.value);
+    }
+  });
+
+  const budgetInputs = Array.from(document.querySelectorAll("[data-brow][data-bkey]"));
+  if(budgetInputs.length){
+    budgetInputs.forEach(inp=>{
+      const i = Number(inp.getAttribute("data-brow"));
+      const k = String(inp.getAttribute("data-bkey") || "");
+      if(!Number.isFinite(i) || i < 0 || !k) return;
+      state.data.budget.rows[i] = state.data.budget.rows[i] || {};
+      const col = (readBudgetOptionsFromField(findAnyBudgetTableField()).columns||[]).find(c => c.key === k);
+      if(col && col.type === "number"){
+        state.data.budget.rows[i][k] = Number(inp.value||0);
+      }else{
+        state.data.budget.rows[i][k] = inp.value;
+      }
+    });
+  }
 }
 
 function budgetPayloadForField(field){
@@ -1080,7 +1337,6 @@ function bindSubmit(){
         return;
       }
 
-      // applicant type sync
       const tf = findApplicantTypeField();
       if(tf){
         const k = "field_" + tf.id;
@@ -1098,11 +1354,16 @@ function bindSubmit(){
         }
       }
 
-      // build form-data for API
       const fd = new FormData();
       fd.append("csrf", DATA.csrf);
       fd.append("grant_id", String(state.grant_id));
       fd.append("applicant_type", state.applicantType);
+
+      const budgetHidden = document.getElementById("budget_json");
+      if(budgetHidden && budgetHidden.value){
+        fd.append("budget_json", budgetHidden.value);
+      }
+
       const meta = pickApplicantMeta();
       state.form_data.__meta = buildSubmissionMeta(meta);
       fd.append("form_data", JSON.stringify(state.form_data));
@@ -1111,16 +1372,13 @@ function bindSubmit(){
       if(meta.email) fd.append("email", meta.email);
       if(meta.phone) fd.append("phone", meta.phone);
 
-      // required requirement files
       Object.keys(state.reqUploads).forEach(reqId=>{
         const f = state.reqUploads[reqId];
         if(f) fd.append("req_file["+reqId+"]", f);
       });
 
-      // other files
       state.otherUploads.forEach(f => { if(f) fd.append("other_files[]", f); });
 
-      // field files
       Object.keys(state.fieldUploads).forEach(fieldId=>{
         const f = state.fieldUploads[fieldId];
         if(f) fd.append("field_file["+fieldId+"]", f);
@@ -1146,7 +1404,7 @@ function bindSubmit(){
   });
 }
 
-/* ========== render step ========= */
+/* ========= render step ========= */
 function renderFieldInput(f){
   const fieldKey = "field_" + f.id;
   const isReq = f.is_required === 1;
@@ -1237,7 +1495,6 @@ function renderFieldInput(f){
     </div>
   `;
 }
-
 function renderStep(){
   const key = state.currentKey;
   const idx = steps.findIndex(s=>s.key===key);
@@ -1280,7 +1537,6 @@ function renderStep(){
   const stepId = Number(activeDbStep.id||0);
   const fields = getFieldsForStep(stepId);
 
-  // applicant type sync
   const typeField = findApplicantTypeField();
   if(typeField){
     const tfKey = "field_" + typeField.id;
@@ -1288,19 +1544,27 @@ function renderStep(){
     if(t) state.applicantType = t;
   }
 
-  // budget step
   if(isBudgetStep(activeDbStep)){
     const budgetField = findBudgetTableFieldForStep(stepId) || findAnyBudgetTableField();
     const opt = budgetField ? readBudgetOptionsFromField(budgetField) : budgetDefaultOptions();
 
-    // load existing rows if saved
+    let restoredRows = null;
+
     if(budgetField){
       const k = "field_" + budgetField.id;
       const cur = state.form_data[k];
       const curObj = (cur && typeof cur==="object") ? cur : parseJsonMaybe(cur);
       const rows = (curObj && Array.isArray(curObj.rows)) ? curObj.rows : null;
-      if(rows && rows.length) state.data.budget.rows = rows;
+      if(rows && rows.length) restoredRows = rows;
     }
+
+    if(!restoredRows){
+      const topBudget = parseJsonMaybe(state.form_data.budget);
+      const rows = (topBudget && Array.isArray(topBudget.rows)) ? topBudget.rows : null;
+      if(rows && rows.length) restoredRows = rows;
+    }
+
+    if(restoredRows) state.data.budget.rows = restoredRows;
 
     box.innerHTML = `<div id="budgetStep"></div>`;
 
@@ -1342,13 +1606,11 @@ function renderStep(){
 
   bindFields(activeDbStep, fields, idx, filesStep);
 }
-
 function bindFields(activeDbStep, fields, idx, isFiles){
   document.querySelectorAll("[data-field]").forEach(el=>{
     const k = el.getAttribute("data-field");
     const syncValue = ()=>{
       state.form_data[k] = el.value;
-
       const tf = findApplicantTypeField();
       if(tf && k === ("field_"+tf.id)){
         const t = normalizeApplicantType(el.value);
