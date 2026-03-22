@@ -198,7 +198,6 @@ th{color:rgba(207,233,255,.92);font-size:12px;font-weight:900}
   overflow:hidden;
 }
 
-/* ✅ sticky head so it feels premium */
 .head{
   display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
   padding-bottom:10px;
@@ -226,8 +225,9 @@ hr{border:0;border-top:1px solid var(--line);margin:12px 0}
 .pill.org{border-color:rgba(46,204,113,.55);box-shadow:0 0 0 2px rgba(46,204,113,.12) inset}
 .pill.warn{border-color:rgba(241,196,15,.55);box-shadow:0 0 0 2px rgba(241,196,15,.12) inset}
 
-.summaryGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:8px 0 12px}
-@media(max-width:980px){.summaryGrid{grid-template-columns:1fr}}
+.summaryGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:8px 0 12px}
+@media(max-width:1200px){.summaryGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.summaryGrid{grid-template-columns:1fr}}
 .summaryCard{background:rgba(24,32,65,.72);border:1px solid var(--line);border-radius:12px;padding:10px}
 .summaryLabel{font-size:11px;color:var(--muted);font-weight:800}
 .summaryValue{font-size:14px;font-weight:900;margin-top:4px}
@@ -342,7 +342,7 @@ a.dl:hover{opacity:.9}
               <th>კონტაქტი</th>
               <th style="width:160px">სტატუსი</th>
               <th style="width:90px">ქულა</th>
-              <th style="width:320px">ქმედებები</th>
+              <th style="width:420px">ქმედებები</th>
             </tr>
           </thead>
           <tbody id="aBody"></tbody>
@@ -392,6 +392,11 @@ a.dl:hover{opacity:.9}
           <div class="summaryLabel">სტატუსი</div>
           <div class="summaryValue" id="amStatusText">—</div>
           <div class="summaryMeta small" id="amTimeline"></div>
+        </div>
+        <div class="summaryCard">
+          <div class="summaryLabel">ბიუჯეტი</div>
+          <div class="summaryValue" id="amBudgetSummary">—</div>
+          <div class="summaryMeta small" id="amBudgetSummaryMeta"></div>
         </div>
       </div>
 
@@ -498,6 +503,7 @@ a.dl:hover{opacity:.9}
           </div>
 
           <div class="actions" style="margin-top:12px">
+            <a class="btn ac" id="amWordBtn" href="#" target="_blank" rel="noopener">Word</a>
             <button class="btn bad" type="button" onclick="deleteActiveApp()">წაშლა</button>
             <button class="btn ok" type="button" onclick="closeApp()">დახურვა</button>
           </div>
@@ -568,6 +574,71 @@ const __deb = new Map();
 function debounce(key, fn, ms=220){
   clearTimeout(__deb.get(key));
   __deb.set(key, setTimeout(fn, ms));
+}
+
+function exportWordUrl(id) {
+  const appId = Number(id || 0);
+  if (!appId) return "#";
+  return "./export_application_word.php?id=" + encodeURIComponent(String(appId));
+}
+
+function extractBudgetSummary(formData, rowsHint = null, budgetPayloads = []) {
+  const gid = Number(window.__activeGrantIdForBudget || 0);
+  let rows = null;
+
+  if (Array.isArray(rowsHint) && rowsHint.length) {
+    rows = rowsHint;
+  }
+
+  if (!rows && Array.isArray(budgetPayloads) && budgetPayloads.length) {
+    for (const item of budgetPayloads) {
+      const value = parseJsonMaybe(item?.value);
+      const found = rowsFromBudgetValue(value);
+      if (Array.isArray(found) && found.length) {
+        rows = found;
+        break;
+      }
+    }
+  }
+
+  if (!rows) {
+    const budgetValue = deepFindBudgetValue(formData, 0, gid);
+    const found = rowsFromBudgetValue(budgetValue);
+    if (Array.isArray(found) && found.length) {
+      rows = found;
+    }
+  }
+
+  if (!rows) {
+    const found = deepFindBudgetRows(formData, 0, gid);
+    if (Array.isArray(found) && found.length) {
+      rows = found;
+    }
+  }
+
+  if (!Array.isArray(rows) || !rows.length) {
+    return {
+      hasBudget: false,
+      total: 0,
+      rowsCount: 0,
+      rows: []
+    };
+  }
+
+  const norm = rows
+    .map((r) => normalizeBudgetRow(r))
+    .filter((r) => r && r.hasContent);
+
+  const total = norm.reduce((sum, row) => {
+    return sum + Number(row.amount || 0);
+  }, 0);
+
+  return {
+    hasBudget: norm.length > 0,
+    total: total,
+    rowsCount: norm.length,
+    rows: norm
+  };
 }
 
 /* ESC closes modal */
@@ -830,6 +901,7 @@ function renderApps(){
       <td>
         <div class="actions">
           <button class="btn ghost" type="button" onclick="openApp(${Number(a.id)}, ${Number(a.grant_id||0)})">გახსნა</button>
+          <a class="btn ac" href="${exportWordUrl(Number(a.id))}" target="_blank" rel="noopener">Word</a>
           <button class="btn bad" type="button" onclick="deleteApp(${Number(a.id)})">წაშლა</button>
         </div>
       </td>
@@ -862,6 +934,7 @@ function renderApps(){
         </div>
         <div class="appCardRight">
           <button class="btn ghost" type="button" onclick="openApp(${Number(a.id)}, ${Number(a.grant_id||0)})">გახსნა</button>
+          <a class="btn ac" href="${exportWordUrl(Number(a.id))}" target="_blank" rel="noopener">Word</a>
           <button class="btn bad" type="button" onclick="deleteApp(${Number(a.id)})">წაშლა</button>
         </div>
       </div>
@@ -1033,17 +1106,14 @@ function normalizeBudgetRow(rowObj){
   };
 }
 
-/* ✅ NEW: smart detect "budget table value" object */
 function looksLikeBudgetValue(v){
   v = parseJsonMaybe(v);
   if(!v) return false;
 
-  // direct {rows:[...]}
   if(typeof v === "object" && !Array.isArray(v) && Array.isArray(v.rows)){
     return v.rows.some(x => looksLikeBudgetRow(parseJsonMaybe(x)));
   }
 
-  // direct rows:[...]
   if(Array.isArray(v)){
     return v.some(x => looksLikeBudgetRow(parseJsonMaybe(x)));
   }
@@ -1225,7 +1295,6 @@ function deepFindBudgetRows(obj, depth=0, grantId=0){
   obj = parseJsonMaybe(obj);
   if(!obj) return null;
 
-  // case: array of rows
   if(Array.isArray(obj)){
     const directRows = rowsFromBudgetValue(obj);
     if(directRows) return directRows;
@@ -1238,14 +1307,12 @@ function deepFindBudgetRows(obj, depth=0, grantId=0){
 
   if(typeof obj !== "object") return null;
 
-  // classic keys
   const b = parseJsonMaybe(obj.budget);
   if(b && typeof b === "object" && Array.isArray(b.rows) && b.rows.some(x=>looksLikeBudgetRow(parseJsonMaybe(x)))) return b.rows;
 
   const bt = parseJsonMaybe(obj.budget_table);
   if(bt && typeof bt === "object" && Array.isArray(bt.rows) && bt.rows.some(x=>looksLikeBudgetRow(parseJsonMaybe(x)))) return bt.rows;
 
-  // case: object has rows itself
   if(Array.isArray(obj.rows) && obj.rows.some(x => looksLikeBudgetRow(parseJsonMaybe(x)))) return obj.rows;
 
   // ✅ case: field_123 can be budget by type OR by key hints
@@ -1260,7 +1327,6 @@ function deepFindBudgetRows(obj, depth=0, grantId=0){
     }
   }
 
-  // fallback search
   for(const [k,v] of Object.entries(obj)){
     const kk = String(k).toLowerCase();
     if(kk.includes("budget") || kk.includes("ბიუჯ")){
@@ -1851,7 +1917,6 @@ async function openApp(id, grantIdHint=0){
     renderExactSubmitted(fd, a);
     renderUploads(a.uploads || [], fd, Number(a.grant_id || 0));
 
-    // ✅ budget: try resolved first, else deep search
     const budgetRowsHint = extractBudgetRowsFromResolved(a.form_data_resolved || []);
     showBudgetInModal(fd, budgetRowsHint, a.budget_payloads || []);
 
@@ -1903,6 +1968,14 @@ function closeApp(){
     countEl.textContent = "0";
     delete countEl.dataset.total;
   }
+
+  const budgetSummary = document.getElementById("amBudgetSummary");
+  const budgetSummaryMeta = document.getElementById("amBudgetSummaryMeta");
+  if (budgetSummary) budgetSummary.textContent = "—";
+  if (budgetSummaryMeta) budgetSummaryMeta.innerHTML = "";
+
+  const wordBtn = document.getElementById("amWordBtn");
+  if (wordBtn) wordBtn.href = "#";
 }
 
 /* save meta throttled */
