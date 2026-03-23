@@ -57,7 +57,7 @@ $list = array_slice($items, 1, 4);
     <div class="mag-kicker" data-i18n="news.kicker">Youth Agency</div>
     <div class="mag-row">
       <h2 class="mag-title" data-i18n="news.title">სიახლეები</h2>
-      <a class="mag-all" href="/youthagency/news_all.php" data-i18n="news.all">ნახე მეტი ↗</a>
+      <a class="mag-all" href="/youthagency/news/" data-i18n="news.all">ნახე მეტი ↗</a>
     </div>
   </div>
 
