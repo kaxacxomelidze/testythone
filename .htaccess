@@ -4,6 +4,7 @@
 
 RewriteEngine On
 RewriteBase /youthagency/
+ErrorDocument 404 /youthagency/404.php
 
 # 1) Do NOT rewrite real files or folders (css/js/images/php etc.)
 RewriteCond %{REQUEST_FILENAME} -f [OR]
@@ -61,3 +62,10 @@ RewriteRule ^grants/([0-9]+)/?$ grants/grants_view.php?id=$1 [L,QSA]
 # /youthagency/rules -> rules/index.php
 # ------------------------------
 RewriteRule ^rules/?$ rules/index.php [L,QSA]
+
+
+# ------------------------------
+# 404 PAGE
+# ------------------------------
+RewriteRule ^404/?$ 404.php [L,QSA]
+RewriteRule . - [R=404,L]
