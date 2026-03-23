@@ -161,12 +161,12 @@ $canonicalUrl = 'https://sspm.ge/youthagency/news/' . ($q !== '' ? '?q=' . rawur
   <meta name="description" content="<?=h($seoDescription)?>">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="<?=h($canonicalUrl)?>">
-  <link rel="icon" type="image/png" href="/youthagency/imgs/youthicon.png">
+  <link rel="icon" type="image/png" href="/youthagency/imgs/youthagencyicon.png">
   <meta property="og:type" content="website">
   <meta property="og:title" content="<?=h($seoTitle)?>">
   <meta property="og:description" content="<?=h($seoDescription)?>">
   <meta property="og:url" content="<?=h($canonicalUrl)?>">
-  <meta property="og:image" content="https://sspm.ge/youthagency/imgs/youthicon.png">
+  <meta property="og:image" content="https://sspm.ge/youthagency/imgs/youthagencyicon.png">
   <meta name="twitter:card" content="summary_large_image">
 
   <!-- Fonts & Icons -->

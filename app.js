@@ -517,6 +517,51 @@
   // header.html has: #activitiesBtn, #activitiesMenu
   // We'll use class "open"
   // ----------------------------
+  function initFooterAccordion() {
+    const footer = document.querySelector('.site-footer');
+    if (!footer || footer.dataset.accordionBound === 'true') return;
+
+    const sections = Array.from(footer.querySelectorAll('[data-footer-section]'));
+    if (!sections.length) return;
+
+    const mobileQuery = window.matchMedia('(max-width: 640px)');
+
+    function syncFooterState() {
+      const isMobile = mobileQuery.matches;
+      sections.forEach((section, index) => {
+        const button = section.querySelector('.footer-section-toggle');
+        if (!button) return;
+
+        if (!isMobile) section.classList.add('is-open');
+        else if (index !== 0 && !section.dataset.userToggled) section.classList.remove('is-open');
+
+        button.setAttribute('aria-expanded', String(isMobile ? section.classList.contains('is-open') : true));
+      });
+    }
+
+    sections.forEach((section, index) => {
+      const button = section.querySelector('.footer-section-toggle');
+      if (!button) return;
+      if (index === 0 && !section.classList.contains('is-open')) section.classList.add('is-open');
+
+      button.addEventListener('click', () => {
+        if (!mobileQuery.matches) return;
+        section.dataset.userToggled = 'true';
+        section.classList.toggle('is-open');
+        button.setAttribute('aria-expanded', String(section.classList.contains('is-open')));
+      });
+    });
+
+    if (typeof mobileQuery.addEventListener === 'function') {
+      mobileQuery.addEventListener('change', syncFooterState);
+    } else if (typeof mobileQuery.addListener === 'function') {
+      mobileQuery.addListener(syncFooterState);
+    }
+
+    footer.dataset.accordionBound = 'true';
+    syncFooterState();
+  }
+
   function initActivitiesDropdown() {
     const activitiesBtn = document.getElementById('activitiesBtn');
     const activitiesMenu = document.getElementById('activitiesMenu');
@@ -579,10 +624,21 @@
     // UI
     initBurgerMenu();
     initActivitiesDropdown();
+    initFooterAccordion();
   }
 
-  // expose for injected header usage
+  function observeDynamicFooter() {
+    const observer = new MutationObserver(() => {
+      initFooterAccordion();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    initFooterAccordion();
+  }
+
+  // expose for injected header/footer usage
   window.initHeader = initHeader;
+  window.initFooterAccordion = initFooterAccordion;
 
   initGlobalLanguageHandlers();
+  observeDynamicFooter();
 })();
