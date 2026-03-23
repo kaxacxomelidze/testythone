@@ -528,27 +528,37 @@
 
     function syncFooterState() {
       const isMobile = mobileQuery.matches;
-      sections.forEach((section, index) => {
+      sections.forEach((section) => {
         const button = section.querySelector('.footer-section-toggle');
         if (!button) return;
 
         if (!isMobile) section.classList.add('is-open');
-        else if (index !== 0 && !section.dataset.userToggled) section.classList.remove('is-open');
+        else if (section.dataset.userToggled !== 'true') section.classList.remove('is-open');
 
         button.setAttribute('aria-expanded', String(isMobile ? section.classList.contains('is-open') : true));
       });
     }
 
-    sections.forEach((section, index) => {
+    sections.forEach((section) => {
       const button = section.querySelector('.footer-section-toggle');
       if (!button) return;
-      if (index === 0 && !section.classList.contains('is-open')) section.classList.add('is-open');
 
       button.addEventListener('click', () => {
         if (!mobileQuery.matches) return;
-        section.dataset.userToggled = 'true';
-        section.classList.toggle('is-open');
-        button.setAttribute('aria-expanded', String(section.classList.contains('is-open')));
+        const willOpen = !section.classList.contains('is-open');
+
+        sections.forEach((otherSection) => {
+          otherSection.classList.remove('is-open');
+          otherSection.dataset.userToggled = 'false';
+          const otherButton = otherSection.querySelector('.footer-section-toggle');
+          if (otherButton) otherButton.setAttribute('aria-expanded', 'false');
+        });
+
+        if (willOpen) {
+          section.classList.add('is-open');
+          section.dataset.userToggled = 'true';
+          button.setAttribute('aria-expanded', 'true');
+        }
       });
     });
 
