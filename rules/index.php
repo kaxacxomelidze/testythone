@@ -7,12 +7,12 @@
   <meta name="description" content="Youth Agency-ის წესები, პირობები და მონაწილეობის ძირითადი მითითებები ერთ გვერდზე.">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="https://sspm.ge/youthagency/rules/">
-  <link rel="icon" type="image/png" href="/youthagency/imgs/youthicon.png">
+  <link rel="icon" type="image/png" href="/youthagency/imgs/youthagencyicon.png">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Youth Agency • Rules">
   <meta property="og:description" content="იხილეთ Youth Agency-ის წესები, პირობები და მონაწილეობის მნიშვნელოვანი ინფორმაცია.">
   <meta property="og:url" content="https://sspm.ge/youthagency/rules/">
-  <meta property="og:image" content="https://sspm.ge/youthagency/imgs/youthicon.png">
+  <meta property="og:image" content="https://sspm.ge/youthagency/imgs/youthagencyicon.png">
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/youthagency/assets.css?v=1">

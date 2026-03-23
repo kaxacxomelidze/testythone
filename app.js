@@ -517,6 +517,63 @@
   // header.html has: #activitiesBtn, #activitiesMenu
   // We'll use class "open"
   // ----------------------------
+  function initFooterAccordion() {
+    const footer = document.querySelector('.site-footer');
+    if (!footer || footer.dataset.accordionBound === 'true') return;
+
+    const sections = Array.from(footer.querySelectorAll('[data-footer-section]'));
+    if (!sections.length) return;
+
+    const mobileQuery = window.matchMedia('(max-width: 640px)');
+
+    function setSectionState(section, shouldOpen, isMobile) {
+      const button = section.querySelector('.footer-section-toggle');
+      const body = section.querySelector('.footer-section-body');
+      if (!button || !body) return;
+
+      section.classList.toggle('is-open', shouldOpen);
+      button.setAttribute('aria-expanded', String(isMobile ? shouldOpen : true));
+      body.hidden = isMobile ? !shouldOpen : false;
+    }
+
+    function syncFooterState() {
+      const isMobile = mobileQuery.matches;
+      sections.forEach((section) => {
+        const shouldOpen = !isMobile ? true : section.dataset.userToggled === 'true';
+        setSectionState(section, shouldOpen, isMobile);
+      });
+    }
+
+    sections.forEach((section) => {
+      const button = section.querySelector('.footer-section-toggle');
+      if (!button) return;
+
+      button.addEventListener('click', () => {
+        if (!mobileQuery.matches) return;
+        const willOpen = !section.classList.contains('is-open');
+
+        sections.forEach((otherSection) => {
+          otherSection.dataset.userToggled = 'false';
+          setSectionState(otherSection, false, true);
+        });
+
+        if (willOpen) {
+          section.dataset.userToggled = 'true';
+          setSectionState(section, true, true);
+        }
+      });
+    });
+
+    if (typeof mobileQuery.addEventListener === 'function') {
+      mobileQuery.addEventListener('change', syncFooterState);
+    } else if (typeof mobileQuery.addListener === 'function') {
+      mobileQuery.addListener(syncFooterState);
+    }
+
+    footer.dataset.accordionBound = 'true';
+    syncFooterState();
+  }
+
   function initActivitiesDropdown() {
     const activitiesBtn = document.getElementById('activitiesBtn');
     const activitiesMenu = document.getElementById('activitiesMenu');
@@ -579,10 +636,21 @@
     // UI
     initBurgerMenu();
     initActivitiesDropdown();
+    initFooterAccordion();
   }
 
-  // expose for injected header usage
+  function observeDynamicFooter() {
+    const observer = new MutationObserver(() => {
+      initFooterAccordion();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    initFooterAccordion();
+  }
+
+  // expose for injected header/footer usage
   window.initHeader = initHeader;
+  window.initFooterAccordion = initFooterAccordion;
 
   initGlobalLanguageHandlers();
+  observeDynamicFooter();
 })();

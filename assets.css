@@ -356,12 +356,41 @@ img{
   gap: 22px;
   padding: 26px 0;
 }
-.box h4{
+.footer-section{
+  min-width:0;
+}
+.footer-section-toggle{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:0;
+  background:transparent;
+  border:0;
+  color:inherit;
+  text-align:left;
+  cursor:default;
+}
+.footer-section-title{
+  display:block;
   margin:0 0 12px;
   font-size:13px;
   letter-spacing:.25px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,.9);
+  text-transform:uppercase;
+  color:rgba(255,255,255,.9);
+}
+.footer-section-arrow{
+  display:none;
+  flex:0 0 auto;
+  color:#6f788d;
+  transition:transform .2s ease;
+}
+.footer-section.is-open .footer-section-arrow{
+  transform:rotate(90deg);
+}
+.footer-section-body{
+  padding-top:0;
 }
 .about p{
   margin:0;
@@ -375,6 +404,11 @@ img{
   display:flex;
   flex-direction:column;
   gap:10px;
+}
+.footer-section-list{
+  margin:0;
+  padding:0;
+  list-style:none;
 }
 .links a{
   color: rgba(255,255,255,.82);
@@ -470,7 +504,43 @@ img{
     width:100%;
     height:44px;
   }
-  .footer-grid{grid-template-columns: 1fr;}
+  .footer-grid{
+    grid-template-columns: 1fr;
+    gap:10px;
+    padding:18px 0;
+  }
+  .footer-section{
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .footer-section-toggle{
+    cursor:pointer;
+    padding:14px 0;
+    align-items:center;
+  }
+  .footer-section-title{
+    margin:0;
+    font-size:15px;
+    text-transform:none;
+    letter-spacing:0;
+    color:#fff;
+  }
+  .footer-section-arrow{display:block;}
+  .footer-section-body{
+    display:none;
+    padding:0 0 14px;
+  }
+  .footer-section.is-open .footer-section-body{display:block;}
+  .footer-section-list{gap:12px;}
+  .links a{
+    width:100%;
+    color:rgba(255,255,255,.72);
+    font-size:14px;
+  }
+  .about p{
+    max-width:none;
+    color:rgba(255,255,255,.72);
+  }
+  .social{margin-top:16px;}
   .footer-tail{flex-direction:column;align-items:flex-start;}
   .pill{width:100%;}
   .copy{width:100%;}

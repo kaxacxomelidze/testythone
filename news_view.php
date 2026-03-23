@@ -106,7 +106,7 @@ $metaDescription = trim(preg_replace('/\s+/u', ' ', strip_tags($viewBody)) ?? ''
 if ($metaDescription === '') $metaDescription = 'Youth Agency-ის სიახლე და დეტალური ინფორმაცია.';
 if (mb_strlen($metaDescription) > 170) $metaDescription = mb_substr($metaDescription, 0, 167) . '...';
 $heroImage = trim((string)($n['image_path'] ?? ''));
-$heroImageUrl = $heroImage !== '' ? 'https://sspm.ge/youthagency/' . ltrim($heroImage, '/') : 'https://sspm.ge/youthagency/imgs/youthicon.png';
+$heroImageUrl = $heroImage !== '' ? 'https://sspm.ge/youthagency/' . ltrim($heroImage, '/') : 'https://sspm.ge/youthagency/imgs/youthagencyicon.png';
 $canonicalUrl = 'https://sspm.ge/youthagency/news/' . (int)$n['id'] . '/' . rawurlencode($slug);
 
 ?>
@@ -119,7 +119,7 @@ $canonicalUrl = 'https://sspm.ge/youthagency/news/' . (int)$n['id'] . '/' . rawu
   <meta name="description" content="<?=h($metaDescription)?>">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="<?=h($canonicalUrl)?>">
-  <link rel="icon" type="image/png" href="/youthagency/imgs/youthicon.png">
+  <link rel="icon" type="image/png" href="/youthagency/imgs/youthagencyicon.png">
   <meta property="og:type" content="article">
   <meta property="og:title" content="<?=h($viewTitle)?>">
   <meta property="og:description" content="<?=h($metaDescription)?>">
