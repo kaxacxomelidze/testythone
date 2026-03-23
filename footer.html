@@ -18,14 +18,14 @@
     <div class="divider"></div>
 
     <div class="footer-grid">
-      <section class="box about footer-section" data-footer-section>
-        <button class="footer-section-toggle" type="button" aria-expanded="false">
+      <section class="box about footer-section" data-footer-section data-footer-key="about">
+        <button class="footer-section-toggle" type="button" aria-expanded="false" aria-controls="footer-section-about">
           <span class="footer-section-title" data-i18n="footer.aboutTitle">ჩვენს შესახებ</span>
           <svg class="footer-section-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 8 14" aria-hidden="true">
             <path fill="currentColor" d="M8 7a1 1 0 0 0-.306-.72l-6-6A1 1 0 1 0 .351 1.76L5.588 7 .28 12.306a1 1 0 0 0 1.414 1.414l6-6A1 1 0 0 0 8 7Z"></path>
           </svg>
         </button>
-        <div class="footer-section-body">
+        <div class="footer-section-body" id="footer-section-about" hidden>
           <p data-i18n="footer.aboutText">
             სააგენტო ხელს უწყობს ახალგაზრდების ჩართულობას, განათლებასა და ინიციატივებს —
             საგრანტო პროგრამებით, პარტნიორული პროექტებით და პრაქტიკული სერვისებით.
@@ -40,14 +40,14 @@
         </div>
       </section>
 
-      <section class="box footer-section" data-footer-section>
-        <button class="footer-section-toggle" type="button" aria-expanded="false">
+      <section class="box footer-section" data-footer-section data-footer-key="nav">
+        <button class="footer-section-toggle" type="button" aria-expanded="false" aria-controls="footer-section-nav">
           <span class="footer-section-title" data-i18n="footer.navTitle">ნავიგაცია</span>
           <svg class="footer-section-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 8 14" aria-hidden="true">
             <path fill="currentColor" d="M8 7a1 1 0 0 0-.306-.72l-6-6A1 1 0 1 0 .351 1.76L5.588 7 .28 12.306a1 1 0 0 0 1.414 1.414l6-6A1 1 0 0 0 8 7Z"></path>
           </svg>
         </button>
-        <div class="footer-section-body">
+        <div class="footer-section-body" id="footer-section-nav" hidden>
           <ul class="footer-section-list links">
             <li><a href="/youthagency/" data-i18n="footer.navHome">მთავარი</a></li>
             <li><a href="/youthagency/camps/" data-i18n="footer.navCamps">ბანაკები</a></li>
@@ -57,14 +57,14 @@
         </div>
       </section>
 
-      <section class="box footer-section" data-footer-section>
-        <button class="footer-section-toggle" type="button" aria-expanded="false">
+      <section class="box footer-section" data-footer-section data-footer-key="services">
+        <button class="footer-section-toggle" type="button" aria-expanded="false" aria-controls="footer-section-services">
           <span class="footer-section-title" data-i18n="footer.servicesTitle">სერვისები</span>
           <svg class="footer-section-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 8 14" aria-hidden="true">
             <path fill="currentColor" d="M8 7a1 1 0 0 0-.306-.72l-6-6A1 1 0 1 0 .351 1.76L5.588 7 .28 12.306a1 1 0 0 0 1.414 1.414l6-6A1 1 0 0 0 8 7Z"></path>
           </svg>
         </button>
-        <div class="footer-section-body">
+        <div class="footer-section-body" id="footer-section-services" hidden>
           <ul class="footer-section-list links">
             <li><a href="/youthagency/news/" data-i18n="footer.servicesNews">სიახლეები</a></li>
             <li><a href="/youthagency/about/" data-i18n="footer.servicesAbout">ჩვენს შესახებ</a></li>
@@ -73,14 +73,14 @@
         </div>
       </section>
 
-      <section class="box footer-section" data-footer-section>
-        <button class="footer-section-toggle" type="button" aria-expanded="false">
+      <section class="box footer-section" data-footer-section data-footer-key="docs">
+        <button class="footer-section-toggle" type="button" aria-expanded="false" aria-controls="footer-section-docs">
           <span class="footer-section-title" data-i18n="footer.docsTitle">დოკუმენტები</span>
           <svg class="footer-section-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 8 14" aria-hidden="true">
             <path fill="currentColor" d="M8 7a1 1 0 0 0-.306-.72l-6-6A1 1 0 1 0 .351 1.76L5.588 7 .28 12.306a1 1 0 0 0 1.414 1.414l6-6A1 1 0 0 0 8 7Z"></path>
           </svg>
         </button>
-        <div class="footer-section-body">
+        <div class="footer-section-body" id="footer-section-docs" hidden>
           <ul class="footer-section-list links">
             <li><a href="#" data-i18n="footer.docsPrivacy">კონფიდენციალურობის პოლიტიკა</a></li>
             <li><a href="#" data-i18n="footer.docsTerms">გამოყენების წესები</a></li>

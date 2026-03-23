@@ -526,16 +526,21 @@
 
     const mobileQuery = window.matchMedia('(max-width: 640px)');
 
+    function setSectionState(section, shouldOpen, isMobile) {
+      const button = section.querySelector('.footer-section-toggle');
+      const body = section.querySelector('.footer-section-body');
+      if (!button || !body) return;
+
+      section.classList.toggle('is-open', shouldOpen);
+      button.setAttribute('aria-expanded', String(isMobile ? shouldOpen : true));
+      body.hidden = isMobile ? !shouldOpen : false;
+    }
+
     function syncFooterState() {
       const isMobile = mobileQuery.matches;
       sections.forEach((section) => {
-        const button = section.querySelector('.footer-section-toggle');
-        if (!button) return;
-
-        if (!isMobile) section.classList.add('is-open');
-        else if (section.dataset.userToggled !== 'true') section.classList.remove('is-open');
-
-        button.setAttribute('aria-expanded', String(isMobile ? section.classList.contains('is-open') : true));
+        const shouldOpen = !isMobile ? true : section.dataset.userToggled === 'true';
+        setSectionState(section, shouldOpen, isMobile);
       });
     }
 
@@ -548,16 +553,13 @@
         const willOpen = !section.classList.contains('is-open');
 
         sections.forEach((otherSection) => {
-          otherSection.classList.remove('is-open');
           otherSection.dataset.userToggled = 'false';
-          const otherButton = otherSection.querySelector('.footer-section-toggle');
-          if (otherButton) otherButton.setAttribute('aria-expanded', 'false');
+          setSectionState(otherSection, false, true);
         });
 
         if (willOpen) {
-          section.classList.add('is-open');
           section.dataset.userToggled = 'true';
-          button.setAttribute('aria-expanded', 'true');
+          setSectionState(section, true, true);
         }
       });
     });
