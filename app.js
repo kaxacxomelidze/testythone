@@ -593,28 +593,70 @@
   function initActivitiesDropdown() {
     const activitiesBtn = document.getElementById('activitiesBtn');
     const activitiesMenu = document.getElementById('activitiesMenu');
-    if (!activitiesBtn || !activitiesMenu) return;
+    const navItem = activitiesBtn ? activitiesBtn.closest('.nav-item') : null;
+    if (!activitiesBtn || !activitiesMenu || !navItem) return;
+    if (navItem.dataset.dropdownBound === 'true') return;
+
+    const hoverQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
+    let closeTimer = null;
+
+    function setOpen(open) {
+      activitiesMenu.classList.toggle('open', open);
+      activitiesBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function openDropdown() {
+      if (closeTimer) window.clearTimeout(closeTimer);
+      setOpen(true);
+    }
 
     function closeDropdown() {
-      activitiesMenu.classList.remove('open');
-      activitiesBtn.setAttribute('aria-expanded', 'false');
+      if (closeTimer) window.clearTimeout(closeTimer);
+      setOpen(false);
+    }
+
+    function queueClose() {
+      if (closeTimer) window.clearTimeout(closeTimer);
+      closeTimer = window.setTimeout(() => setOpen(false), 120);
     }
 
     activitiesBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const isOpen = activitiesMenu.classList.toggle('open');
-      activitiesBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      const isOpen = !activitiesMenu.classList.contains('open');
+      setOpen(isOpen);
+    });
+
+    navItem.addEventListener('mouseenter', () => {
+      if (!hoverQuery.matches) return;
+      openDropdown();
+    });
+
+    navItem.addEventListener('mouseleave', () => {
+      if (!hoverQuery.matches) return;
+      queueClose();
+    });
+
+    navItem.addEventListener('focusin', () => {
+      openDropdown();
+    });
+
+    navItem.addEventListener('focusout', () => {
+      window.setTimeout(() => {
+        if (!navItem.contains(document.activeElement)) closeDropdown();
+      }, 0);
     });
 
     document.addEventListener('click', (e) => {
-      if (activitiesMenu.contains(e.target) || activitiesBtn.contains(e.target)) return;
+      if (navItem.contains(e.target)) return;
       closeDropdown();
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeDropdown();
     });
+
+    navItem.dataset.dropdownBound = 'true';
   }
 
   // ----------------------------
