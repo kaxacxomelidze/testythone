@@ -113,7 +113,9 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="/youthagency/imgs/youthagencyicon.png">
   <title>Youth Agency • Grants</title>
+  <meta name="description" content="იხილეთ Youth Agency-ის აქტიური საგრანტო პროგრამები და მონაწილეობის პირობები.">
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -370,7 +372,7 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
     <section class="hero">
       <div class="hero-inner">
         <div>
-          <h1 data-i18n="grants.title">საგრანტო პროგრამები</h1>
+          <h1><i class="fa-solid fa-hand-holding-heart"></i> <span data-i18n="grants.title">საგრანტო პროგრამები</span></h1>
           <p data-i18n="grants.subtitle">ახალგაზრდებისთვის განკუთვნილი საგრანტო შესაძლებლობები იდეებისა და პროექტების მხარდასაჭერად</p>
         </div>
 

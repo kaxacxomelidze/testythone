@@ -87,6 +87,8 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Youth Agency • Camps</title>
+  <link rel="icon" type="image/png" href="/youthagency/imgs/youthagencyicon.png">
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -131,13 +133,15 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
       flex-wrap:wrap;
       align-items:center;
       justify-content:space-between;
-
       padding:12px;
       border:1px solid rgba(30,42,69,.9);
       border-radius:16px;
       background: linear-gradient(180deg, rgba(17,28,51,.55), rgba(17,28,51,.32));
       box-shadow: var(--shadow);
     }
+
+    .search-intro{display:flex;align-items:center;gap:14px;flex:1 1 320px}
+    .search-icon{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:rgba(96,165,250,.16);color:#93c5fd;font-size:24px;border:1px solid rgba(96,165,250,.3)}
 
     .search{
       flex:1 1 360px;
@@ -334,7 +338,8 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <div id="siteHeaderMount"></div>
 
   <main class="wrap">
-    <div class="bar">
+    <section class="bar"><div class="search-intro"><div class="search-icon"><i class="fa-solid fa-campground"></i></div><div><h1 style="margin:0 0 6px;font-size:30px;color:#fff" data-i18n="camps.heroTitle">ბანაკები</h1><div style="color:rgba(229,231,235,.78);font-weight:700" data-i18n="camps.heroSubtitle">აღმოაჩინე ახალგაზრდული ბანაკები, თარიღები და რეგისტრაციის დეტალები.</div></div></div>
+      
       <div class="search">
         <i class="fa-solid fa-magnifying-glass"></i>
         <input id="q" type="search" placeholder="ძიება ბანაკებში..." data-i18n-placeholder="camps.searchPlaceholder">
@@ -360,7 +365,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
           <span data-i18n="camps.filterClosed">დახურული</span> <span class="count" id="cClosed">0</span>
         </div>
       </div>
-    </div>
+    </section>
     <br>
 
     <section class="grid" id="grid" aria-live="polite">
