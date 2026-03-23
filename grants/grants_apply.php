@@ -283,6 +283,7 @@ $payload = [
 ?><!doctype html>
 <html lang="ka">
 <head>
+  <link rel="icon" type="image/png" href="/youthagency/imgs/youthagencyicon.png">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><?= h((string)$grant['title']) ?> • Grant Portal</title>
