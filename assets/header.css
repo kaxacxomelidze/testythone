@@ -67,6 +67,8 @@ body{
 .header-nav a:hover,.nav-trigger:hover,.header-link:hover,.mobile-panel nav a:hover{color:#fff;background:rgba(255,255,255,.1)}
 .header-nav a.active,.header-link.active{color:#fff;background:rgba(76,141,255,.18)}
 .nav-item{position:relative;display:flex;align-items:center}
+.nav-caret{font-size:12px;line-height:1;opacity:.85;transition:transform .18s ease}
+.nav-trigger[aria-expanded="true"] .nav-caret{transform:rotate(180deg)}
 .dropdown-menu{
   position:absolute;top:100%;left:0;margin-top:10px;min-width:220px;background:#fff;border-radius:16px;
   box-shadow:0 18px 36px rgba(0,0,0,.22);padding:8px;opacity:0;visibility:hidden;transform:translateY(8px);
