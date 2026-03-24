@@ -3,6 +3,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../admin/config.php';
 $pdo = db();
+security_headers(true);
+enforce_http_method(['POST'], true);
+enforce_same_origin_post(true);
+enforce_content_length(20 * 1024 * 1024, true);
+enforce_rate_limit('grants_apply_api', 40, 300, true);
 
 function json_out(array $d, int $code=200): void {
   http_response_code($code);
@@ -49,7 +54,7 @@ try{
           json_out(['ok'=>false,'error'=>'File upload failed'], 400);
         }
 
-        $data[$key] = '/youthagency/uploads/grant_apps/' . $new;
+        $data[$key] = '/uploads/grant_apps/' . $new;
       } else {
         $data[$key] = '';
       }
