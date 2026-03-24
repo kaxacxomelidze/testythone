@@ -183,7 +183,14 @@ function detect_activity_tables_export(array $formData, array $fieldTypes = [], 
   return $tables;
 }
 
+function is_activity_row_key_export(string $key): bool {
+  return (bool)preg_match('~(^|\.)rows\.\d+\.(activity|start_date|end_date|coverage)$~', $key)
+    || (bool)preg_match('~(^|\.)total_rows$~', $key);
+}
+
 function should_skip_answer_key_export(string $key, array $skipPrefixes): bool {
+  if (is_activity_row_key_export($key)) return true;
+
   foreach ($skipPrefixes as $prefix) {
     if ($prefix === '') continue;
     if ($key === $prefix) return true;
