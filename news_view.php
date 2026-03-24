@@ -14,6 +14,19 @@ function has_col(PDO $pdo, string $table, string $col): bool {
   }
 }
 
+function normalize_public_path(string $path): string {
+  $path = trim($path);
+  if ($path === '') return '';
+  if (preg_match('~^(https?:)?//~i', $path) || str_starts_with($path, 'data:')) return $path;
+  $path = str_replace('\\', '/', $path);
+  $path = preg_replace('~/+~', '/', $path) ?? $path;
+  if (!str_starts_with($path, '/')) $path = '/' . ltrim($path, '/');
+  if (str_starts_with($path, '/youthagency/')) {
+    $path = '/' . ltrim(substr($path, strlen('/youthagency/')), '/');
+  }
+  return $path;
+}
+
 function fmt_date(?string $dt): string {
   if (!$dt) return '';
   $ts = strtotime($dt);
@@ -105,7 +118,7 @@ if ($lang === 'en') {
 $metaDescription = trim(preg_replace('/\s+/u', ' ', strip_tags($viewBody)) ?? '');
 if ($metaDescription === '') $metaDescription = 'Youth Agency-ის სიახლე და დეტალური ინფორმაცია.';
 if (mb_strlen($metaDescription) > 170) $metaDescription = mb_substr($metaDescription, 0, 167) . '...';
-$heroImage = trim((string)($n['image_path'] ?? ''));
+$heroImage = normalize_public_path((string)($n['image_path'] ?? ''));
 $heroImageUrl = $heroImage !== '' ? 'https://sspm.ge/' . ltrim($heroImage, '/') : 'https://sspm.ge/imgs/youthagencyicon.png';
 $canonicalUrl = 'https://sspm.ge/news/' . (int)$n['id'] . '/' . rawurlencode($slug);
 
@@ -147,7 +160,7 @@ $canonicalUrl = 'https://sspm.ge/news/' . (int)$n['id'] . '/' . rawurlencode($sl
     <div class="meta"><?=h(fmt_date($n['published_at'] ?? ''))?></div>
 
     <?php if (!empty($n['image_path'])): ?>
-      <img class="heroimg" src="<?=h(str_starts_with((string)$n['image_path'], "/") ? (string)$n['image_path'] : "/" . (string)$n['image_path'])?>" alt="">
+      <img class="heroimg" src="<?=h(normalize_public_path((string)$n['image_path']))?>" alt="">
     <?php endif; ?>
 
     <?php if (trim($viewBody) !== ''): ?>
@@ -158,7 +171,7 @@ $canonicalUrl = 'https://sspm.ge/news/' . (int)$n['id'] . '/' . rawurlencode($sl
       <h3 style="margin-top:22px">Gallery</h3>
       <div class="gallery">
         <?php foreach($gallery as $img): ?>
-          <img src="<?=h(str_starts_with((string)$img['image_path'], "/") ? (string)$img['image_path'] : "/" . (string)$img['image_path'])?>" alt="">
+          <img src="<?=h(normalize_public_path((string)$img['image_path']))?>" alt="">
         <?php endforeach; ?>
       </div>
     <?php endif; ?>

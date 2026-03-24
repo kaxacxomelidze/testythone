@@ -55,8 +55,11 @@ function public_url(string $path): string {
   if ($p === '') return '';
   if (preg_match('~^(https?:)?//~i', $p)) return $p;
   if (str_starts_with($p, 'data:')) return $p;
-  if (str_starts_with($p, '/')) return $p;
-  return '/' . ltrim($p, '/');
+  if (!str_starts_with($p, '/')) $p = '/' . ltrim($p, '/');
+  if (str_starts_with($p, '/youthagency/')) {
+    return '/' . ltrim(substr($p, strlen('/youthagency/')), '/');
+  }
+  return $p;
 }
 
 /* detect columns safely */

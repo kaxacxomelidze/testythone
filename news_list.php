@@ -36,6 +36,19 @@ function news_url(array $n): string {
   return "/news/$id/$slug";
 }
 
+function normalize_public_path(string $path): string {
+  $path = trim($path);
+  if ($path === '') return '';
+  if (preg_match('~^(https?:)?//~i', $path) || str_starts_with($path, 'data:')) return $path;
+  $path = str_replace('\\', '/', $path);
+  $path = preg_replace('~/+~', '/', $path) ?? $path;
+  if (!str_starts_with($path, '/')) $path = '/' . ltrim($path, '/');
+  if (str_starts_with($path, '/youthagency/')) {
+    $path = '/' . ltrim(substr($path, strlen('/youthagency/')), '/');
+  }
+  return $path;
+}
+
 $news_cols = table_cols($pdo, 'news');
 $has_title_en = isset($news_cols['title_en']);
 $has_body_en = isset($news_cols['body_en']);
@@ -72,7 +85,7 @@ $list = array_slice($items, 1, 4);
 
     <?php
       $fUrl  = news_url($featured);
-      $fImg  = trim((string)($featured['image_path'] ?? ''));
+      $fImg  = normalize_public_path((string)($featured['image_path'] ?? ''));
       $fDate = fmt_date($featured['published_at'] ?? '');
       $fDesc = excerpt($featured['body'] ?? '', 200);
       $fTitleEn = (string)($featured['title_en'] ?? '');
@@ -85,7 +98,7 @@ $list = array_slice($items, 1, 4);
         <a class="mag-feature__link" href="<?=h($fUrl)?>">
           <div class="mag-feature__media">
             <?php if ($fImg): ?>
-              <img src="<?=h(str_starts_with($fImg, "/") ? $fImg : "/" . $fImg)?>" alt="<?=h($featured['title'])?>">
+              <img src="<?=h($fImg)?>" alt="<?=h($featured['title'])?>">
             <?php else: ?>
               <div class="mag-fallback"></div>
             <?php endif; ?>
@@ -117,7 +130,7 @@ $list = array_slice($items, 1, 4);
           <?php foreach ($list as $n): ?>
             <?php
               $url  = news_url($n);
-              $img  = trim((string)($n['image_path'] ?? ''));
+              $img  = normalize_public_path((string)($n['image_path'] ?? ''));
               $date = fmt_date($n['published_at'] ?? '');
               $desc = excerpt($n['body'] ?? '', 95);
               $titleEn = (string)($n['title_en'] ?? '');
@@ -127,7 +140,7 @@ $list = array_slice($items, 1, 4);
               <a class="mag-mini__link" href="<?=h($url)?>">
                 <div class="mag-mini__thumb">
                   <?php if ($img): ?>
-                    <img src="<?=h(str_starts_with($img, "/") ? $img : "/" . $img)?>" alt="<?=h($n['title'])?>">
+                    <img src="<?=h($img)?>" alt="<?=h($n['title'])?>">
                   <?php else: ?>
                     <div class="mag-mini__fallback"></div>
                   <?php endif; ?>

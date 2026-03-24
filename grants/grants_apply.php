@@ -78,7 +78,7 @@ function build_public_image_url(string $rawPath): string {
   if ($clean === '') return '';
 
   if (stripos($clean, 'youthagency/') === 0) {
-    return '/' . $clean;
+    return '/' . ltrim(substr($clean, strlen('youthagency/')), '/');
   }
 
   if (stripos($clean, 'admin/uploads/') === 0) {

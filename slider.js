@@ -15,9 +15,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   console.log("✅ Slider HTML found");
 
-  // Try root path first, then legacy subpath fallback.
-  const API_URLS = ["/data/slides_api.php", "/youthagency/data/slides_api.php"];
-  console.log("API candidates:", API_URLS);
+  const API_URLS = ["/data/slides_api.php"];
+  console.log("API candidate:", API_URLS[0]);
 
   async function fetchSlidesData() {
     for (const url of API_URLS) {

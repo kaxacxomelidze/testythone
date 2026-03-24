@@ -113,6 +113,21 @@ function upload_public_file(string $fieldName, string $subdir, array $allowedExt
   return "/uploads/$subdir/" . $fname;
 }
 
+function normalize_public_path(string $path): string {
+  $path = trim($path);
+  if ($path === '') return '';
+  if (preg_match('~^(https?:)?//~i', $path) || str_starts_with($path, 'data:')) return $path;
+
+  $path = str_replace('\\', '/', $path);
+  $path = preg_replace('~/+~', '/', $path) ?? $path;
+  if (!str_starts_with($path, '/')) $path = '/' . ltrim($path, '/');
+
+  if (str_starts_with($path, '/youthagency/')) {
+    $path = '/' . ltrim(substr($path, strlen('/youthagency/')), '/');
+  }
+  return $path;
+}
+
 /* ------------------ PRG: POST -> REDIRECT -> GET ------------------ */
 function redirect_same(array $params = []): void {
   // Keep id=... always
@@ -331,7 +346,7 @@ $campName  = (string)($camp['name'] ?? '');
 $campNameEn  = (string)($camp['name_en'] ?? '');
 $campText  = (string)($camp['card_text'] ?? '');
 $campTextEn  = (string)($camp['card_text_en'] ?? '');
-$campCover = (string)($camp['cover'] ?? '');
+$campCover = normalize_public_path((string)($camp['cover'] ?? ''));
 $campStart = fmtDate((string)($camp['start_date'] ?? ''));
 $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
 ?>
@@ -672,7 +687,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
           <article class="post">
             <div class="postTop">
               <?php if (!empty($p['cover'])): ?>
-                <img class="postCover" src="<?=h((string)$p['cover'])?>" alt="">
+                <img class="postCover" src="<?=h(normalize_public_path((string)$p['cover']))?>" alt="">
               <?php endif; ?>
 
               <div>
@@ -689,7 +704,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
               <div class="gallery">
                 <?php foreach ($g as $img): ?>
                   <a href="<?=h((string)$img['path'])?>" target="_blank" rel="noopener">
-                    <img src="<?=h((string)$img['path'])?>" alt="">
+                    <img src="<?=h(normalize_public_path((string)$img['path']))?>" alt="">
                   </a>
                 <?php endforeach; ?>
               </div>

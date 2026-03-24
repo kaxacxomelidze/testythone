@@ -30,6 +30,21 @@ function fmtDate(?string $d): string {
   return date('Y-m-d', $ts);
 }
 
+function normalize_public_path(string $path): string {
+  $path = trim($path);
+  if ($path === '') return '';
+  if (preg_match('~^(https?:)?//~i', $path) || str_starts_with($path, 'data:')) return $path;
+
+  $path = str_replace('\\', '/', $path);
+  $path = preg_replace('~/+~', '/', $path) ?? $path;
+  if (!str_starts_with($path, '/')) $path = '/' . ltrim($path, '/');
+
+  if (str_starts_with($path, '/youthagency/')) {
+    $path = '/' . ltrim(substr($path, strlen('/youthagency/')), '/');
+  }
+  return $path;
+}
+
 /**
  * Convert date string to timestamp
  * - If "YYYY-MM-DD" => use end-of-day (23:59:59) when $endOfDay=true
@@ -382,7 +397,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
           $descEn  = (string)($c['card_text_en'] ?? '');
           $start = fmtDate((string)($c['start_date'] ?? ''));
           $end   = fmtDate((string)($c['end_date'] ?? ''));
-          $cover = (string)($c['cover'] ?? '');
+          $cover = normalize_public_path((string)($c['cover'] ?? ''));
 
           $status = campStatus($c);
 
