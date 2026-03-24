@@ -7,7 +7,8 @@
   <meta name="robots" content="noindex,follow">
   <link rel="icon" type="image/png" href="/imgs/youthagencyicon.png">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets.css?v=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="/assets.css?v=1">
   <style>
     .page{min-height:calc(100vh - 160px);display:grid;place-items:center;padding:40px 18px;background:radial-gradient(circle at top, rgba(96,165,250,.14), transparent 36%), #f8fafc}
     .card{max-width:720px;width:100%;background:#fff;border-radius:24px;padding:34px;text-align:center;border:1px solid rgba(15,23,42,.08);box-shadow:0 24px 48px rgba(15,23,42,.08)}
