@@ -102,7 +102,7 @@ function upload_file(string $inputName, int $campId, int $fieldId, string $uploa
   }
 
   // IMPORTANT: must match where your web server serves uploads
-  $publicPath = "/youthagency/uploads/camps/" . $name;
+  $publicPath = "/uploads/camps/" . $name;
 
   return ['ok' => true, 'path' => $publicPath, 'error' => ''];
 }
