@@ -15,17 +15,30 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   console.log("✅ Slider HTML found");
 
-  // FIXED API PATH (NO MAGIC)
-  const API_URL = "/youthagency/data/slides_api.php";
-  console.log("API:", API_URL);
+  // Try root path first, then legacy subpath fallback.
+  const API_URLS = ["/data/slides_api.php", "/youthagency/data/slides_api.php"];
+  console.log("API candidates:", API_URLS);
 
-  let data;
-  try {
-    const res = await fetch(API_URL);
-    console.log("API status:", res.status);
-    data = await res.json();
-  } catch (e) {
-    console.error("❌ API fetch failed", e);
+  async function fetchSlidesData() {
+    for (const url of API_URLS) {
+      try {
+        const res = await fetch(url, { headers: { "Accept": "application/json" } });
+        console.log("API status:", url, res.status);
+        if (!res.ok) continue;
+
+        const raw = await res.text();
+        const parsed = JSON.parse(raw);
+        return parsed;
+      } catch (e) {
+        console.warn("⚠️ API candidate failed:", url, e);
+      }
+    }
+    return null;
+  }
+
+  const data = await fetchSlidesData();
+  if (!data) {
+    console.error("❌ API fetch failed for all candidates", API_URLS);
     return;
   }
 
@@ -46,7 +59,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function img(path) {
     if (path.startsWith("/")) return path;
-    return "/youthagency/" + path;
+    return "/" + path;
   }
 
   function render() {

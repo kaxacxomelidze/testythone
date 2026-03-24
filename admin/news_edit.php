@@ -168,7 +168,7 @@ try {
 
 $slug = trim((string)($n['slug'] ?? ''));
 if ($slug === '' || $slug === '-' || $slug === 'news') $slug = 'news-' . $id;
-$open = "/youthagency/news/" . $id . "/" . $slug;
+$open = "/news/" . $id . "/" . $slug;
 
 $titlePage = t('სიახლის რედაქტირება', 'Edit News');
 ob_start();
