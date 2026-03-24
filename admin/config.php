@@ -43,10 +43,20 @@ if (!defined('DATA_DIR'))   define('DATA_DIR', __DIR__ . '/../data');
 if (!defined('UPLOAD_DIR')) define('UPLOAD_DIR', __DIR__ . '/../uploads');
 
 
-if (!defined('DB_HOST')) define('DB_HOST', '127.0.0.1');
-if (!defined('DB_NAME')) define('DB_NAME', 'spg_portal'); // <-- შენი რეალური DB
-if (!defined('DB_USER')) define('DB_USER', 'root');
-if (!defined('DB_PASS')) define('DB_PASS', '');
+if (!function_exists('env_or')) {
+  function env_or(string $key, string $default = ''): string {
+    $v = getenv($key);
+    if ($v !== false && $v !== '') return $v;
+    if (isset($_ENV[$key]) && $_ENV[$key] !== '') return (string)$_ENV[$key];
+    if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') return (string)$_SERVER[$key];
+    return $default;
+  }
+}
+
+if (!defined('DB_HOST')) define('DB_HOST', env_or('DB_HOST', '127.0.0.1'));
+if (!defined('DB_NAME')) define('DB_NAME', env_or('DB_NAME', 'sspm_test'));
+if (!defined('DB_USER')) define('DB_USER', env_or('DB_USER', 'sspm_main'));
+if (!defined('DB_PASS')) define('DB_PASS', env_or('DB_PASS', 'themainfirst!@#$'));
 /**
  * =========================
  * PDO Database

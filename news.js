@@ -22,12 +22,12 @@
     }
 
     wrap.innerHTML = items.map(n => {
-      const link = n.id ? `/youthagency/news/${encodeURIComponent(n.id)}/${encodeURIComponent(n.slug || 'news')}` : '#';
+      const link = n.id ? `/news/${encodeURIComponent(n.id)}/${encodeURIComponent(n.slug || 'news')}` : '#';
       const preview = (n.body || '').toString().slice(0, 180);
 
       return `
         <article class="news-card">
-          ${n.image_path ? `<img class="news-img" src="/youthagency/${escAttr(n.image_path)}" alt="">` : ``}
+          ${n.image_path ? `<img class="news-img" src="${String(n.image_path).startsWith("/") ? escAttr(n.image_path) : "/" + escAttr(n.image_path)}" alt="">` : ``}
           <div class="news-body">
             <div class="news-title">${escHtml(n.title || '')}</div>
             ${n.published_at ? `<div class="news-date">${escHtml(n.published_at)}</div>` : ``}
