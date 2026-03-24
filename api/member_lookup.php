@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../admin/config.php';
 require_once __DIR__ . '/../admin/db.php';
 security_headers(true);
+enforce_http_method(['GET'], true);
 enforce_rate_limit('member_lookup_api', 90, 60, true);
 
 header('Content-Type: application/json; charset=utf-8');

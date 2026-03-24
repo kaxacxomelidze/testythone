@@ -127,6 +127,65 @@ if (!function_exists('enforce_rate_limit')) {
     exit;
   }
 }
+
+if (!function_exists('enforce_http_method')) {
+  function enforce_http_method(array $allowed, bool $json = true): void {
+    $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    $allowed = array_map(static fn($m) => strtoupper((string)$m), $allowed);
+    if (in_array($method, $allowed, true)) return;
+
+    http_response_code(405);
+    if (!headers_sent()) header('Allow: ' . implode(', ', $allowed));
+    if ($json) {
+      if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
+      echo json_encode(['ok' => false, 'error' => 'Method Not Allowed']);
+    } else {
+      echo 'Method Not Allowed';
+    }
+    exit;
+  }
+}
+
+if (!function_exists('enforce_content_length')) {
+  function enforce_content_length(int $maxBytes = 1048576, bool $json = true): void {
+    $len = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+    if ($len <= 0 || $len <= $maxBytes) return;
+
+    http_response_code(413);
+    if ($json) {
+      if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
+      echo json_encode(['ok' => false, 'error' => 'Payload too large']);
+    } else {
+      echo 'Payload too large';
+    }
+    exit;
+  }
+}
+
+if (!function_exists('enforce_same_origin_post')) {
+  function enforce_same_origin_post(bool $json = true): void {
+    $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    if (!in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) return;
+
+    $origin = trim((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
+    if ($origin === '') return; // some same-origin browser requests omit Origin
+
+    $host = trim((string)($_SERVER['HTTP_HOST'] ?? ''));
+    if ($host === '') return;
+
+    $originHost = parse_url($origin, PHP_URL_HOST);
+    if (!is_string($originHost) || $originHost === '' || strcasecmp($originHost, $host) === 0) return;
+
+    http_response_code(403);
+    if ($json) {
+      if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
+      echo json_encode(['ok' => false, 'error' => 'Forbidden origin']);
+    } else {
+      echo 'Forbidden origin';
+    }
+    exit;
+  }
+}
 /**
  * =========================
  * PDO Database

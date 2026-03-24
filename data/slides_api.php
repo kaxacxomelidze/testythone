@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../admin/config.php';
 security_headers(true);
+enforce_http_method(['GET'], true);
 enforce_rate_limit('data_slides_api', 180, 60, true);
 
 header('Content-Type: application/json; charset=utf-8');
