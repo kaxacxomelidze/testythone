@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("✅ Slider HTML found");
 
   // FIXED API PATH (NO MAGIC)
-  const API_URL = "/youthagency/data/slides_api.php";
+  const API_URL = "/data/slides_api.php";
   console.log("API:", API_URL);
 
   let data;
@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function img(path) {
     if (path.startsWith("/")) return path;
-    return "/youthagency/" + path;
+    return "/" + path;
   }
 
   function render() {

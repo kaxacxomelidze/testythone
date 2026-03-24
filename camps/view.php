@@ -110,7 +110,7 @@ function upload_public_file(string $fieldName, string $subdir, array $allowedExt
 
   if (!move_uploaded_file($tmp, $dest)) return '';
 
-  return "/youthagency/uploads/$subdir/" . $fname;
+  return "/uploads/$subdir/" . $fname;
 }
 
 /* ------------------ PRG: POST -> REDIRECT -> GET ------------------ */
@@ -338,13 +338,14 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
 <!doctype html>
 <html lang="ka">
 <head>
+  <link rel="icon" type="image/png" href="/imgs/youthagencyicon.png">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title><?=h($campName)?></title>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="/youthagency/assets.css?v=1">
+  <link rel="stylesheet" href="/assets.css?v=1">
 
   <style>
     :root{
@@ -607,7 +608,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
   <main class="wrap">
 
     <div class="topbar">
-      <a class="back" href="/youthagency/camps/">
+      <a class="back" href="/camps/">
         <i class="fa-solid fa-arrow-left"></i> <span data-i18n="campsView.back">ბანაკებზე დაბრუნება</span>
       </a>
 
@@ -862,7 +863,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
 
           async function lookup(pid){
             try{
-              const res = await fetch("/youthagency/api/member_lookup.php?pid=" + encodeURIComponent(pid));
+              const res = await fetch("/api/member_lookup.php?pid=" + encodeURIComponent(pid));
               const j = await res.json().catch(()=>null);
               if(!j || !j.ok || !j.found) return null;
               return j.member || null;
@@ -921,10 +922,10 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
     }
 
     (async () => {
-      await inject('siteHeaderMount', '/youthagency/header.html');
-      await loadScript('/youthagency/app.js');
+      await inject('siteHeaderMount', '/header.html');
+      await loadScript('/app.js');
       if (typeof window.initHeader === 'function') window.initHeader();
-      await inject('siteFooterMount', '/youthagency/footer.html');
+      await inject('siteFooterMount', '/footer.html');
     })();
   </script>
 
