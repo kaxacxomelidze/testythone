@@ -89,7 +89,7 @@ function upload_image(string $fieldName, string $subdir, array $allowedExt = ['j
   $dest = $dir . "/" . $fname;
   if (!move_uploaded_file($tmp, $dest)) fail("Upload failed", 500);
 
-  return "/youthagency/uploads/$subdir/" . $fname;
+  return "/uploads/$subdir/" . $fname;
 }
 
 function upload_many_images(string $fieldName, string $subdir): array {
@@ -117,7 +117,7 @@ function upload_many_images(string $fieldName, string $subdir): array {
     $dest = $dir . "/" . $fname;
 
     if (move_uploaded_file($tmps[$i], $dest)) {
-      $paths[] = "/youthagency/uploads/$subdir/" . $fname;
+      $paths[] = "/uploads/$subdir/" . $fname;
     }
   }
   return $paths;
@@ -484,8 +484,8 @@ try {
     $pdo->prepare("DELETE FROM camps_post_media WHERE id=?")->execute([$id]);
 
     $path = (string)$row['path'];
-    if (str_starts_with($path, "/youthagency/uploads/")) {
-      $abs = __DIR__ . "/../.." . str_replace("/youthagency", "", $path);
+    if (str_starts_with($path, "/uploads/")) {
+      $abs = __DIR__ . "/../.." . ltrim($path, "/");
       if (is_file($abs)) @unlink($abs);
     }
     ok();

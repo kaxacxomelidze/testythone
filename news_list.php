@@ -33,7 +33,7 @@ function news_url(array $n): string {
   $id = (int)($n['id'] ?? 0);
   $slug = trim((string)($n['slug'] ?? ''));
   if ($slug === '' || $slug === '-' || $slug === 'news') $slug = 'news-' . $id;
-  return "/youthagency/news/$id/$slug";
+  return "/news/$id/$slug";
 }
 
 $news_cols = table_cols($pdo, 'news');
@@ -57,7 +57,7 @@ $list = array_slice($items, 1, 4);
     <div class="mag-kicker" data-i18n="news.kicker">Youth Agency</div>
     <div class="mag-row">
       <h2 class="mag-title" data-i18n="news.title">სიახლეები</h2>
-      <a class="mag-all" href="/youthagency/news_all.php" data-i18n="news.all">ნახე მეტი ↗</a>
+      <a class="mag-all" href="/news/" data-i18n="news.all">ნახე მეტი ↗</a>
     </div>
   </div>
 
@@ -85,7 +85,7 @@ $list = array_slice($items, 1, 4);
         <a class="mag-feature__link" href="<?=h($fUrl)?>">
           <div class="mag-feature__media">
             <?php if ($fImg): ?>
-              <img src="/youthagency/<?=h($fImg)?>" alt="<?=h($featured['title'])?>">
+              <img src="<?=h(str_starts_with($fImg, "/") ? $fImg : "/" . $fImg)?>" alt="<?=h($featured['title'])?>">
             <?php else: ?>
               <div class="mag-fallback"></div>
             <?php endif; ?>
@@ -127,7 +127,7 @@ $list = array_slice($items, 1, 4);
               <a class="mag-mini__link" href="<?=h($url)?>">
                 <div class="mag-mini__thumb">
                   <?php if ($img): ?>
-                    <img src="/youthagency/<?=h($img)?>" alt="<?=h($n['title'])?>">
+                    <img src="<?=h(str_starts_with($img, "/") ? $img : "/" . $img)?>" alt="<?=h($n['title'])?>">
                   <?php else: ?>
                     <div class="mag-mini__fallback"></div>
                   <?php endif; ?>

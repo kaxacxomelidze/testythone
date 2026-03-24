@@ -49,7 +49,7 @@ try{
           json_out(['ok'=>false,'error'=>'File upload failed'], 400);
         }
 
-        $data[$key] = '/youthagency/uploads/grant_apps/' . $new;
+        $data[$key] = '/uploads/grant_apps/' . $new;
       } else {
         $data[$key] = '';
       }
