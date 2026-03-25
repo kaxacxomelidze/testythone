@@ -157,7 +157,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     .search-intro{flex:1 1 320px}
 
-    .search{
+    .camp-search{
       flex:1 1 360px;
       display:flex;
       align-items:center;
@@ -168,8 +168,8 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
       background: rgba(11,18,32,.45);
       padding:11px 12px;
     }
-    .search i{color:rgba(229,231,235,.9)}
-    .search input{
+    .camp-search i{color:rgba(229,231,235,.9)}
+    .camp-search input{
       width:100%;
       border:0;
       outline:none;
@@ -178,7 +178,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
       font-weight:800;
       font-size:1rem;
     }
-    .search input::placeholder{color:rgba(156,163,175,.95);font-weight:700}
+    .camp-search input::placeholder{color:rgba(156,163,175,.95);font-weight:700}
 
     .filters{
       display:flex;
@@ -354,7 +354,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <main class="wrap">
     <section class="bar"><div class="search-intro"><h1 style="margin:0 0 6px;font-size:30px;color:#fff" data-i18n="camps.heroTitle">ბანაკები</h1><div style="color:rgba(229,231,235,.78);font-weight:700" data-i18n="camps.heroSubtitle">აღმოაჩინე ახალგაზრდული ბანაკები, თარიღები და რეგისტრაციის დეტალები.</div></div>
       
-      <div class="search">
+      <div class="camp-search">
         <i class="fa-solid fa-magnifying-glass"></i>
         <input id="q" type="search" placeholder="ძიება ბანაკებში..." data-i18n-placeholder="camps.searchPlaceholder">
       </div>
