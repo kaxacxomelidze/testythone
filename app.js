@@ -1,4 +1,4 @@
-// /youthagency/app.js (FULL FIXED + IMPROVED)
+// /app.js (FULL FIXED + IMPROVED)
 (function () {
   'use strict';
 
@@ -42,7 +42,7 @@
       'footer.address': 'ვაჟა ფშაველას ქ. #76',
       'footer.phone': '032 230 51 65',
       'footer.email': 'info@youth.ge',
-      'footer.copy': 'youth.ge © 2026. ყველა უფლება დაცულია.',
+      'footer.copySuffix': '© 2026. ყველა უფლება დაცულია.',
 
       'about.title': 'ჩვენ შესახებ',
       'about.body': 'სსიპ ახალგაზრდობის სააგენტო არის საჯარო სამართლის იურიდიული პირი, რომელიც შექმნილია სახელმწიფო ახალგაზრდული პოლიტიკის სტრატეგიის შემუშავების, განხორციელებისა და კოორდინაციის მიზნით. ახალგაზრდობა არის ქვეყნის მდგრადი განვითარების მამოძრავებელი ძალა და ადამიანური კაპიტალის მთავარი განახლებადი წყარო. სახელმწიფო ახალგაზრდებისთვის და ახალგაზრდებთან ერთად ქმნის მათი, როგორც ინდივიდებისა და საზოგადოების სრულფასოვანი წევრების განვითარების მხარდამჭერ გარემოს, რაც ხელს შეუწყობს თითოეულის პოტენციალის სრულად გამოყენებას, ეკონომიკურ გაძლიერებასა და ქვეყნის განვითარების პროცესში აქტიურ მონაწილეობას.',
@@ -61,6 +61,8 @@
       'contact.address': 'ვაჟა ფშაველას ქ. #76',
       'contact.phoneInfo': '032 230 51 65',
       'contact.emailInfo': 'info@youth.ge',
+      'contact.mapTitle': 'მდებარეობა რუკაზე',
+      'contact.mapNote': 'ოფისი შეგიძლიათ მარტივად ნახოთ რუკაზე და დაგეგმოთ ვიზიტი წინასწარ.',
 
       'home.sliderLabel': 'მთავარი სლაიდერი',
       'home.prevSlide': 'წინა სლაიდი',
@@ -113,6 +115,8 @@
       'grantsApply.stepsTitle': 'ნაბიჯები',
       'grantsApply.stepsHint': 'შეავსეთ ნაბიჯობრივად',
 
+      'camps.heroTitle': 'ბანაკები',
+      'camps.heroSubtitle': 'აღმოაჩინე ახალგაზრდული ბანაკები, თარიღები და რეგისტრაციის დეტალები.',
       'camps.searchPlaceholder': 'ძიება ბანაკებში...',
       'camps.filtersAria': 'ფილტრები',
       'camps.filterAll': 'ყველა',
@@ -146,7 +150,11 @@
       'campsView.submit': 'გაგზავნა',
       'campsView.errorRequired': 'გთხოვ შეავსო სავალდებულო ველები (*)',
       'campsView.submitting': 'იგზავნება...',
-      'newsIndex.paginationAria': 'გვერდები'
+      'newsIndex.paginationAria': 'გვერდები',
+      'notFound.title': 'გვერდი ვერ მოიძებნა',
+      'notFound.body': 'შესაძლოა მისამართი არასწორად აკრიფეთ ან მოთხოვნილი გვერდი გადატანილია.',
+      'notFound.home': 'მთავარზე დაბრუნება',
+      'notFound.contact': 'დაგვიკავშირდით'
     },
 
     en: {
@@ -182,7 +190,7 @@
       'footer.address': '76 Vazha-Pshavela St.',
       'footer.phone': '032 230 51 65',
       'footer.email': 'info@youth.ge',
-      'footer.copy': 'youth.ge © 2026. All rights reserved.',
+      'footer.copySuffix': '© 2026. All rights reserved.',
 
       'about.title': 'About Us',
       'about.body': 'The LEPL Youth Agency is a legal entity of public law established to develop, implement, and coordinate the state youth policy strategy. Youth is the driving force of sustainable development and the main renewable source of human capital. The state, together with young people, creates a supportive environment for their development as full members of society, enabling each person to fully realize their potential, strengthen economically, and participate actively in the country’s development.',
@@ -201,6 +209,8 @@
       'contact.address': '76 Vazha-Pshavela St.',
       'contact.phoneInfo': '032 230 51 65',
       'contact.emailInfo': 'info@youth.ge',
+      'contact.mapTitle': 'Find us on the map',
+      'contact.mapNote': 'Use the map to locate our office and plan your visit in advance.',
 
       'home.sliderLabel': 'Main slider',
       'home.prevSlide': 'Previous slide',
@@ -253,6 +263,8 @@
       'grantsApply.stepsTitle': 'Steps',
       'grantsApply.stepsHint': 'Fill out step by step',
 
+      'camps.heroTitle': 'Camps',
+      'camps.heroSubtitle': 'Discover youth camp programs, dates, and registration details.',
       'camps.searchPlaceholder': 'Search camps...',
       'camps.filtersAria': 'Filters',
       'camps.filterAll': 'All',
@@ -286,7 +298,11 @@
       'campsView.submit': 'Submit',
       'campsView.errorRequired': 'Please fill the required fields (*)',
       'campsView.submitting': 'Submitting...',
-      'newsIndex.paginationAria': 'Pagination'
+      'newsIndex.paginationAria': 'Pagination',
+      'notFound.title': 'Page not found',
+      'notFound.body': 'The address may be incorrect or the page may have been moved.',
+      'notFound.home': 'Back to home',
+      'notFound.contact': 'Contact us'
     }
   };
 
@@ -455,10 +471,10 @@
       }
     });
 
-    // home exact match: /youthagency/ highlight home
+    // home exact match: / highlight home
     if (!best) {
-      const home = Array.from(links).find(a => normalizePath(a.getAttribute('data-active') || '') === '/youthagency/');
-      if (home && current === '/youthagency/') best = home;
+      const home = Array.from(links).find(a => normalizePath(a.getAttribute('data-active') || '') === '/');
+      if (home && current === '/') best = home;
     }
 
     if (best) {
@@ -577,28 +593,70 @@
   function initActivitiesDropdown() {
     const activitiesBtn = document.getElementById('activitiesBtn');
     const activitiesMenu = document.getElementById('activitiesMenu');
-    if (!activitiesBtn || !activitiesMenu) return;
+    const navItem = activitiesBtn ? activitiesBtn.closest('.nav-item') : null;
+    if (!activitiesBtn || !activitiesMenu || !navItem) return;
+    if (navItem.dataset.dropdownBound === 'true') return;
+
+    const hoverQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
+    let closeTimer = null;
+
+    function setOpen(open) {
+      activitiesMenu.classList.toggle('open', open);
+      activitiesBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function openDropdown() {
+      if (closeTimer) window.clearTimeout(closeTimer);
+      setOpen(true);
+    }
 
     function closeDropdown() {
-      activitiesMenu.classList.remove('open');
-      activitiesBtn.setAttribute('aria-expanded', 'false');
+      if (closeTimer) window.clearTimeout(closeTimer);
+      setOpen(false);
+    }
+
+    function queueClose() {
+      if (closeTimer) window.clearTimeout(closeTimer);
+      closeTimer = window.setTimeout(() => setOpen(false), 120);
     }
 
     activitiesBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const isOpen = activitiesMenu.classList.toggle('open');
-      activitiesBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      const isOpen = !activitiesMenu.classList.contains('open');
+      setOpen(isOpen);
+    });
+
+    navItem.addEventListener('mouseenter', () => {
+      if (!hoverQuery.matches) return;
+      openDropdown();
+    });
+
+    navItem.addEventListener('mouseleave', () => {
+      if (!hoverQuery.matches) return;
+      queueClose();
+    });
+
+    navItem.addEventListener('focusin', () => {
+      openDropdown();
+    });
+
+    navItem.addEventListener('focusout', () => {
+      window.setTimeout(() => {
+        if (!navItem.contains(document.activeElement)) closeDropdown();
+      }, 0);
     });
 
     document.addEventListener('click', (e) => {
-      if (activitiesMenu.contains(e.target) || activitiesBtn.contains(e.target)) return;
+      if (navItem.contains(e.target)) return;
       closeDropdown();
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeDropdown();
     });
+
+    navItem.dataset.dropdownBound = 'true';
   }
 
   // ----------------------------
@@ -640,11 +698,19 @@
   }
 
   function observeDynamicFooter() {
-    const observer = new MutationObserver(() => {
+    // Avoid watching the full subtree forever (can cause heavy callback churn on dynamic pages).
+    // We only need to initialize once when footer exists, then disconnect.
+    if (document.querySelector('.site-footer')) {
       initFooterAccordion();
+      return;
+    }
+
+    const observer = new MutationObserver(() => {
+      if (!document.querySelector('.site-footer')) return;
+      initFooterAccordion();
+      observer.disconnect();
     });
     observer.observe(document.body, { childList: true, subtree: true });
-    initFooterAccordion();
   }
 
   // expose for injected header/footer usage

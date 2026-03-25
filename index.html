@@ -3,25 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Youth Agency</title>
-  <meta name="description" content="Youth Agency-ის ოფიციალური საინფორმაციო ვებგვერდი — სიახლეები, ბანაკები, საგრანტო პროგრამები და ახალგაზრდებისთვის განკუთვნილი სერვისები.">
-  <meta name="keywords" content="Youth Agency, ახალგაზრდობის სააგენტო, youthagency.gov.ge, სიახლეები, ბანაკები, გრანტები">
+  <title>ახალგაზრდობის სააგენტო</title>
+  <meta name="description" content="ახალგაზრდობის სააგენტოს ოფიციალური ვებგვერდი — ახალგაზრდული ინიციატივები, სიახლეები, ბანაკები, საგრანტო პროგრამები და განვითარების შესაძლებლობები.">
+  <meta name="keywords" content="ახალგაზრდობის სააგენტო, Youth Agency, youthagency.gov.ge, ახალგაზრდული პოლიტიკა, სიახლეები, ბანაკები, გრანტები">
+  <meta name="author" content="სსიპ ახალგაზრდობის სააგენტო">
   <meta name="robots" content="index,follow">
-  <link rel="canonical" href="http://localhost/youthagency/">
+  <link rel="canonical" href="https://sspm.ge/">
 
   <!-- FAVICON -->
-  <link rel="icon" type="image/png" sizes="32x32" href="/youthagency/imgs/youthagencyicon.png?v=6">
-  <link rel="icon" type="image/png" sizes="16x16" href="/youthagency/imgs/youthagencyicon.png?v=6">
-  <link rel="apple-touch-icon" href="/youthagency/imgs/youthagencyicon.png?v=6">
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/youthagencyicon.png?v=6">
+  <link rel="icon" type="image/png" sizes="16x16" href="/imgs/youthagencyicon.png?v=6">
+  <link rel="apple-touch-icon" href="/imgs/youthagencyicon.png?v=6">
 
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Youth Agency">
-  <meta property="og:title" content="Youth Agency">
-  <meta property="og:description" content="სიახლეები, ბანაკები, საგრანტო პროგრამები და ახალგაზრდებზე მორგებული სერვისები ერთ სივრცეში.">
-  <meta property="og:url" content="http://localhost/youthagency/">
-  <meta property="og:image" content="http://localhost/youthagency/imgs/youthagencyicon.png">
+  <meta property="og:locale" content="ka_GE">
+  <meta property="og:site_name" content="ახალგაზრდობის სააგენტო">
+  <meta property="og:title" content="ახალგაზრდობის სააგენტო">
+  <meta property="og:description" content="ახალგაზრდული პოლიტიკის, პროგრამების და შესაძლებლობების ერთიანი ოფიციალური სივრცე.">
+  <meta property="og:url" content="https://sspm.ge/">
+  <meta property="og:image" content="https://sspm.ge/imgs/youthagencyicon.png">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="http://localhost/youthagency/imgs/youthagencyicon.png">
+  <meta name="twitter:title" content="ახალგაზრდობის სააგენტო">
+  <meta name="twitter:description" content="ახალგაზრდობის სააგენტოს ოფიციალური ვებგვერდი — სიახლეები, ბანაკები და საგრანტო პროგრამები.">
+  <meta name="twitter:image" content="https://sspm.ge/imgs/youthagencyicon.png">
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -32,10 +36,15 @@
     {
       "@context": "https://schema.org",
       "@type": "GovernmentOrganization",
-      "name": "Youth Agency",
-      "url": "http://localhost/youthagency/",
-      "logo": "http://localhost/youthagency/imgs/youthagencyicon.png",
-      "sameAs": ["https://youthagency.gov.ge/"]
+      "name": "სსიპ ახალგაზრდობის სააგენტო",
+      "url": "https://sspm.ge/",
+      "logo": "https://sspm.ge/imgs/youthagencyicon.png",
+      "sameAs": [
+        "https://youthagency.gov.ge/",
+        "https://www.youtube.com/@youthagency8266",
+        "https://www.facebook.com/YouthAgencyGeorgia",
+        "https://www.instagram.com/youthagency_georgia/"
+      ]
     }
   </script>
 </head>
@@ -98,7 +107,7 @@
     (async () => {
       try {
         const headerPromise = inject('siteHeaderMount', 'header.html');
-        const newsPromise = injectPhp('newsMount', '/youthagency/news_list.php');
+        const newsPromise = injectPhp('newsMount', '/news_list.php');
         const footerPromise = inject('siteFooterMount', 'footer.html');
 
         await headerPromise;

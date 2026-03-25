@@ -30,6 +30,21 @@ function fmtDate(?string $d): string {
   return date('Y-m-d', $ts);
 }
 
+function normalize_public_path(string $path): string {
+  $path = trim($path);
+  if ($path === '') return '';
+  if (preg_match('~^(https?:)?//~i', $path) || str_starts_with($path, 'data:')) return $path;
+
+  $path = str_replace('\\', '/', $path);
+  $path = preg_replace('~/+~', '/', $path) ?? $path;
+  if (!str_starts_with($path, '/')) $path = '/' . ltrim($path, '/');
+
+  if (str_starts_with($path, '/youthagency/')) {
+    $path = '/' . ltrim(substr($path, strlen('/youthagency/')), '/');
+  }
+  return $path;
+}
+
 /**
  * Convert date string to timestamp
  * - If "YYYY-MM-DD" => use end-of-day (23:59:59) when $endOfDay=true
@@ -87,10 +102,12 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Youth Agency • Camps</title>
+  <link rel="icon" type="image/png" href="/imgs/youthagencyicon.png">
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="/youthagency/assets.css?v=1">
+  <link rel="stylesheet" href="/assets.css?v=1">
 
   <style>
     :root{
@@ -131,7 +148,6 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
       flex-wrap:wrap;
       align-items:center;
       justify-content:space-between;
-
       padding:12px;
       border:1px solid rgba(30,42,69,.9);
       border-radius:16px;
@@ -139,7 +155,9 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
       box-shadow: var(--shadow);
     }
 
-    .search{
+    .search-intro{flex:1 1 320px}
+
+    .camp-search{
       flex:1 1 360px;
       display:flex;
       align-items:center;
@@ -150,8 +168,8 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
       background: rgba(11,18,32,.45);
       padding:11px 12px;
     }
-    .search i{color:rgba(229,231,235,.9)}
-    .search input{
+    .camp-search i{color:rgba(229,231,235,.9)}
+    .camp-search input{
       width:100%;
       border:0;
       outline:none;
@@ -160,7 +178,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
       font-weight:800;
       font-size:1rem;
     }
-    .search input::placeholder{color:rgba(156,163,175,.95);font-weight:700}
+    .camp-search input::placeholder{color:rgba(156,163,175,.95);font-weight:700}
 
     .filters{
       display:flex;
@@ -334,8 +352,9 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <div id="siteHeaderMount"></div>
 
   <main class="wrap">
-    <div class="bar">
-      <div class="search">
+    <section class="bar"><div class="search-intro"><h1 style="margin:0 0 6px;font-size:30px;color:#fff" data-i18n="camps.heroTitle">ბანაკები</h1><div style="color:rgba(229,231,235,.78);font-weight:700" data-i18n="camps.heroSubtitle">აღმოაჩინე ახალგაზრდული ბანაკები, თარიღები და რეგისტრაციის დეტალები.</div></div>
+      
+      <div class="camp-search">
         <i class="fa-solid fa-magnifying-glass"></i>
         <input id="q" type="search" placeholder="ძიება ბანაკებში..." data-i18n-placeholder="camps.searchPlaceholder">
       </div>
@@ -360,7 +379,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
           <span data-i18n="camps.filterClosed">დახურული</span> <span class="count" id="cClosed">0</span>
         </div>
       </div>
-    </div>
+    </section>
     <br>
 
     <section class="grid" id="grid" aria-live="polite">
@@ -370,7 +389,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
           $slug = (string)($c['slug'] ?? '');
           if ($slug === '') $slug = 'camp-' . $id;
 
-          $url = "/youthagency/camps/$id/" . rawurlencode($slug);
+          $url = "/camps/$id/" . rawurlencode($slug);
 
           $name  = (string)($c['name'] ?? '');
           $nameEn  = (string)($c['name_en'] ?? '');
@@ -378,7 +397,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
           $descEn  = (string)($c['card_text_en'] ?? '');
           $start = fmtDate((string)($c['start_date'] ?? ''));
           $end   = fmtDate((string)($c['end_date'] ?? ''));
-          $cover = (string)($c['cover'] ?? '');
+          $cover = normalize_public_path((string)($c['cover'] ?? ''));
 
           $status = campStatus($c);
 
@@ -525,13 +544,13 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     (async () => {
       try {
-        await inject('siteHeaderMount', '/youthagency/header.html');
+        await inject('siteHeaderMount', '/header.html');
         try{
-          await loadScript('/youthagency/app.js');
+          await loadScript('/app.js');
           if (typeof window.initHeader === 'function') window.initHeader();
         }catch(e){}
 
-        await inject('siteFooterMount', '/youthagency/footer.html');
+        await inject('siteFooterMount', '/footer.html');
 
         initCampsClassic();
       } catch (err) {
