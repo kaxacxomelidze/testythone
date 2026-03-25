@@ -111,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   // image upload (optional)
   $uploadDirAbs = __DIR__ . '/../uploads/grants';
-  $uploadWebPrefix = '/youthagency/uploads/grants';
+  $uploadWebPrefix = '/uploads/grants';
   $up = upload_image($_FILES['image'] ?? [], $uploadDirAbs, $uploadWebPrefix);
   if (!$up['ok']) $err = $up['error'];
 
@@ -221,7 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="row" style="margin-top:12px">
         <div>
           <label>Apply URL (button link)</label>
-          <input name="apply_url" value="<?=h($row['apply_url'])?>" placeholder="/youthagency/grants_apply.php">
+          <input name="apply_url" value="<?=h($row['apply_url'])?>" placeholder="/grants_apply.php">
         </div>
         <div>
           <label>Sort order (smaller = earlier)</label>

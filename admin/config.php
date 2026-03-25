@@ -43,10 +43,149 @@ if (!defined('DATA_DIR'))   define('DATA_DIR', __DIR__ . '/../data');
 if (!defined('UPLOAD_DIR')) define('UPLOAD_DIR', __DIR__ . '/../uploads');
 
 
-if (!defined('DB_HOST')) define('DB_HOST', '127.0.0.1');
-if (!defined('DB_NAME')) define('DB_NAME', 'spg_portal'); // <-- შენი რეალური DB
-if (!defined('DB_USER')) define('DB_USER', 'root');
-if (!defined('DB_PASS')) define('DB_PASS', '');
+if (!function_exists('env_or')) {
+  function env_or(string $key, string $default = ''): string {
+    $v = getenv($key);
+    if ($v !== false && $v !== '') return $v;
+    if (isset($_ENV[$key]) && $_ENV[$key] !== '') return (string)$_ENV[$key];
+    if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') return (string)$_SERVER[$key];
+    return $default;
+  }
+}
+
+if (!defined('DB_HOST')) define('DB_HOST', env_or('DB_HOST', '127.0.0.1'));
+if (!defined('DB_NAME')) define('DB_NAME', env_or('DB_NAME', 'sspm_test'));
+if (!defined('DB_USER')) define('DB_USER', env_or('DB_USER', 'sspm_main'));
+if (!defined('DB_PASS')) define('DB_PASS', env_or('DB_PASS', 'themainfirst!@#$'));
+
+if (!function_exists('security_headers')) {
+  function security_headers(bool $isJson = false): void {
+    if (headers_sent()) return;
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+    if ($isJson) {
+      header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+      header('Pragma: no-cache');
+    }
+  }
+}
+
+if (!function_exists('rate_limit_exceeded')) {
+  function rate_limit_exceeded(string $bucket, int $max = 120, int $windowSec = 60): bool {
+    $ip = (string)($_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    $key = hash('sha256', $bucket . '|' . $ip);
+    $dir = sys_get_temp_dir() . '/sspm_rate_limits';
+    if (!is_dir($dir)) @mkdir($dir, 0775, true);
+    $file = $dir . '/' . $key . '.json';
+
+    $now = time();
+    $data = ['start' => $now, 'count' => 0];
+
+    $fp = @fopen($file, 'c+');
+    if (!$fp) return false;
+    try {
+      if (!flock($fp, LOCK_EX)) return false;
+      $raw = stream_get_contents($fp);
+      if (is_string($raw) && trim($raw) !== '') {
+        $j = json_decode($raw, true);
+        if (is_array($j) && isset($j['start'], $j['count'])) {
+          $data = ['start' => (int)$j['start'], 'count' => (int)$j['count']];
+        }
+      }
+
+      if (($now - $data['start']) >= $windowSec) {
+        $data = ['start' => $now, 'count' => 0];
+      }
+
+      $data['count']++;
+
+      ftruncate($fp, 0);
+      rewind($fp);
+      fwrite($fp, json_encode($data));
+      fflush($fp);
+      flock($fp, LOCK_UN);
+    } finally {
+      fclose($fp);
+    }
+
+    return $data['count'] > $max;
+  }
+}
+
+if (!function_exists('enforce_rate_limit')) {
+  function enforce_rate_limit(string $bucket, int $max = 120, int $windowSec = 60, bool $json = true): void {
+    if (!rate_limit_exceeded($bucket, $max, $windowSec)) return;
+    http_response_code(429);
+    if ($json) {
+      if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
+      echo json_encode(['ok' => false, 'error' => 'Too many requests. Please try again later.']);
+    } else {
+      echo 'Too many requests. Please try again later.';
+    }
+    exit;
+  }
+}
+
+if (!function_exists('enforce_http_method')) {
+  function enforce_http_method(array $allowed, bool $json = true): void {
+    $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    $allowed = array_map(static fn($m) => strtoupper((string)$m), $allowed);
+    if (in_array($method, $allowed, true)) return;
+
+    http_response_code(405);
+    if (!headers_sent()) header('Allow: ' . implode(', ', $allowed));
+    if ($json) {
+      if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
+      echo json_encode(['ok' => false, 'error' => 'Method Not Allowed']);
+    } else {
+      echo 'Method Not Allowed';
+    }
+    exit;
+  }
+}
+
+if (!function_exists('enforce_content_length')) {
+  function enforce_content_length(int $maxBytes = 1048576, bool $json = true): void {
+    $len = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+    if ($len <= 0 || $len <= $maxBytes) return;
+
+    http_response_code(413);
+    if ($json) {
+      if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
+      echo json_encode(['ok' => false, 'error' => 'Payload too large']);
+    } else {
+      echo 'Payload too large';
+    }
+    exit;
+  }
+}
+
+if (!function_exists('enforce_same_origin_post')) {
+  function enforce_same_origin_post(bool $json = true): void {
+    $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    if (!in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) return;
+
+    $origin = trim((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
+    if ($origin === '') return; // some same-origin browser requests omit Origin
+
+    $host = trim((string)($_SERVER['HTTP_HOST'] ?? ''));
+    if ($host === '') return;
+
+    $originHost = parse_url($origin, PHP_URL_HOST);
+    if (!is_string($originHost) || $originHost === '' || strcasecmp($originHost, $host) === 0) return;
+
+    http_response_code(403);
+    if ($json) {
+      if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
+      echo json_encode(['ok' => false, 'error' => 'Forbidden origin']);
+    } else {
+      echo 'Forbidden origin';
+    }
+    exit;
+  }
+}
 /**
  * =========================
  * PDO Database
@@ -179,12 +318,17 @@ if (!function_exists('client_ip')) {
 
 if (!function_exists('log_admin')) {
   function log_admin(string $action, ?string $entity = null, ?int $entityId = null, $details = null): void {
-    // ✅ if db() is missing -> show error immediately
     if (!function_exists('db')) {
-      die("log_admin(): db() function not found. Add db() into config.php or include db.php before calling.");
+      error_log("log_admin(): db() function not found.");
+      return;
     }
 
-    $pdo = db();
+    try {
+      $pdo = db();
+    } catch (Throwable $e) {
+      error_log("log_admin(): db() failed: " . $e->getMessage());
+      return;
+    }
 
     $adminId = (int)($_SESSION['admin_id'] ?? 0);
     $adminName = (string)($_SESSION['admin_user'] ?? ($_SESSION['admin_name'] ?? 'Admin'));
@@ -198,7 +342,8 @@ if (!function_exists('log_admin')) {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
-    $ok = $stmt->execute([
+    try {
+      $ok = $stmt->execute([
       $adminId ?: null,
       $adminName ?: null,
       $action,
@@ -207,11 +352,57 @@ if (!function_exists('log_admin')) {
       $details,
       client_ip(),
       substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255),
-    ]);
-
-    if (!$ok) {
-      $err = $stmt->errorInfo();
-      die("log_admin(): insert failed: " . print_r($err, true));
+      ]);
+      if (!$ok) {
+        $err = $stmt->errorInfo();
+        error_log("log_admin(): insert failed: " . print_r($err, true));
+      }
+    } catch (Throwable $e) {
+      error_log("log_admin(): exception: " . $e->getMessage());
     }
   }
 }
+
+if (!function_exists('log_admin_safe')) {
+  function log_admin_safe(string $action, ?string $entity = null, ?int $entityId = null, $details = null): void {
+    try { log_admin($action, $entity, $entityId, $details); } catch (Throwable $e) {}
+  }
+}
+
+if (!function_exists('bootstrap_admin_audit')) {
+  function bootstrap_admin_audit(): void {
+    static $booted = false;
+    if ($booted) return;
+    $booted = true;
+
+    if (PHP_SAPI === 'cli') return;
+    $uri = (string)($_SERVER['REQUEST_URI'] ?? '');
+    if (!str_contains($uri, '/admin/')) return;
+
+    $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    if (!in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) return;
+
+    $startedAt = microtime(true);
+    $path = parse_url($uri, PHP_URL_PATH) ?: $uri;
+    $entity = basename((string)$path);
+    $postKeys = array_keys($_POST ?? []);
+    $queryAction = (string)($_GET['action'] ?? '');
+
+    register_shutdown_function(function () use ($startedAt, $method, $path, $entity, $postKeys, $queryAction): void {
+      $status = http_response_code();
+      if ($status === false) $status = 200;
+      $durationMs = (int)round((microtime(true) - $startedAt) * 1000);
+
+      log_admin_safe('admin_request', $entity, null, [
+        'method' => $method,
+        'path' => $path,
+        'query_action' => $queryAction,
+        'post_keys' => $postKeys,
+        'status' => $status,
+        'duration_ms' => $durationMs,
+      ]);
+    });
+  }
+}
+
+bootstrap_admin_audit();
