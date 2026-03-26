@@ -51,7 +51,7 @@
   <script>
     async function inject(id, file) { const el = document.getElementById(id); if (!el) throw new Error(`Mount element not found: #${id}`); const res = await fetch(file + '?v=2'); if (!res.ok) throw new Error(`${file} not found. Status: ${res.status}`); el.innerHTML = await res.text(); }
     async function loadScript(src) { return new Promise((resolve, reject) => { const s = document.createElement('script'); s.src = src + '?v=2'; s.onload = resolve; s.onerror = () => reject(new Error(`Failed to load script: ${src}`)); document.body.appendChild(s); }); }
-    (async () => { try { await inject('siteHeaderMount', '/header.html'); await loadScript('/app.js'); if (typeof window.initHeader === 'function') window.initHeader(); await inject('siteFooterMount', '/footer.html'); } catch (err) { console.error(err); } })();
+    (async () => { try { const headerP = inject('siteHeaderMount', '/header.html'); const appP = loadScript('/app.js'); const footerP = inject('siteFooterMount', '/footer.html'); await Promise.all([headerP, appP]); if (typeof window.initHeader === 'function') window.initHeader(); await footerP; } catch (err) { console.error(err); } })();
   </script>
 </body>
 </html>

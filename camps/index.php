@@ -556,13 +556,14 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     (async () => {
       try {
-        await inject('siteHeaderMount', '/header.html');
+        const headerP = inject('siteHeaderMount', '/header.html');
+        const appP = loadScript('/app.js');
+        const footerP = inject('siteFooterMount', '/footer.html');
         try{
-          await loadScript('/app.js');
+          await Promise.all([headerP, appP]);
           if (typeof window.initHeader === 'function') window.initHeader();
         }catch(e){}
-
-        await inject('siteFooterMount', '/footer.html');
+        await footerP;
 
         initCampsClassic();
       } catch (err) {

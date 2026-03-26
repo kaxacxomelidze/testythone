@@ -41,7 +41,7 @@
       'footer.docsCopyright': 'საავტორო უფლებები',
       'footer.address': 'ვაჟა ფშაველას ქ. #76',
       'footer.phone': '032 230 51 65',
-      'footer.email': 'info@sspm.ge',
+      'footer.email': 'info@youthagency.gov.ge',
       'footer.copySuffix': '© 2026. ყველა უფლება დაცულია.',
 
       'about.title': 'ჩვენ შესახებ',
