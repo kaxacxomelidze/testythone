@@ -105,10 +105,22 @@ function upload_public_file(string $fieldName, string $subdir, array $allowedExt
     if (!@mkdir($dir, 0775, true) && !is_dir($dir)) return '';
   }
 
-  $fname = "up_" . time() . "_" . bin2hex(random_bytes(8)) . "." . $ext;
+  $base = "up_" . time() . "_" . bin2hex(random_bytes(8));
+  $fname = $base . "." . $ext;
   $dest  = $dir . "/" . $fname;
 
-  if (!move_uploaded_file($tmp, $dest)) return '';
+  $isImage = in_array($ext, ['jpg','jpeg','png','webp','gif'], true);
+  if ($isImage) {
+    $fname = $base . ".webp";
+    $dest = $dir . "/" . $fname;
+    if (!convert_image_to_webp($tmp, $dest, 90)) {
+      $fname = $base . "." . $ext;
+      $dest = $dir . "/" . $fname;
+      if (!move_uploaded_file($tmp, $dest)) return '';
+    }
+  } else {
+    if (!move_uploaded_file($tmp, $dest)) return '';
+  }
 
   return "/uploads/$subdir/" . $fname;
 }

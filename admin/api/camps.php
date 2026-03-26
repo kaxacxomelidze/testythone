@@ -107,9 +107,14 @@ function upload_image(string $fieldName, string $subdir, array $allowedExt = ['j
     if (!@mkdir($dir, 0775, true) && !is_dir($dir)) fail("Cannot create uploads folder: /uploads/$subdir", 500);
   }
 
-  $fname = "up_" . time() . "_" . bin2hex(random_bytes(6)) . "." . $ext;
+  $base = "up_" . time() . "_" . bin2hex(random_bytes(6));
+  $fname = $base . ".webp";
   $dest = $dir . "/" . $fname;
-  if (!move_uploaded_file($tmp, $dest)) fail("Upload failed", 500);
+  if (!convert_image_to_webp($tmp, $dest, 90)) {
+    $fname = $base . "." . $ext;
+    $dest = $dir . "/" . $fname;
+    if (!move_uploaded_file($tmp, $dest)) fail("Upload failed", 500);
+  }
 
   return "/uploads/$subdir/" . $fname;
 }
@@ -135,10 +140,16 @@ function upload_many_images(string $fieldName, string $subdir): array {
     $ext = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
     if (!in_array($ext, $allowed, true)) continue;
 
-    $fname = "gal_" . time() . "_" . bin2hex(random_bytes(6)) . "." . $ext;
+    $base = "gal_" . time() . "_" . bin2hex(random_bytes(6));
+    $fname = $base . ".webp";
     $dest = $dir . "/" . $fname;
-
-    if (move_uploaded_file($tmps[$i], $dest)) {
+    $ok = convert_image_to_webp((string)$tmps[$i], $dest, 88);
+    if (!$ok) {
+      $fname = $base . "." . $ext;
+      $dest = $dir . "/" . $fname;
+      $ok = move_uploaded_file($tmps[$i], $dest);
+    }
+    if ($ok) {
       $paths[] = "/uploads/$subdir/" . $fname;
     }
   }

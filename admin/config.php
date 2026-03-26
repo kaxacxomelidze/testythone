@@ -114,6 +114,35 @@ if (!function_exists('rate_limit_exceeded')) {
   }
 }
 
+if (!function_exists('convert_image_to_webp')) {
+  function convert_image_to_webp(string $srcPath, string $destPath, int $quality = 90): bool {
+    if (!is_file($srcPath) || !function_exists('imagewebp')) return false;
+
+    $info = @getimagesize($srcPath);
+    $mime = strtolower((string)($info['mime'] ?? ''));
+    if ($mime === '') return false;
+
+    $img = match ($mime) {
+      'image/jpeg' => @imagecreatefromjpeg($srcPath),
+      'image/png'  => @imagecreatefrompng($srcPath),
+      'image/gif'  => @imagecreatefromgif($srcPath),
+      'image/webp' => @imagecreatefromwebp($srcPath),
+      default      => false,
+    };
+    if (!$img) return false;
+
+    if ($mime === 'image/png' || $mime === 'image/webp') {
+      imagepalettetotruecolor($img);
+      imagealphablending($img, true);
+      imagesavealpha($img, true);
+    }
+
+    $ok = @imagewebp($img, $destPath, max(60, min(100, $quality)));
+    imagedestroy($img);
+    return (bool)$ok;
+  }
+}
+
 if (!function_exists('enforce_rate_limit')) {
   function enforce_rate_limit(string $bucket, int $max = 120, int $windowSec = 60, bool $json = true): void {
     if (!rate_limit_exceeded($bucket, $max, $windowSec)) return;

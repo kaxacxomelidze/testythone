@@ -44,17 +44,22 @@ function slugify(string $text): string {
 }
 
 function saveUpload(string $tmp, string $folder, string $prefix, string $mime): string {
-  $allowed = ['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp'];
+  $allowed = ['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp','image/gif'=>'gif'];
   if (!isset($allowed[$mime])) throw new RuntimeException('Allowed: JPG, PNG, WebP');
 
   $ext  = $allowed[$mime];
-  $name = $prefix . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+  $base = $prefix . '_' . bin2hex(random_bytes(8));
+  $name = $base . '.webp';
 
   $dir = UPLOAD_DIR . '/' . $folder;
   if (!is_dir($dir)) mkdir($dir, 0775, true);
 
   $dest = $dir . '/' . $name;
-  if (!move_uploaded_file($tmp, $dest)) throw new RuntimeException('Upload failed.');
+  if (!convert_image_to_webp($tmp, $dest, 90)) {
+    $name = $base . '.' . $ext;
+    $dest = $dir . '/' . $name;
+    if (!move_uploaded_file($tmp, $dest)) throw new RuntimeException('Upload failed.');
+  }
 
   return 'uploads/' . $folder . '/' . $name;
 }
