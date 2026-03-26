@@ -3,6 +3,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../db.php'; // must define $pdo (PDO)
+security_headers(true);
+enforce_http_method(['GET', 'POST'], true);
+enforce_same_origin_post(true);
+enforce_content_length(25 * 1024 * 1024, true);
+enforce_rate_limit('admin_api_camps', 600, 60, true);
 
 // Make sure session exists (sometimes config.php already starts it, but safe)
 if (session_status() !== PHP_SESSION_ACTIVE) { @session_start(); }
@@ -22,8 +27,25 @@ function out(array $j): void {
   echo json_encode($j, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
   exit;
 }
-function ok(array $extra = []): void { out(["ok"=>true] + $extra); }
-function fail(string $msg, int $code = 400): void { http_response_code($code); out(["ok"=>false,"error"=>$msg]); }
+function audit_api_event(string $result, ?string $error = null): void {
+  if (!function_exists('log_admin_safe')) return;
+  log_admin_safe('api_camps_' . $result, 'camps_api', null, [
+    'action' => (string)($_GET['action'] ?? ''),
+    'method' => (string)($_SERVER['REQUEST_METHOD'] ?? 'GET'),
+    'status' => http_response_code() ?: 200,
+    'error' => $error,
+    'ip' => client_ip(),
+  ]);
+}
+function ok(array $extra = []): void {
+  audit_api_event('ok');
+  out(["ok"=>true] + $extra);
+}
+function fail(string $msg, int $code = 400): void {
+  http_response_code($code);
+  audit_api_event('fail', $msg);
+  out(["ok"=>false,"error"=>$msg]);
+}
 
 /* ----------------------------- auth + db --------------------------------- */
 if (empty($_SESSION['admin_logged_in']) || (int)($_SESSION['admin_logged_in']) !== 1) {
@@ -89,7 +111,7 @@ function upload_image(string $fieldName, string $subdir, array $allowedExt = ['j
   $dest = $dir . "/" . $fname;
   if (!move_uploaded_file($tmp, $dest)) fail("Upload failed", 500);
 
-  return "/youthagency/uploads/$subdir/" . $fname;
+  return "/uploads/$subdir/" . $fname;
 }
 
 function upload_many_images(string $fieldName, string $subdir): array {
@@ -117,7 +139,7 @@ function upload_many_images(string $fieldName, string $subdir): array {
     $dest = $dir . "/" . $fname;
 
     if (move_uploaded_file($tmps[$i], $dest)) {
-      $paths[] = "/youthagency/uploads/$subdir/" . $fname;
+      $paths[] = "/uploads/$subdir/" . $fname;
     }
   }
   return $paths;
@@ -484,8 +506,8 @@ try {
     $pdo->prepare("DELETE FROM camps_post_media WHERE id=?")->execute([$id]);
 
     $path = (string)$row['path'];
-    if (str_starts_with($path, "/youthagency/uploads/")) {
-      $abs = __DIR__ . "/../.." . str_replace("/youthagency", "", $path);
+    if (str_starts_with($path, "/uploads/")) {
+      $abs = __DIR__ . "/../.." . ltrim($path, "/");
       if (is_file($abs)) @unlink($abs);
     }
     ok();
