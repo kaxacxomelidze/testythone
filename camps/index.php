@@ -338,6 +338,17 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
       color:rgba(229,231,235,.92);
     }
     .empty .muted{color:var(--muted);font-weight:700;margin-top:6px}
+    .visually-hidden{
+      position:absolute !important;
+      width:1px !important;
+      height:1px !important;
+      padding:0 !important;
+      margin:-1px !important;
+      overflow:hidden !important;
+      clip:rect(0, 0, 0, 0) !important;
+      white-space:nowrap !important;
+      border:0 !important;
+    }
 
     @media (max-width:520px){
       .wrap{padding:14px}
@@ -359,7 +370,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <input id="q" type="search" placeholder="ძიება ბანაკებში..." data-i18n-placeholder="camps.searchPlaceholder">
       </div>
 
-      <div class="filters" aria-label="Filters" data-i18n-aria="camps.filtersAria">
+      <div class="filters" role="group" aria-label="Filters" data-i18n-aria="camps.filtersAria">
         <div class="btn active" data-filter="all">
           <span data-i18n="camps.filterAll">ყველა</span> <span class="count" id="cAll"><?=count($camps)?></span>
         </div>
@@ -383,6 +394,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <br>
 
     <section class="grid" id="grid" aria-live="polite">
+      <h2 class="visually-hidden">Camps list</h2>
       <?php foreach($camps as $c): ?>
         <?php
           $id = (int)$c['id'];

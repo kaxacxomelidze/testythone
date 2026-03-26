@@ -104,17 +104,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .info-panel h2,.map-card h2{margin:0 0 14px;font-size:18px;color:#1f2a44;font-weight:800}.info-list{display:grid;gap:10px}.info-row{color:#334155;font-weight:700;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid rgba(15,23,42,.08)}
     .map-frame{width:100%;height:320px;border:0;border-radius:16px;display:block;box-shadow:0 14px 28px rgba(15,23,42,.08)}
     .map-note{margin:12px 0 0;color:#475569;font-size:14px;line-height:1.6}
+    .visually-hidden{position:absolute !important;width:1px !important;height:1px !important;padding:0 !important;margin:-1px !important;overflow:hidden !important;clip:rect(0,0,0,0) !important;white-space:nowrap !important;border:0 !important}
     @media (max-width:980px){.page-grid{grid-template-columns:1fr}.info-card{order:2}}
     @media (max-width:768px){.page{padding:32px 16px 46px}.page-card{padding:22px}.info-panel,.map-card{padding:18px}}
-    @media (max-width:480px){.page{padding:24px 14px 40px}.page-card{padding:18px}.page-card h1{font-size:22px}.page-card p{font-size:14px}.form-grid{gap:12px}.btn-submit{width:100%}}
+    @media (max-width:480px){.page{padding:24px 14px 40px}.page-card{padding:18px}.page-card h2{font-size:22px}.page-card p{font-size:14px}.form-grid{gap:12px}.btn-submit{width:100%}}
   </style>
 </head>
 <body>
   <div id="siteHeaderMount"></div>
   <main class="page">
     <section class="page-grid">
+      <h2 class="visually-hidden">Contact section</h2>
       <article class="page-card">
-        <h1 data-i18n="contact.title">კონტაქტი</h1>
+        <h2 data-i18n="contact.title">კონტაქტი</h2>
         <p data-i18n="contact.subtitle">გამოგვიგზავნეთ შეტყობინება და მალე დაგიკავშირდებით.</p>
         <?php if ($success): ?><div class="notice success"><strong data-i18n="contact.successTitle">გმადლობთ!</strong> <span data-i18n="contact.successText">თქვენი შეტყობინება მიღებულია. მალე დაგიკავშირდებით.</span></div><?php elseif ($errors): ?><div class="notice error"><span data-i18n="contact.error">გთხოვთ სწორად შეავსოთ აუცილებელი ველები.</span></div><?php endif; ?>
         <form class="form-grid" method="post">
