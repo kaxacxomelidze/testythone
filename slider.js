@@ -63,18 +63,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       </div>
     `).join("");
 
-    dots.innerHTML = slides.map((_, i) =>
-      `<button class="dot ${i === index ? "active" : ""}" data-i="${i}"></button>`
-    ).join("");
+    dots.innerHTML = slides.map((_, i) => {
+      const current = i === index;
+      return `<button class="dot ${current ? "active" : ""}" data-i="${i}" aria-label="Slide ${i + 1}" aria-current="${current ? 'true' : 'false'}"></button>`;
+    }).join("");
 
     move();
   }
 
   function move() {
     track.style.transform = `translateX(${-index * 100}%)`;
-    dots.querySelectorAll(".dot").forEach((d, i) =>
-      d.classList.toggle("active", i === index)
-    );
+    dots.querySelectorAll(".dot").forEach((d, i) => {
+      const active = i === index;
+      d.classList.toggle("active", active);
+      d.setAttribute("aria-current", active ? "true" : "false");
+    });
   }
 
   function start() {

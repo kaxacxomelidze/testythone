@@ -6,8 +6,8 @@
   --muted:rgba(255,255,255,.75);
   --muted2:rgba(255,255,255,.65);
   --line:rgba(255,255,255,.14);
-  --btn:#4c8dff;
-  --btn-hover:#3b7bf0;
+  --btn:#1d4ed8;
+  --btn-hover:#1e40af;
 
   --container:1220px;
   --r12:12px;
@@ -352,7 +352,7 @@ img{
 .search input::placeholder{ color: rgba(255,255,255,.6); }
 .search button{
   height:42px;
-  border:0;
+  border:1px solid rgba(255,255,255,.2);
   padding: 0 18px;
   background: var(--btn);
   color:#fff;
