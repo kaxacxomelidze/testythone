@@ -78,7 +78,7 @@ body{
   transition:opacity .15s ease, transform .15s ease, visibility .15s ease;z-index:10000;border:1px solid rgba(15,23,42,.08);
 }
 .dropdown-menu.open{opacity:1;visibility:visible;transform:translateY(0)}
-.dropdown-menu a{display:flex;padding:11px 12px;border-radius:12px;color:#1d2554;font-weight:700;text-decoration:none;font-size:14px}
+.dropdown-menu a{display:flex;padding:11px 12px;border-radius:12px;color:#000;font-weight:700;text-decoration:none;font-size:14px}
 .dropdown-menu a:hover{background:rgba(76,141,255,.12)}
 .header-right{margin-left:auto;flex:0 0 auto;flex-wrap:nowrap;justify-content:flex-end}
 .lang-switch{display:flex;align-items:center;gap:6px;padding:4px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:999px}
