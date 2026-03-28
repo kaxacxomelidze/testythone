@@ -1,9 +1,14 @@
 # ==============================
-# /youthagency/.htaccess
+# /.htaccess
 # ==============================
 
 RewriteEngine On
-RewriteBase /youthagency/
+RewriteBase /
+ErrorDocument 404 /404.php
+
+# Legacy prefix redirects (/youthagency/* -> /*)
+RewriteRule ^youthagency/?$ / [R=301,L,NE]
+RewriteRule ^youthagency/(.*)$ /$1 [R=301,L,NE]
 
 # 1) Do NOT rewrite real files or folders (css/js/images/php etc.)
 RewriteCond %{REQUEST_FILENAME} -f [OR]
@@ -12,16 +17,16 @@ RewriteRule ^ - [L]
 
 # ------------------------------
 # HOME (optional clean URL)
-# /youthagency/ -> /youthagency/index.html
+# / -> /index.html
 # ------------------------------
 DirectoryIndex index.html index.php
 
 # ------------------------------
 # CLEAN PUBLIC PAGES
-# /youthagency/news -> main_news/news_index.php
-# /youthagency/about -> about/index.php
-# /youthagency/contact -> contact/index.php
-# /youthagency/rules -> rules/index.php
+# /news -> main_news/news_index.php
+# /about -> about/index.php
+# /contact -> contact/index.php
+# /rules -> rules/index.php
 # ------------------------------
 RewriteRule ^news/?$ main_news/news_index.php [L,QSA]
 RewriteRule ^about/?$ about/index.php [L,QSA]
@@ -29,26 +34,26 @@ RewriteRule ^contact/?$ contact/index.php [L,QSA]
 
 # ------------------------------
 # NEWS SEO URLS
-# /youthagency/news/123/some-title -> news_view.php?id=123&slug=some-title
-# /youthagency/news/123 -> news_view.php?id=123
+# /news/123/some-title -> news_view.php?id=123&slug=some-title
+# /news/123 -> news_view.php?id=123
 # ------------------------------
 RewriteRule ^news/([0-9]+)/([^/]+)/?$ news_view.php?id=$1&slug=$2 [L,QSA]
 RewriteRule ^news/([0-9]+)/?$ news_view.php?id=$1 [L,QSA]
 
 # ------------------------------
 # CAMPS SEO URLS
-# /youthagency/camps -> camps/index.php
-# /youthagency/camps/12/some-title -> camps/view.php?id=12&slug=some-title
+# /camps -> camps/index.php
+# /camps/12/some-title -> camps/view.php?id=12&slug=some-title
 # ------------------------------
 RewriteRule ^camps/?$ camps/index.php [L,QSA]
 RewriteRule ^camps/([0-9]+)/([^/]+)/?$ camps/view.php?id=$1&slug=$2 [L,QSA]
 
 # ------------------------------
 # GRANTS SEO URLS
-# /youthagency/grants -> grants/grants_index.php
-# /youthagency/grants/5/some-title -> grants/grants_view.php?id=5&slug=some-title
-# /youthagency/grants/5 -> grants/grants_view.php?id=5
-# /youthagency/grants/apply/5/some-title -> grants/grants_apply.php?id=5&slug=some-title
+# /grants -> grants/grants_index.php
+# /grants/5/some-title -> grants/grants_view.php?id=5&slug=some-title
+# /grants/5 -> grants/grants_view.php?id=5
+# /grants/apply/5/some-title -> grants/grants_apply.php?id=5&slug=some-title
 # ------------------------------
 RewriteRule ^grants/?$ grants/grants_index.php [L,QSA]
 RewriteRule ^grants/apply/([0-9]+)/([^/]+)/?$ grants/grants_apply.php?id=$1&slug=$2 [L,QSA]
@@ -58,6 +63,44 @@ RewriteRule ^grants/([0-9]+)/?$ grants/grants_view.php?id=$1 [L,QSA]
 
 # ------------------------------
 # RULES PAGE
-# /youthagency/rules -> rules/index.php
+# /rules -> rules/index.php
 # ------------------------------
 RewriteRule ^rules/?$ rules/index.php [L,QSA]
+
+
+# ------------------------------
+# 404 PAGE
+# ------------------------------
+RewriteRule ^404/?$ 404.php [L,QSA]
+RewriteRule . - [R=404,L]
+
+# ------------------------------
+# Performance: compression
+# ------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/plain text/html text/css text/javascript application/javascript application/json application/xml image/svg+xml
+</IfModule>
+
+# ------------------------------
+# Performance: browser caching
+# ------------------------------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+  ExpiresByType text/javascript "access plus 7 days"
+  ExpiresByType image/jpeg "access plus 30 days"
+  ExpiresByType image/jpg "access plus 30 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/webp "access plus 30 days"
+  ExpiresByType image/svg+xml "access plus 30 days"
+  ExpiresByType font/woff2 "access plus 30 days"
+  ExpiresByType font/woff "access plus 30 days"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\\.(html?|php)$">
+    Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header always set Pragma "no-cache"
+  </FilesMatch>
+</IfModule>
