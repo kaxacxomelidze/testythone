@@ -1,7 +1,4 @@
-console.log("✅ slider.js loaded");
-
 document.addEventListener("DOMContentLoaded", async () => {
-  console.log("✅ DOM ready");
 
   const track = document.getElementById("slidesTrack");
   const dots = document.getElementById("dots");
@@ -13,23 +10,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  console.log("✅ Slider HTML found");
+  const API_URLS = ["/data/slides_api.php"];
 
-  // FIXED API PATH (NO MAGIC)
-  const API_URL = "/youthagency/data/slides_api.php";
-  console.log("API:", API_URL);
+  async function fetchSlidesData() {
+    for (const url of API_URLS) {
+      try {
+        const res = await fetch(url, { headers: { "Accept": "application/json" } });
+        if (!res.ok) continue;
 
-  let data;
-  try {
-    const res = await fetch(API_URL);
-    console.log("API status:", res.status);
-    data = await res.json();
-  } catch (e) {
-    console.error("❌ API fetch failed", e);
+        const raw = await res.text();
+        const parsed = JSON.parse(raw);
+        return parsed;
+      } catch (e) {
+        console.warn("API candidate failed:", url, e);
+      }
+    }
+    return null;
+  }
+
+  const data = await fetchSlidesData();
+  if (!data) {
+    console.error("API fetch failed for all candidates", API_URLS);
     return;
   }
 
-  console.log("API DATA:", data);
 
   let slides = data.slides || [];
   const autoplay = Number(data.settings?.autoplay_ms || 4500);
@@ -46,13 +50,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function img(path) {
     if (path.startsWith("/")) return path;
-    return "/youthagency/" + path;
+    return "/" + path;
   }
 
   function render() {
-    track.innerHTML = slides.map(s => `
+    track.innerHTML = slides.map((s, i) => `
       <div class="slide">
-        <img src="${img(s.image)}">
+        <img src="${img(s.image)}" alt="${s.title ? String(s.title).replace(/"/g, '&quot;') : ''}" ${i === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy" fetchpriority="auto"'} decoding="async">
         <div class="slide-content">
           ${s.title ? `<h3>${s.title}</h3>` : ""}
         </div>
@@ -109,5 +113,4 @@ document.addEventListener("DOMContentLoaded", async () => {
   render();
   start();
 
-  console.log("✅ Slider initialized");
 });
