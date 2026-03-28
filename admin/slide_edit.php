@@ -34,16 +34,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $error = 'Allowed: JPG, PNG, WebP';
     } else {
       $ext  = $allowed[$mime];
-      $name = 'slide_' . bin2hex(random_bytes(8)) . '.' . $ext;
+      $base = 'slide_' . bin2hex(random_bytes(8));
+      $name = $base . '.webp';
 
       $dir = UPLOAD_DIR . '/slides';
       if (!is_dir($dir)) mkdir($dir, 0775, true);
 
       $dest = $dir . '/' . $name;
 
-      if (!move_uploaded_file($f['tmp_name'], $dest)) {
-        $error = 'Upload failed.';
-      } else {
+      if (!convert_image_to_webp($f['tmp_name'], $dest, 90)) {
+        $name = $base . '.' . $ext;
+        $dest = $dir . '/' . $name;
+        if (!move_uploaded_file($f['tmp_name'], $dest)) {
+          $error = 'Upload failed.';
+        }
+      }
+      if (!$error) {
         // delete old image
         $old = __DIR__ . '/../' . $image_path;
         if (is_file($old)) @unlink($old);

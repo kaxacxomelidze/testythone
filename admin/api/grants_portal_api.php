@@ -407,10 +407,14 @@ function save_cover_image(?array $file): string {
     if (!mkdir($dir, 0775, true) && !is_dir($dir)) json_err("ვერ შეიქმნა uploads/grants");
   }
 
-  $name = 'grant_' . date('Ymd_His') . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+  $base = 'grant_' . date('Ymd_His') . '_' . bin2hex(random_bytes(6));
+  $name = $base . '.webp';
   $pathAbs = $dir . '/' . $name;
-
-  if (!move_uploaded_file($file['tmp_name'], $pathAbs)) json_err("ვერ მოხერხდა სურათის შენახვა");
+  if (!convert_image_to_webp($file['tmp_name'], $pathAbs, 90)) {
+    $name = $base . '.' . $ext;
+    $pathAbs = $dir . '/' . $name;
+    if (!move_uploaded_file($file['tmp_name'], $pathAbs)) json_err("ვერ მოხერხდა სურათის შენახვა");
+  }
   return 'uploads/grants/' . $name;
 }
 
