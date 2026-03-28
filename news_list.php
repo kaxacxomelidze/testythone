@@ -33,7 +33,95 @@ function news_url(array $n): string {
   $id = (int)($n['id'] ?? 0);
   $slug = trim((string)($n['slug'] ?? ''));
   if ($slug === '' || $slug === '-' || $slug === 'news') $slug = 'news-' . $id;
-  return "/youthagency/news/$id/$slug";
+  return "/news/$id/$slug";
+}
+
+function normalize_public_path(string $path): string {
+  $path = trim($path);
+  if ($path === '') return '';
+  if (preg_match('~^(https?:)?//~i', $path) || str_starts_with($path, 'data:')) return $path;
+  $path = str_replace('\\', '/', $path);
+  $path = preg_replace('~/+~', '/', $path) ?? $path;
+  if (!str_starts_with($path, '/')) $path = '/' . ltrim($path, '/');
+  if (str_starts_with($path, '/youthagency/')) {
+    $path = '/' . ltrim(substr($path, strlen('/youthagency/')), '/');
+  }
+  return $path;
+}
+
+function public_path_to_fs(string $publicPath): ?string {
+  $publicPath = normalize_public_path($publicPath);
+  if ($publicPath === '' || !str_starts_with($publicPath, '/uploads/')) return null;
+  $base = realpath(__DIR__ . '/uploads');
+  if ($base === false) return null;
+  $candidate = realpath(__DIR__ . $publicPath);
+  if ($candidate === false || !is_file($candidate)) return null;
+  $baseNorm = rtrim(str_replace('\\', '/', $base), '/');
+  $candNorm = str_replace('\\', '/', $candidate);
+  if ($candNorm !== $baseNorm && !str_starts_with($candNorm, $baseNorm . '/')) return null;
+  return $candidate;
+}
+
+function ensure_news_thumb(string $publicPath, int $w, int $h, int $quality = 78): string {
+  $srcFile = public_path_to_fs($publicPath);
+  if (!$srcFile || $w < 40 || $h < 40) return $publicPath;
+  if (!function_exists('imagecreatetruecolor') || !function_exists('imagecopyresampled')) return $publicPath;
+
+  $cacheDirFs = __DIR__ . '/uploads/cache/news';
+  if (!is_dir($cacheDirFs) && !@mkdir($cacheDirFs, 0775, true) && !is_dir($cacheDirFs)) {
+    return $publicPath;
+  }
+
+  $fingerprint = md5($srcFile . '|' . (string)@filemtime($srcFile) . "|{$w}x{$h}|{$quality}");
+  $targetName = $fingerprint . ".webp";
+  $targetFs = $cacheDirFs . '/' . $targetName;
+  $targetPublic = '/uploads/cache/news/' . $targetName;
+
+  if (is_file($targetFs) && filesize($targetFs) > 0) return $targetPublic;
+
+  $ext = strtolower(pathinfo($srcFile, PATHINFO_EXTENSION));
+  $src = null;
+  if ($ext === 'jpg' || $ext === 'jpeg') $src = @imagecreatefromjpeg($srcFile);
+  elseif ($ext === 'png') $src = @imagecreatefrompng($srcFile);
+  elseif ($ext === 'webp' && function_exists('imagecreatefromwebp')) $src = @imagecreatefromwebp($srcFile);
+  elseif ($ext === 'gif') $src = @imagecreatefromgif($srcFile);
+
+  if (!$src) return $publicPath;
+
+  $sw = imagesx($src);
+  $sh = imagesy($src);
+  if ($sw < 1 || $sh < 1) {
+    imagedestroy($src);
+    return $publicPath;
+  }
+
+  $srcRatio = $sw / $sh;
+  $dstRatio = $w / $h;
+  if ($srcRatio > $dstRatio) {
+    $cropH = $sh;
+    $cropW = (int)round($sh * $dstRatio);
+    $cropX = (int)floor(($sw - $cropW) / 2);
+    $cropY = 0;
+  } else {
+    $cropW = $sw;
+    $cropH = (int)round($sw / $dstRatio);
+    $cropX = 0;
+    $cropY = (int)floor(($sh - $cropH) / 2);
+  }
+
+  $dst = imagecreatetruecolor($w, $h);
+  imagealphablending($dst, true);
+  imagesavealpha($dst, true);
+  imagecopyresampled($dst, $src, 0, 0, $cropX, $cropY, $w, $h, $cropW, $cropH);
+
+  $ok = false;
+  if (function_exists('imagewebp')) {
+    $ok = @imagewebp($dst, $targetFs, $quality);
+  }
+  imagedestroy($dst);
+  imagedestroy($src);
+
+  return $ok && is_file($targetFs) ? $targetPublic : $publicPath;
 }
 
 $news_cols = table_cols($pdo, 'news');
@@ -57,7 +145,7 @@ $list = array_slice($items, 1, 4);
     <div class="mag-kicker" data-i18n="news.kicker">Youth Agency</div>
     <div class="mag-row">
       <h2 class="mag-title" data-i18n="news.title">სიახლეები</h2>
-      <a class="mag-all" href="/youthagency/news_all.php" data-i18n="news.all">ნახე მეტი ↗</a>
+      <a class="mag-all" href="/news/" data-i18n="news.all">ნახე მეტი ↗</a>
     </div>
   </div>
 
@@ -72,7 +160,9 @@ $list = array_slice($items, 1, 4);
 
     <?php
       $fUrl  = news_url($featured);
-      $fImg  = trim((string)($featured['image_path'] ?? ''));
+      $fImg  = normalize_public_path((string)($featured['image_path'] ?? ''));
+      $fImgSm = ensure_news_thumb($fImg, 640, 360);
+      $fImgLg = ensure_news_thumb($fImg, 1280, 720);
       $fDate = fmt_date($featured['published_at'] ?? '');
       $fDesc = excerpt($featured['body'] ?? '', 200);
       $fTitleEn = (string)($featured['title_en'] ?? '');
@@ -85,7 +175,7 @@ $list = array_slice($items, 1, 4);
         <a class="mag-feature__link" href="<?=h($fUrl)?>">
           <div class="mag-feature__media">
             <?php if ($fImg): ?>
-              <img src="/youthagency/<?=h($fImg)?>" alt="<?=h($featured['title'])?>">
+              <img src="<?=h($fImgSm)?>" srcset="<?=h($fImgSm)?> 640w, <?=h($fImgLg)?> 1280w" sizes="(max-width:980px) 100vw, 65vw" alt="<?=h($featured['title'])?>" loading="eager" fetchpriority="high" decoding="async" width="640" height="360">
             <?php else: ?>
               <div class="mag-fallback"></div>
             <?php endif; ?>
@@ -117,7 +207,9 @@ $list = array_slice($items, 1, 4);
           <?php foreach ($list as $n): ?>
             <?php
               $url  = news_url($n);
-              $img  = trim((string)($n['image_path'] ?? ''));
+              $img  = normalize_public_path((string)($n['image_path'] ?? ''));
+              $imgSm = ensure_news_thumb($img, 275, 183);
+              $imgLg = ensure_news_thumb($img, 550, 366);
               $date = fmt_date($n['published_at'] ?? '');
               $desc = excerpt($n['body'] ?? '', 95);
               $titleEn = (string)($n['title_en'] ?? '');
@@ -127,7 +219,7 @@ $list = array_slice($items, 1, 4);
               <a class="mag-mini__link" href="<?=h($url)?>">
                 <div class="mag-mini__thumb">
                   <?php if ($img): ?>
-                    <img src="/youthagency/<?=h($img)?>" alt="<?=h($n['title'])?>">
+                    <img src="<?=h($imgSm)?>" srcset="<?=h($imgSm)?> 275w, <?=h($imgLg)?> 550w" sizes="(max-width:980px) 45vw, 275px" alt="<?=h($n['title'])?>" loading="lazy" fetchpriority="auto" decoding="async" width="275" height="183">
                   <?php else: ?>
                     <div class="mag-mini__fallback"></div>
                   <?php endif; ?>
