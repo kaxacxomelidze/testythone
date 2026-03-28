@@ -188,7 +188,7 @@ let currentCamp = null;
 let editingPostId = 0;
 
 async function apiJson(action, payload = {}) {
-  const res = await fetch("/youthagency/admin/api/camps.php?action=" + encodeURIComponent(action), {
+  const res = await fetch("/admin/api/camps.php?action=" + encodeURIComponent(action), {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify(payload)
@@ -229,7 +229,7 @@ function renderCamps(){
         <div class="muted">Fields: ${c.fieldsCount ?? 0}</div>
         <div class="row" style="margin-top:10px">
           <button class="btn ac" onclick="editCamp(${c.id})">Edit</button>
-          <a class="pill" href="/youthagency/camps/${c.id}/${encodeURIComponent(c.slug)}" target="_blank">Open user page</a>
+          <a class="pill" href="/camps/${c.id}/${encodeURIComponent(c.slug)}" target="_blank">Open user page</a>
         </div>
       </div>
     `;
@@ -349,7 +349,7 @@ async function saveCamp(){
   if (file) fd.append("cover_file", file);
 
   try{
-    const res = await fetch("/youthagency/admin/api/camps.php?action=save", { method:"POST", body: fd });
+    const res = await fetch("/admin/api/camps.php?action=save", { method:"POST", body: fd });
     const j = await res.json().catch(()=>({ok:false,error:"Bad JSON"}));
     if(!res.ok || !j.ok) throw new Error(j.error || ("HTTP " + res.status));
 
@@ -436,7 +436,7 @@ async function savePost(){
   for(const f of galleryFiles) fd.append("gallery_files[]", f);
 
   try{
-    const res = await fetch("/youthagency/admin/api/camps.php?action=postSave", { method:"POST", body: fd });
+    const res = await fetch("/admin/api/camps.php?action=postSave", { method:"POST", body: fd });
     const j = await res.json().catch(()=>({ok:false,error:"Bad JSON"}));
     if(!res.ok || !j.ok) throw new Error(j.error || ("HTTP "+res.status));
 
@@ -560,7 +560,7 @@ async function loadRegs(){
               <td class="muted">${esc(r.ip||"")}</td>
               ${(r.values||[]).map(v=>{
                 const s=(v||"").toString();
-                const isLink=s.startsWith("/youthagency/uploads/");
+                const isLink=s.startsWith("/uploads/");
                 return `<td>${isLink ? `<a href="${esc(s)}" target="_blank">${esc(s)}</a>` : esc(s)}</td>`;
               }).join("")}
             </tr>

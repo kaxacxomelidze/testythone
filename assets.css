@@ -4,8 +4,8 @@
   --muted:rgba(255,255,255,.75);
   --muted2:rgba(255,255,255,.65);
   --line:rgba(255,255,255,.14);
-  --btn:#4c8dff;
-  --btn-hover:#3b7bf0;
+  --btn:#1d4ed8;
+  --btn-hover:#1e40af;
 
   --container:1220px;
   --r12:12px;
@@ -20,6 +20,8 @@ body{
   background:#f2f2f2;
   line-height:1.5;
 }
+/* Defensive: legacy cached homepage promo block must never be visible */
+.home-seo{display:none !important;}
 img{
   max-width:100%;
   height:auto;
@@ -133,6 +135,16 @@ img{
 
 .header-nav a.active{
   color:#fff;
+}
+
+.header-nav .dropdown-menu a{
+  color:#000 !important;
+}
+.header-nav .dropdown-menu a:hover{
+  color:#000 !important;
+}
+.header-nav .dropdown-menu a.active{
+  color:#000 !important;
 }
 
 .header-nav a.active::after{
@@ -338,7 +350,7 @@ img{
 .search input::placeholder{ color: rgba(255,255,255,.6); }
 .search button{
   height:42px;
-  border:0;
+  border:1px solid rgba(255,255,255,.2);
   padding: 0 18px;
   background: var(--btn);
   color:#fff;
@@ -478,6 +490,15 @@ img{
   line-height:1.45;
   text-align:right;
   max-width: 46ch;
+}
+.copy-link{
+  color:#fff;
+  font-weight:800;
+  text-decoration:none;
+  margin-right:6px;
+}
+.copy-link:hover{
+  text-decoration:underline;
 }
 
 @media (max-width: 1024px){
