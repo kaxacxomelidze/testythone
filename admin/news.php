@@ -35,7 +35,7 @@ ob_start();
         <?php
           $slug = trim((string)($n['slug'] ?? ''));
           if ($slug === '' || $slug === '-' || $slug === 'news') $slug = 'news-' . (int)$n['id'];
-          $open = "/youthagency/news/" . (int)$n['id'] . "/" . $slug;
+          $open = "/news/" . (int)$n['id'] . "/" . $slug;
         ?>
         <tr>
           <td style="padding:10px;border-bottom:1px solid var(--line)"><?=h($n['title'])?></td>

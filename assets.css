@@ -479,6 +479,15 @@ img{
   text-align:right;
   max-width: 46ch;
 }
+.copy-link{
+  color:#fff;
+  font-weight:800;
+  text-decoration:none;
+  margin-right:6px;
+}
+.copy-link:hover{
+  text-decoration:underline;
+}
 
 @media (max-width: 1024px){
   .footer-head{flex-direction:column;align-items:flex-start;}

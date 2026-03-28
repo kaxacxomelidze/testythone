@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../admin/config.php';
 require_once __DIR__ . '/../admin/db.php';
+security_headers(true);
+enforce_http_method(['GET'], true);
+enforce_rate_limit('member_lookup_api', 90, 60, true);
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -23,6 +26,8 @@ if (!isset($pdo) || !($pdo instanceof PDO)) fail("DB not initialized", 500);
 
 $pid = preg_replace('/\s+/', '', trim((string)($_GET['pid'] ?? '')));
 if ($pid === '') fail("PID required");
+$pid = preg_replace('/\D+/', '', $pid) ?? '';
+if ($pid === '' || strlen($pid) < 6 || strlen($pid) > 20) fail("Invalid PID");
 
 try {
   // 1) members table (main source)
