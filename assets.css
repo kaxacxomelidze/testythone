@@ -139,6 +139,13 @@ img{
   color:#fff;
 }
 
+.header-nav .dropdown-menu a{
+  color:#000 !important;
+}
+.header-nav .dropdown-menu a:hover{
+  color:#000 !important;
+}
+
 .header-nav a.active::after{
   content:"";
   position:absolute;

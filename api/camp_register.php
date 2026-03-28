@@ -67,6 +67,24 @@ function pick_col(array $cols, array $candidates, string $fallback = ''): string
   return $fallback;
 }
 
+function convert_to_webp(string $srcPath, string $destPath, int $quality = 90): bool {
+  if (!is_file($srcPath) || !function_exists('imagewebp')) return false;
+  $info = @getimagesize($srcPath);
+  $mime = strtolower((string)($info['mime'] ?? ''));
+  if ($mime === '') return false;
+  $img = match ($mime) {
+    'image/jpeg' => @imagecreatefromjpeg($srcPath),
+    'image/png'  => @imagecreatefrompng($srcPath),
+    'image/gif'  => @imagecreatefromgif($srcPath),
+    'image/webp' => @imagecreatefromwebp($srcPath),
+    default      => false,
+  };
+  if (!$img) return false;
+  $ok = @imagewebp($img, $destPath, max(60, min(100, $quality)));
+  imagedestroy($img);
+  return (bool)$ok;
+}
+
 function upload_file(string $inputName, int $campId, int $fieldId, string $uploadDir): array {
   if (empty($_FILES[$inputName]) || !isset($_FILES[$inputName]['error'])) {
     return ['ok' => false, 'path' => '', 'error' => 'No file uploaded'];
@@ -94,11 +112,25 @@ function upload_file(string $inputName, int $campId, int $fieldId, string $uploa
     @mkdir($uploadDir, 0775, true);
   }
 
-  $name = "camp{$campId}_field{$fieldId}_" . bin2hex(random_bytes(10)) . "." . $ext;
+  $base = "camp{$campId}_field{$fieldId}_" . bin2hex(random_bytes(10));
+  $name = $base . "." . $ext;
   $dest = rtrim($uploadDir, '/\\') . DIRECTORY_SEPARATOR . $name;
 
-  if (!move_uploaded_file($tmp, $dest)) {
-    return ['ok' => false, 'path' => '', 'error' => 'Upload failed (check permissions)'];
+  $isImage = in_array($ext, ['jpg','jpeg','png','webp','gif'], true);
+  if ($isImage) {
+    $name = $base . ".webp";
+    $dest = rtrim($uploadDir, '/\\') . DIRECTORY_SEPARATOR . $name;
+    if (!convert_to_webp($tmp, $dest, 90)) {
+      $name = $base . "." . $ext;
+      $dest = rtrim($uploadDir, '/\\') . DIRECTORY_SEPARATOR . $name;
+      if (!move_uploaded_file($tmp, $dest)) {
+        return ['ok' => false, 'path' => '', 'error' => 'Upload failed (check permissions)'];
+      }
+    }
+  } else {
+    if (!move_uploaded_file($tmp, $dest)) {
+      return ['ok' => false, 'path' => '', 'error' => 'Upload failed (check permissions)'];
+    }
   }
 
   // IMPORTANT: must match where your web server serves uploads

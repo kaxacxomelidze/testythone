@@ -59,13 +59,26 @@ try{
 
         $name = basename((string)$_FILES[$key]['name']);
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-        $safeExt = preg_match('/^(pdf|doc|docx|jpg|jpeg|png)$/', $ext) ? $ext : 'bin';
-
-        $new = 'g'.$grantId.'_'.time().'_' . bin2hex(random_bytes(4)) . '.' . $safeExt;
+        $safeExt = preg_match('/^(pdf|doc|docx|jpg|jpeg|png|webp|gif)$/', $ext) ? $ext : 'bin';
+        $base = 'g'.$grantId.'_'.time().'_' . bin2hex(random_bytes(4));
+        $new = $base . '.' . $safeExt;
         $dest = $upDir . '/' . $new;
 
-        if(!move_uploaded_file($_FILES[$key]['tmp_name'], $dest)){
-          json_out(['ok'=>false,'error'=>'File upload failed'], 400);
+        $isImage = in_array($safeExt, ['jpg','jpeg','png','webp','gif'], true);
+        if ($isImage) {
+          $new = $base . '.webp';
+          $dest = $upDir . '/' . $new;
+          if (!convert_image_to_webp($_FILES[$key]['tmp_name'], $dest, 90)) {
+            $new = $base . '.' . $safeExt;
+            $dest = $upDir . '/' . $new;
+            if(!move_uploaded_file($_FILES[$key]['tmp_name'], $dest)){
+              json_out(['ok'=>false,'error'=>'File upload failed'], 400);
+            }
+          }
+        } else {
+          if(!move_uploaded_file($_FILES[$key]['tmp_name'], $dest)){
+            json_out(['ok'=>false,'error'=>'File upload failed'], 400);
+          }
         }
 
         $data[$key] = '/uploads/grant_apps/' . $new;

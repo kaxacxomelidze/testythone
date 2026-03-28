@@ -536,10 +536,23 @@ function save_application_uploads(PDO $pdo, int $grantId, int $appId): array {
     if ($orig === '') $orig = 'file';
 
     $ext = safe_ext_from_mime($mime, $orig);
-    $stored = 'up_' . date('Ymd_His') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+    $base = 'up_' . date('Ymd_His') . '_' . bin2hex(random_bytes(8));
+    $stored = $base . '.' . $ext;
     $abs = rtrim($baseDirAbs, '/\\') . DIRECTORY_SEPARATOR . $stored;
-
-    if (!move_uploaded_file($tmp, $abs)) json_err("ვერ მოხერხდა ფაილის შენახვა: " . $orig, 500);
+    $isImage = in_array(strtolower($mime), ['image/jpeg','image/png','image/webp','image/gif'], true);
+    if ($isImage) {
+      $stored = $base . '.webp';
+      $abs = rtrim($baseDirAbs, '/\\') . DIRECTORY_SEPARATOR . $stored;
+      if (!convert_image_to_webp($tmp, $abs, 90)) {
+        $stored = $base . '.' . $ext;
+        $abs = rtrim($baseDirAbs, '/\\') . DIRECTORY_SEPARATOR . $stored;
+        if (!move_uploaded_file($tmp, $abs)) json_err("ვერ მოხერხდა ფაილის შენახვა: " . $orig, 500);
+      } else {
+        $mime = 'image/webp';
+      }
+    } else {
+      if (!move_uploaded_file($tmp, $abs)) json_err("ვერ მოხერხდა ფაილის შენახვა: " . $orig, 500);
+    }
 
     $fieldName = (string)($f['field'] ?? '');
     $requirement_id = null;
