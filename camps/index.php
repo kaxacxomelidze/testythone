@@ -476,7 +476,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <script>
     async function inject(id, file) {
       const el = document.getElementById(id);
-      const res = await fetch(file + (file.includes('?') ? '&' : '?') + 'v=2');
+      const res = await fetch(file + (file.includes('?') ? '&' : '?') + 'v=2', {cache:'force-cache'});
       if (res.ok) el.innerHTML = await res.text();
     }
 

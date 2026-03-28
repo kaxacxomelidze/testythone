@@ -2,16 +2,11 @@
   const wrap = document.getElementById('newsGrid');
   if (!wrap) return;
 
-  console.log('✅ news.js loaded');
-
   const url = 'data/news_api.php';
 
   try {
     const res = await fetch(url, { cache: 'default' });
-    console.log('News API status:', res.status);
-
     const payload = res.ok ? await res.json() : { ok: false, news: [] };
-    console.log('News payload:', payload);
 
     const items = Array.isArray(payload.news) ? payload.news : [];
 
@@ -38,7 +33,7 @@
     }).join('');
 
   } catch (err) {
-    console.error('❌ News load error:', err);
+    console.error('News load error:', err);
     wrap.innerHTML = `<div class="news-empty">Failed to load news</div>`;
   }
 

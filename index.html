@@ -105,17 +105,17 @@
 
   <div id="newsMount"></div>
 
-  <script src="news.js?v=1"></script>
+  <script src="news.js?v=1" defer></script>
 
   <div id="siteFooterMount"></div>
 
-  <script src="slider.js?v=1"></script>
+  <script src="slider.js?v=1" defer></script>
 
   <script>
     async function inject(id, file) {
       const el = document.getElementById(id);
       if (!el) throw new Error(`Mount element not found: #${id}`);
-      const res = await fetch(file + '?v=2');
+      const res = await fetch(file + '?v=2', { cache: 'force-cache' });
       if (!res.ok) throw new Error(`${file} not found. Status: ${res.status}`);
       el.innerHTML = await res.text();
     }
@@ -123,7 +123,7 @@
     async function injectPhp(id, url) {
       const el = document.getElementById(id);
       if (!el) throw new Error(`Mount element not found: #${id}`);
-      const res = await fetch(url + '?v=2');
+      const res = await fetch(url + '?v=2', { cache: 'force-cache' });
       if (!res.ok) throw new Error(`${url} not found. Status: ${res.status}`);
       el.innerHTML = await res.text();
     }

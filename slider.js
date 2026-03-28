@@ -1,7 +1,4 @@
-console.log("✅ slider.js loaded");
-
 document.addEventListener("DOMContentLoaded", async () => {
-  console.log("✅ DOM ready");
 
   const track = document.getElementById("slidesTrack");
   const dots = document.getElementById("dots");
@@ -13,23 +10,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  console.log("✅ Slider HTML found");
-
   const API_URLS = ["/data/slides_api.php"];
-  console.log("API candidate:", API_URLS[0]);
 
   async function fetchSlidesData() {
     for (const url of API_URLS) {
       try {
         const res = await fetch(url, { headers: { "Accept": "application/json" } });
-        console.log("API status:", url, res.status);
         if (!res.ok) continue;
 
         const raw = await res.text();
         const parsed = JSON.parse(raw);
         return parsed;
       } catch (e) {
-        console.warn("⚠️ API candidate failed:", url, e);
+        console.warn("API candidate failed:", url, e);
       }
     }
     return null;
@@ -37,11 +30,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const data = await fetchSlidesData();
   if (!data) {
-    console.error("❌ API fetch failed for all candidates", API_URLS);
+    console.error("API fetch failed for all candidates", API_URLS);
     return;
   }
 
-  console.log("API DATA:", data);
 
   let slides = data.slides || [];
   const autoplay = Number(data.settings?.autoplay_ms || 4500);
@@ -121,5 +113,4 @@ document.addEventListener("DOMContentLoaded", async () => {
   render();
   start();
 
-  console.log("✅ Slider initialized");
 });
