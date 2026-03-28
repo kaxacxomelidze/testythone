@@ -4,6 +4,8 @@
 
   if (window.__appJsLoaded) return;
   window.__appJsLoaded = true;
+  // Safety cleanup: remove legacy homepage promo block if any stale cached markup exists.
+  document.querySelectorAll('.home-seo').forEach((el) => el.remove());
 
   // ----------------------------
   // i18n dictionary
