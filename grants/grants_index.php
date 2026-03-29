@@ -9,7 +9,7 @@ $pdo = db();
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 if (preg_match('~/grants/grants_index\.php$~', $requestPath)) {
   $qs = $_SERVER['QUERY_STRING'] ?? '';
-  header('Location: /youthagency/grants/' . ($qs !== '' ? ('?' . $qs) : ''), true, 301);
+  header('Location: /grants/' . ($qs !== '' ? ('?' . $qs) : ''), true, 301);
   exit;
 }
 
@@ -32,7 +32,7 @@ function grants_url(array $g): string {
   $id = (int)($g['id'] ?? 0);
   $slug = trim((string)($g['slug'] ?? ''));
   if ($slug === '') $slug = 'grant-' . $id;
-  return "/youthagency/grants/$id/" . rawurlencode($slug);
+  return "/grants/$id/" . rawurlencode($slug);
 }
 
 function excerpt(string $text, int $len = 170): string {
@@ -69,7 +69,7 @@ function is_deadline_passed(?string $deadline): bool {
   return time() > $ts;
 }
 
-$applyDefault = "/youthagency/rules/";
+$applyDefault = "/rules/";
 $hasTitleEn = has_col($pdo, 'grants', 'title_en');
 $hasDescEn = has_col($pdo, 'grants', 'description_en');
 $hasBodyEn = has_col($pdo, 'grants', 'body_en');
@@ -113,11 +113,13 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="/imgs/youthagencyicon.png">
   <title>Youth Agency • Grants</title>
+  <meta name="description" content="იხილეთ Youth Agency-ის აქტიური საგრანტო პროგრამები და მონაწილეობის პირობები.">
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="/youthagency/assets.css?v=1">
+  <link rel="stylesheet" href="/assets.css?v=1">
 
   <style>
     :root{
@@ -441,7 +443,7 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
       <?php if($totalPages>1): ?>
         <nav class="pager" aria-label="Pagination" data-i18n-aria="grants.paginationAria">
           <?php for($p=1;$p<=$totalPages;$p++): ?>
-            <a class="<?= $p===$page?'active':'' ?>" href="/youthagency/grants/?page=<?=$p?>"><?=$p?></a>
+            <a class="<?= $p===$page?'active':'' ?>" href="/grants/?page=<?=$p?>"><?=$p?></a>
           <?php endfor; ?>
         </nav>
       <?php endif; ?>
@@ -465,9 +467,9 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
       });
     }
     (async()=>{
-      await inject('siteHeaderMount','/youthagency/header.html');
-      try{ await loadScript('/youthagency/app.js'); if(typeof window.initHeader==='function') window.initHeader(); }catch(e){}
-      await inject('siteFooterMount','/youthagency/footer.html');
+      await inject('siteHeaderMount','/header.php');
+      try{ await loadScript('/app.js'); if(typeof window.initHeader==='function') window.initHeader(); }catch(e){}
+      await inject('siteFooterMount','/footer.php');
     })();
   </script>
 </body>

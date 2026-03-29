@@ -59,9 +59,8 @@ function build_public_image_url(string $rawPath): string {
   $path = str_replace('\\', '/', $rawPath);
   $path = preg_replace('~/+~', '/', $path);
 
-  $pos = stripos($path, '/youthagency/');
-  if ($pos !== false) {
-    return substr($path, $pos);
+  if (str_starts_with($path, '/')) {
+    return $path;
   }
 
   $segments = [];
@@ -79,18 +78,18 @@ function build_public_image_url(string $rawPath): string {
   if ($clean === '') return '';
 
   if (stripos($clean, 'youthagency/') === 0) {
-    return '/' . $clean;
+    return '/' . ltrim(substr($clean, strlen('youthagency/')), '/');
   }
 
   if (stripos($clean, 'admin/uploads/') === 0) {
-    return '/youthagency/' . $clean;
+    return '/' . $clean;
   }
 
   if (stripos($clean, 'uploads/') === 0) {
-    return '/youthagency/admin/' . $clean;
+    return '/admin/' . $clean;
   }
 
-  return '/youthagency/' . ltrim($clean, '/');
+  return '/' . ltrim($clean, '/');
 }
 
 function parse_json_array(?string $json): array {
@@ -283,13 +282,14 @@ $payload = [
 ?><!doctype html>
 <html lang="ka">
 <head>
+  <link rel="icon" type="image/png" href="/imgs/youthagencyicon.png">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><?= h((string)$grant['title']) ?> • Grant Portal</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="/youthagency/assets.css?v=1">
+  <link rel="stylesheet" href="/assets.css?v=1">
 
   <style>
     :root{
@@ -2476,10 +2476,10 @@ $payload = [
     }
 
     (async () => {
-      await inject('siteHeaderMount', '/youthagency/header.html');
-      await loadScript('/youthagency/app.js');
+      await inject('siteHeaderMount', '/header.php');
+      await loadScript('/app.js');
       if (typeof window.initHeader === 'function') window.initHeader();
-      await inject('siteFooterMount', '/youthagency/footer.html');
+      await inject('siteFooterMount', '/footer.php');
     })();
   </script>
 </body>

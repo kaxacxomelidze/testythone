@@ -86,11 +86,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($isLocked) {
     $wait = (int)$entry['lock_until'] - $now;
     $error = "ცდები ბევრჯერ. სცადე მოგვიანებით ({$wait} წამში).";
+    if (function_exists('log_admin_safe')) {
+      log_admin_safe('login_blocked', 'admin_users', null, ['ip'=>$ip,'wait_seconds'=>$wait]);
+    }
   } else {
 
     $csrf = (string)($_POST['csrf'] ?? '');
     if (!$csrf || !hash_equals($_SESSION['csrf'], $csrf)) {
       $error = 'უსაფრთხოების შემოწმება ვერ გაიარა. გვერდი განაახლე და თავიდან სცადე.';
+      if (function_exists('log_admin_safe')) {
+        log_admin_safe('login_failed_csrf', 'admin_users', null, ['ip'=>$ip, 'username'=>trim((string)($_POST['user'] ?? ''))]);
+      }
     } else {
 
       // reset window
@@ -110,6 +116,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if (!$captchaOk) {
         $error = 'კოდს ვერ ვადასტურებთ. სცადე თავიდან.';
         register_failed_attempt($rl, $ip, $entry, $now, $MAX_ATTEMPTS, $LOCK_SEC);
+        if (function_exists('log_admin_safe')) {
+          log_admin_safe('login_failed_captcha', 'admin_users', null, ['ip'=>$ip, 'username'=>$u]);
+        }
       } else {
         $stmt = $pdo->prepare("SELECT id, username, password_hash, role, is_active FROM admin_users WHERE username = ? LIMIT 1");
         $stmt->execute([$u]);
@@ -155,6 +164,9 @@ if (function_exists('log_admin')) {
       if (!$ok && $error === '') {
         register_failed_attempt($rl, $ip, $entry, $now, $MAX_ATTEMPTS, $LOCK_SEC);
         $error = $genericError;
+        if (function_exists('log_admin_safe')) {
+          log_admin_safe('login_failed_password', 'admin_users', null, ['ip'=>$ip, 'username'=>$u]);
+        }
       }
     }
   }

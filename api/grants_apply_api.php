@@ -3,10 +3,29 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../admin/config.php';
 $pdo = db();
+security_headers(true);
+enforce_http_method(['POST'], true);
+enforce_same_origin_post(true);
+enforce_content_length(20 * 1024 * 1024, true);
+enforce_rate_limit('grants_apply_api', 40, 300, true);
+
+function audit_grant_apply(string $result, array $details = []): void {
+  if (!function_exists('log_admin_safe')) return;
+  log_admin_safe('grant_apply_' . $result, 'grant_applications', null, $details + [
+    'grant_id' => (int)($_POST['grant_id'] ?? 0),
+    'method' => (string)($_SERVER['REQUEST_METHOD'] ?? 'GET'),
+    'ip' => client_ip(),
+  ]);
+}
 
 function json_out(array $d, int $code=200): void {
   http_response_code($code);
   header('Content-Type: application/json; charset=utf-8');
+  if (!empty($d['ok'])) {
+    audit_grant_apply('ok', ['status_code' => $code]);
+  } else {
+    audit_grant_apply('fail', ['status_code' => $code, 'error' => (string)($d['error'] ?? '')]);
+  }
   echo json_encode($d, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
   exit;
 }
@@ -40,16 +59,29 @@ try{
 
         $name = basename((string)$_FILES[$key]['name']);
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-        $safeExt = preg_match('/^(pdf|doc|docx|jpg|jpeg|png)$/', $ext) ? $ext : 'bin';
-
-        $new = 'g'.$grantId.'_'.time().'_' . bin2hex(random_bytes(4)) . '.' . $safeExt;
+        $safeExt = preg_match('/^(pdf|doc|docx|jpg|jpeg|png|webp|gif)$/', $ext) ? $ext : 'bin';
+        $base = 'g'.$grantId.'_'.time().'_' . bin2hex(random_bytes(4));
+        $new = $base . '.' . $safeExt;
         $dest = $upDir . '/' . $new;
 
-        if(!move_uploaded_file($_FILES[$key]['tmp_name'], $dest)){
-          json_out(['ok'=>false,'error'=>'File upload failed'], 400);
+        $isImage = in_array($safeExt, ['jpg','jpeg','png','webp','gif'], true);
+        if ($isImage) {
+          $new = $base . '.webp';
+          $dest = $upDir . '/' . $new;
+          if (!convert_image_to_webp($_FILES[$key]['tmp_name'], $dest, 90)) {
+            $new = $base . '.' . $safeExt;
+            $dest = $upDir . '/' . $new;
+            if(!move_uploaded_file($_FILES[$key]['tmp_name'], $dest)){
+              json_out(['ok'=>false,'error'=>'File upload failed'], 400);
+            }
+          }
+        } else {
+          if(!move_uploaded_file($_FILES[$key]['tmp_name'], $dest)){
+            json_out(['ok'=>false,'error'=>'File upload failed'], 400);
+          }
         }
 
-        $data[$key] = '/youthagency/uploads/grant_apps/' . $new;
+        $data[$key] = '/uploads/grant_apps/' . $new;
       } else {
         $data[$key] = '';
       }
