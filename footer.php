@@ -1,5 +1,117 @@
-<?php
-require_once __DIR__ . '/admin/config.php';
-security_headers(false);
-header('Content-Type: text/html; charset=UTF-8');
-readfile(__DIR__ . '/footer.html');
+<footer class="site-footer" data-nosnippet>
+  <div class="footer-wrap">
+
+    <div class="footer-head">
+      <div class="brand-footer">
+        <img src="/imgs/youthagency.png" alt="Youth Agency" width="363" height="100">
+      </div>
+
+      <form class="search" action="/news/" method="get">
+        <div class="search-shell">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <input type="search" name="q" placeholder="მოძებნე სიახლე, პროგრამა ან გვერდი..." aria-label="ძიება" data-i18n-placeholder="footer.searchPlaceholder" data-i18n-aria="footer.searchAria">
+        </div>
+        <button type="submit" data-i18n="footer.searchButton">ძიება</button>
+      </form>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="footer-grid">
+      <section class="box about footer-section" data-footer-section data-footer-key="about">
+        <button class="footer-section-toggle" type="button" aria-expanded="false" aria-controls="footer-section-about">
+          <span class="footer-section-title" data-i18n="footer.aboutTitle">ჩვენს შესახებ</span>
+          <svg class="footer-section-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 8 14" aria-hidden="true">
+            <path fill="currentColor" d="M8 7a1 1 0 0 0-.306-.72l-6-6A1 1 0 1 0 .351 1.76L5.588 7 .28 12.306a1 1 0 0 0 1.414 1.414l6-6A1 1 0 0 0 8 7Z"></path>
+          </svg>
+        </button>
+        <div class="footer-section-body" id="footer-section-about">
+          <p data-i18n="footer.aboutText">
+            სააგენტო ხელს უწყობს ახალგაზრდების ჩართულობას, განათლებასა და ინიციატივებს —
+            საგრანტო პროგრამებით, პარტნიორული პროექტებით და პრაქტიკული სერვისებით.
+          </p>
+
+          <div class="social" aria-label="სოციალური ქსელები" data-i18n-aria="footer.socialLabel">
+            <a href="https://www.youtube.com/@youthagency8266" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+            <a href="https://www.facebook.com/YouthAgencyGeorgia" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="https://www.instagram.com/youthagency_georgia/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="box footer-section" data-footer-section data-footer-key="nav">
+        <button class="footer-section-toggle" type="button" aria-expanded="false" aria-controls="footer-section-nav">
+          <span class="footer-section-title" data-i18n="footer.navTitle">ნავიგაცია</span>
+          <svg class="footer-section-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 8 14" aria-hidden="true">
+            <path fill="currentColor" d="M8 7a1 1 0 0 0-.306-.72l-6-6A1 1 0 1 0 .351 1.76L5.588 7 .28 12.306a1 1 0 0 0 1.414 1.414l6-6A1 1 0 0 0 8 7Z"></path>
+          </svg>
+        </button>
+        <div class="footer-section-body" id="footer-section-nav">
+          <ul class="footer-section-list links">
+            <li><a href="/" data-i18n="footer.navHome">მთავარი</a></li>
+            <li><a href="/camps/" data-i18n="footer.navCamps">ბანაკები</a></li>
+            <li><a href="/camps/" data-i18n="footer.navActivities">აქტივობები</a></li>
+            <li><a href="/grants/" data-i18n="footer.navGrants">საგრანტო პროექტები</a></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="box footer-section" data-footer-section data-footer-key="services">
+        <button class="footer-section-toggle" type="button" aria-expanded="false" aria-controls="footer-section-services">
+          <span class="footer-section-title" data-i18n="footer.servicesTitle">სერვისები</span>
+          <svg class="footer-section-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 8 14" aria-hidden="true">
+            <path fill="currentColor" d="M8 7a1 1 0 0 0-.306-.72l-6-6A1 1 0 1 0 .351 1.76L5.588 7 .28 12.306a1 1 0 0 0 1.414 1.414l6-6A1 1 0 0 0 8 7Z"></path>
+          </svg>
+        </button>
+        <div class="footer-section-body" id="footer-section-services">
+          <ul class="footer-section-list links">
+            <li><a href="/news/" data-i18n="footer.servicesNews">სიახლეები</a></li>
+            <li><a href="/about/" data-i18n="footer.servicesAbout">ჩვენს შესახებ</a></li>
+            <li><a href="/contact/" data-i18n="footer.servicesContact">კონტაქტი</a></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="box footer-section" data-footer-section data-footer-key="docs">
+        <button class="footer-section-toggle" type="button" aria-expanded="false" aria-controls="footer-section-docs">
+          <span class="footer-section-title" data-i18n="footer.docsTitle">დოკუმენტები</span>
+          <svg class="footer-section-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 8 14" aria-hidden="true">
+            <path fill="currentColor" d="M8 7a1 1 0 0 0-.306-.72l-6-6A1 1 0 1 0 .351 1.76L5.588 7 .28 12.306a1 1 0 0 0 1.414 1.414l6-6A1 1 0 0 0 8 7Z"></path>
+          </svg>
+        </button>
+        <div class="footer-section-body" id="footer-section-docs">
+          <ul class="footer-section-list links">
+            <li><a href="/rules/" data-i18n="footer.docsPrivacy">კონფიდენციალურობის პოლიტიკა</a></li>
+            <li><a href="/rules/" data-i18n="footer.docsTerms">გამოყენების წესები</a></li>
+            <li><a href="/rules/" data-i18n="footer.docsCopyright">საავტორო უფლებები</a></li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="footer-tail">
+      <div class="contact">
+        <div class="pill">
+          <i class="fa-solid fa-location-dot"></i>
+          <span data-i18n="footer.address">ვაჟა ფშაველას ქ. #76</span>
+        </div>
+        <div class="pill">
+          <i class="fa-solid fa-phone"></i>
+          <span data-i18n="footer.phone">032 230 51 65</span>
+        </div>
+        <div class="pill">
+          <i class="fa-solid fa-envelope"></i>
+          <span data-i18n="footer.email">info@youthagency.gov.ge</span>
+        </div>
+      </div>
+
+      <div class="copy">
+        <a class="copy-link" href="https://sspm.ge/" target="_blank" rel="noopener noreferrer">sspm.ge</a>
+        <span data-i18n="footer.copySuffix">© 2026. All rights reserved.</span>
+      </div>
+    </div>
+
+  </div>
+</footer>

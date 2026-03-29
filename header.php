@@ -1,5 +1,79 @@
-<?php
-require_once __DIR__ . '/admin/config.php';
-security_headers(false);
-header('Content-Type: text/html; charset=UTF-8');
-readfile(__DIR__ . '/header.html');
+<!-- /header.php -->
+<header class="site-header" id="siteHeader">
+  <div class="header-wrap">
+    <div class="header-left">
+      <a class="brand" href="/" aria-label="Youth Agency home">
+        <img src="/imgs/youthagency.png" alt="Youth Agency" width="363" height="100">
+      </a>
+    </div>
+
+    <nav class="header-nav" aria-label="Primary navigation">
+      <a href="/" data-active="/"><span data-i18n="nav.home">მთავარი</span></a>
+      <a href="/news/" data-active="/news/"><span data-i18n="nav.news">სიახლეები</span></a>
+
+      <div class="nav-item">
+        <button class="nav-trigger" id="activitiesBtn" type="button" aria-expanded="false" aria-haspopup="true">
+          <span data-i18n="nav.activities">აქტივობები</span>
+          <span class="nav-caret" aria-hidden="true">▾</span>
+        </button>
+
+        <div class="dropdown-menu" id="activitiesMenu">
+          <a href="/camps/" data-active="/camps/"><span data-i18n="nav.camps">ბანაკები</span></a>
+          <a href="/meetings/" data-active="/meetings/"><span data-i18n="nav.meetings">შეხვედრები</span></a>
+        </div>
+      </div>
+
+      <a href="/grants/" data-active="/grants/"><span data-i18n="nav.grants">საგრანტო</span></a>
+      <a href="/rules/" data-active="/rules/"><span data-i18n="nav.rules">წესები</span></a>
+    </nav>
+
+    <div class="header-right">
+      <div class="lang-switch" aria-label="Language switcher">
+        <button class="lang-btn" data-lang="ka">KA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+
+      <a class="header-link" href="/about/" data-active="/about/"><span data-i18n="nav.about">ჩვენს შესახებ</span></a>
+      <a class="cta" href="/contact/" data-active="/contact/"><span data-i18n="nav.contact">კონტაქტი</span></a>
+
+      <button class="burger" id="burgerBtn" type="button" aria-expanded="false" aria-label="Open menu">
+        <span aria-hidden="true">☰</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="mobile-panel" id="mobilePanel">
+    <div class="inner">
+      <nav aria-label="Mobile navigation">
+        <a href="/" data-active="/"><span data-i18n="nav.home">მთავარი</span></a>
+        <a href="/news/" data-active="/news/"><span data-i18n="nav.news">სიახლეები</span></a>
+        <a href="/camps/" data-active="/camps/"><span data-i18n="nav.camps">ბანაკები</span></a>
+        <a href="/meetings/" data-active="/meetings/"><span data-i18n="nav.meetings">შეხვედრები</span></a>
+        <a href="/grants/" data-active="/grants/"><span data-i18n="nav.grants">საგრანტო</span></a>
+        <a href="/rules/" data-active="/rules/"><span data-i18n="nav.rules">წესები</span></a>
+        <a href="/about/" data-active="/about/"><span data-i18n="nav.about">ჩვენს შესახებ</span></a>
+        <a href="/contact/" data-active="/contact/"><span data-i18n="nav.contact">კონტაქტი</span></a>
+      </nav>
+
+      <div class="lang-switch mobile">
+        <button class="lang-btn" data-lang="ka">KA</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  (function initHeaderFallback(){
+    if (typeof window.initHeader === 'function') {
+      window.initHeader();
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = '/app.js?v=2';
+    s.onload = () => {
+      if (typeof window.initHeader === 'function') window.initHeader();
+    };
+    document.body.appendChild(s);
+  })();
+</script>
