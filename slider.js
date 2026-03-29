@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       <div class="slide">
         <img src="${img(s.image)}" alt="${s.title ? String(s.title).replace(/"/g, '&quot;') : ''}" ${i === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy" fetchpriority="auto"'} decoding="async">
         <div class="slide-content">
-          ${s.title ? `<h3>${s.title}</h3>` : ""}
+          ${s.title ? `<h3 class="slide-title">${s.title}</h3>` : ""}
         </div>
       </div>
     `).join("");
@@ -112,6 +112,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     move();
     start();
   };
+
+  let touchStartX = 0;
+  let touchEndX = 0;
+  const SWIPE_THRESHOLD = 35;
+
+  track.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0]?.clientX || 0;
+  }, { passive: true });
+
+  track.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0]?.clientX || 0;
+    const delta = touchEndX - touchStartX;
+    if (Math.abs(delta) < SWIPE_THRESHOLD) return;
+
+    stop();
+    if (delta < 0) index = (index + 1) % slides.length;
+    else index = (index - 1 + slides.length) % slides.length;
+    move();
+    start();
+  }, { passive: true });
 
   render();
   start();
