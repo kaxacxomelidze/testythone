@@ -61,6 +61,7 @@
   font-size:clamp(22px, 4vw, 44px);
   font-weight:800;
   line-height:1.15;
+  text-wrap:balance;
 }
 
 .slide-link{
@@ -130,12 +131,42 @@
 /* mobile adjustments */
 @media (max-width:768px){
   .nav{ display:none; }
-  .slide-content{ max-width:90%; }
+  .slide-content{
+    max-width:92%;
+    left:16px;
+    right:16px;
+    bottom:24px;
+  }
+  .slide-title{
+    font-size:clamp(20px, 7vw, 30px);
+    line-height:1.2;
+    margin:0;
+    max-width:24ch;
+  }
+  .dots{
+    bottom:12px;
+    gap:8px;
+  }
+  .dot{
+    width:12px;
+    height:12px;
+  }
+  .dot.active{
+    width:28px;
+  }
 }
 @media (max-width:640px){
   .slider{
     height:calc(70vh - 64px);
-    min-height:360px;
+    min-height:320px;
+  }
+  .slide img{
+    height:100%;
+    object-fit:cover;
+    object-position:center;
+  }
+  .slide::after{
+    background:linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.40));
   }
   .slide-link{
     padding:10px 16px;

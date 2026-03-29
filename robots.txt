@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Keep admin and internal endpoints out of search indexes
+Disallow: /admin/
+Disallow: /api/
+Disallow: /data/
+Disallow: /uploads/cache/
+
+Sitemap: https://sspm.ge/sitemap.xml
