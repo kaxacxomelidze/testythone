@@ -62,18 +62,3 @@
     </div>
   </div>
 </header>
-
-<script>
-  (function initHeaderFallback(){
-    if (typeof window.initHeader === 'function') {
-      window.initHeader();
-      return;
-    }
-    const s = document.createElement('script');
-    s.src = '/app.js?v=2';
-    s.onload = () => {
-      if (typeof window.initHeader === 'function') window.initHeader();
-    };
-    document.body.appendChild(s);
-  })();
-</script>
