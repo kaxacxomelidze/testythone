@@ -265,7 +265,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
           <div style="height:10px"></div>
           <label class="small">Apply URL (optional)</label>
-          <input id="gApplyUrl" placeholder="/youthagency/grants/grants_apply.php?id=1">
+          <input id="gApplyUrl" placeholder="/grants/grants_apply.php?id=1">
 
           <div style="height:10px"></div>
           <div class="row" style="margin:0">
