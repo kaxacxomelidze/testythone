@@ -719,10 +719,61 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
+  async function autoInjectSharedChrome() {
+    const path = (location && location.pathname ? location.pathname : '/').toLowerCase();
+    if (path.startsWith('/admin') || path.startsWith('/api/') || path.startsWith('/data/')) return;
+
+    const hasHeader = !!document.querySelector('.site-header');
+    const hasFooter = !!document.querySelector('.site-footer');
+    const hasHeaderMount = !!document.getElementById('siteHeaderMount');
+    const hasFooterMount = !!document.getElementById('siteFooterMount');
+
+    async function fetchHtml(url) {
+      const res = await fetch(url + '?v=2', { cache: 'force-cache' });
+      if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
+      return res.text();
+    }
+
+    const tasks = [];
+
+    if (!hasHeader && !hasHeaderMount) {
+      const mount = document.createElement('div');
+      mount.id = 'siteHeaderMount';
+      document.body.prepend(mount);
+      tasks.push(
+        fetchHtml('/header.html').then((html) => {
+          mount.innerHTML = html;
+          initHeader();
+        })
+      );
+    }
+
+    if (!hasFooter && !hasFooterMount) {
+      const mount = document.createElement('div');
+      mount.id = 'siteFooterMount';
+      document.body.appendChild(mount);
+      tasks.push(
+        fetchHtml('/footer.html').then((html) => {
+          mount.innerHTML = html;
+          initFooterAccordion();
+        })
+      );
+    }
+
+    if (tasks.length) {
+      try {
+        await Promise.all(tasks);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
+
   // expose for injected header/footer usage
   window.initHeader = initHeader;
   window.initFooterAccordion = initFooterAccordion;
 
+  autoInjectSharedChrome();
   initGlobalLanguageHandlers();
   observeDynamicFooter();
 })();

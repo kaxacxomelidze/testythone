@@ -353,12 +353,6 @@ img{
     align-self:stretch;
     justify-content:center;
   }
-  .header-right .lang-switch{display:none}
-  .mobile-panel .lang-switch{
-    display:flex;
-    align-self:stretch;
-    justify-content:center;
-  }
   .burger{display:flex}
 }
 
