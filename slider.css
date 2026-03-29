@@ -157,21 +157,16 @@
 }
 @media (max-width:640px){
   .slider{
-    height:auto;
-    min-height:0;
-  }
-  .slides,
-  .slide{
-    height:auto;
+    height:calc(70vh - 64px);
+    min-height:320px;
   }
   .slide img{
-    height:auto;
-    min-height:260px;
+    height:100%;
     object-fit:cover;
-    background:transparent;
+    object-position:center;
   }
   .slide::after{
-    background:linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.35));
+    background:linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.40));
   }
   .slide-link{
     padding:10px 16px;
