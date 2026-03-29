@@ -152,6 +152,8 @@ $canonicalUrl = 'https://sspm.ge/news/' . (int)$n['id'] . '/' . rawurlencode($sl
   </style>
 </head>
 <body>
+  <div id="siteHeaderMount"></div>
+
   <div class="wrap">
     <a class="btn" href="/news/">← Back to news</a>
 
@@ -177,7 +179,40 @@ $canonicalUrl = 'https://sspm.ge/news/' . (int)$n['id'] . '/' . rawurlencode($sl
     <?php endif; ?>
   </div>
 
-  <!-- Keep app.js for header/menu translations -->
-  <script src="/app.js?v=2"></script>
+  <div id="siteFooterMount"></div>
+
+  <script>
+    async function inject(id, file) {
+      const el = document.getElementById(id);
+      if (!el) throw new Error(`Mount element not found: #${id}`);
+      const res = await fetch(file + '?v=2', { cache: 'force-cache' });
+      if (!res.ok) throw new Error(`${file} not found. Status: ${res.status}`);
+      el.innerHTML = await res.text();
+    }
+
+    async function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src + '?v=2';
+        s.onload = resolve;
+        s.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+        document.body.appendChild(s);
+      });
+    }
+
+    (async () => {
+      try {
+        const headerPromise = inject('siteHeaderMount', '/header.html');
+        const footerPromise = inject('siteFooterMount', '/footer.html');
+        const appPromise = loadScript('/app.js');
+
+        await Promise.all([headerPromise, appPromise]);
+        if (typeof window.initHeader === 'function') window.initHeader();
+        await footerPromise;
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  </script>
 </body>
 </html>
