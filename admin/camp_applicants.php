@@ -131,7 +131,7 @@ ob_start();
 
 <script>
 async function apiJson(action, payload = {}) {
-  const res = await fetch("/youthagency/admin/api/camps.php?action=" + encodeURIComponent(action), {
+  const res = await fetch("/admin/api/camps.php?action=" + encodeURIComponent(action), {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify(payload)
@@ -151,7 +151,7 @@ function esc(s){
 
 function isFileLink(s){
   s = (s??"").toString();
-  return s.startsWith("/youthagency/uploads/") || s.startsWith("http://") || s.startsWith("https://");
+  return s.startsWith("/uploads/") || s.startsWith("http://") || s.startsWith("https://");
 }
 
 function hideHist(){
@@ -237,7 +237,7 @@ function exportXLSX(){
   const q = document.getElementById("q").value.trim();
 
   const url =
-    "/youthagency/admin/api/export_applicants_xlsx.php" +
+    "/admin/api/export_applicants_xlsx.php" +
     "?campId=" + encodeURIComponent(campId) +
     "&status=" + encodeURIComponent(status) +
     "&q=" + encodeURIComponent(q);
