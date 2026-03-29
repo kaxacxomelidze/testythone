@@ -725,8 +725,10 @@
 
     const hasHeader = !!document.querySelector('.site-header');
     const hasFooter = !!document.querySelector('.site-footer');
-    const hasHeaderMount = !!document.getElementById('siteHeaderMount');
-    const hasFooterMount = !!document.getElementById('siteFooterMount');
+    const headerMount = document.getElementById('siteHeaderMount');
+    const footerMount = document.getElementById('siteFooterMount');
+    const hasHeaderMount = !!headerMount;
+    const hasFooterMount = !!footerMount;
 
     async function fetchHtml(url) {
       const res = await fetch(url + '?v=2', { cache: 'force-cache' });
@@ -736,10 +738,12 @@
 
     const tasks = [];
 
-    if (!hasHeader && !hasHeaderMount) {
-      const mount = document.createElement('div');
-      mount.id = 'siteHeaderMount';
-      document.body.prepend(mount);
+    if (!hasHeader) {
+      const mount = hasHeaderMount ? headerMount : document.createElement('div');
+      if (!hasHeaderMount) {
+        mount.id = 'siteHeaderMount';
+        document.body.prepend(mount);
+      }
       tasks.push(
         fetchHtml('/header.php').then((html) => {
           mount.innerHTML = html;
@@ -748,10 +752,12 @@
       );
     }
 
-    if (!hasFooter && !hasFooterMount) {
-      const mount = document.createElement('div');
-      mount.id = 'siteFooterMount';
-      document.body.appendChild(mount);
+    if (!hasFooter) {
+      const mount = hasFooterMount ? footerMount : document.createElement('div');
+      if (!hasFooterMount) {
+        mount.id = 'siteFooterMount';
+        document.body.appendChild(mount);
+      }
       tasks.push(
         fetchHtml('/footer.php').then((html) => {
           mount.innerHTML = html;
