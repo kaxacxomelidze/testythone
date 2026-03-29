@@ -1,3 +1,5 @@
+@import url('/assets/header.css');
+
 :root{
   --main-bg:#364379;
   --text:#ffffff;
@@ -345,6 +347,12 @@ img{
     gap:10px;
   }
   .header-right a{display:none}
+  .header-right .lang-switch{display:none}
+  .mobile-panel .lang-switch{
+    display:flex;
+    align-self:stretch;
+    justify-content:center;
+  }
   .header-right .lang-switch{display:none}
   .mobile-panel .lang-switch{
     display:flex;
