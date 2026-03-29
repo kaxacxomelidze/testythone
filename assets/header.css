@@ -107,9 +107,9 @@ body{
   .burger{display:inline-flex}
 }
 @media (max-width: 640px){
-  .header-wrap{grid-template-columns:1fr auto;grid-template-areas:'brand actions' 'lang lang';row-gap:10px}
-  .header-left{grid-area:brand}
-  .header-right{grid-area:actions}
+  .header-wrap{display:flex;grid-template-columns:none;grid-template-areas:none;row-gap:0;min-height:64px;padding:0 14px}
+  .header-left{grid-area:auto;flex:1;min-width:0}
+  .header-right{grid-area:auto;margin-left:auto}
   .header-right .lang-switch{display:none}
   .mobile-panel .lang-switch{display:flex}
   .brand img{height:36px}
