@@ -738,6 +738,23 @@
 
     const tasks = [];
 
+    // If header/footer are already server-rendered, initialize behaviors immediately.
+    // Also retry once after full load to preserve animations/handlers if other scripts mutate DOM.
+    function safeInitHeader() {
+      try { initHeader(); } catch (e) { console.error(e); }
+    }
+    function safeInitFooter() {
+      try { initFooterAccordion(); } catch (e) { console.error(e); }
+    }
+    if (hasHeader) {
+      safeInitHeader();
+      window.addEventListener('load', safeInitHeader, { once: true });
+    }
+    if (hasFooter) {
+      safeInitFooter();
+      window.addEventListener('load', safeInitFooter, { once: true });
+    }
+
     if (!hasHeader) {
       const mount = hasHeaderMount ? headerMount : document.createElement('div');
       if (!hasHeaderMount) {
