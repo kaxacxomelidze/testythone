@@ -372,7 +372,7 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
     <section class="hero">
       <div class="hero-inner">
         <div>
-          <h1 data-i18n="grants.title">საგრანტო პროგრამები</h1>
+          <h1><i class="fa-solid fa-hand-holding-heart"></i> <span data-i18n="grants.title">საგრანტო პროგრამები</span></h1>
           <p data-i18n="grants.subtitle">ახალგაზრდებისთვის განკუთვნილი საგრანტო შესაძლებლობები იდეებისა და პროექტების მხარდასაჭერად</p>
         </div>
 
