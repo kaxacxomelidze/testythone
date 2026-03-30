@@ -360,7 +360,7 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 
 <body>
-  <div id="siteHeaderMount"></div>
+  <?php require_once __DIR__ . '/../header.php'; ?>
 
   <main class="wrap">
     <section class="bar"><div class="search-intro"><h1 style="margin:0 0 6px;font-size:30px;color:#fff" data-i18n="camps.heroTitle">ბანაკები</h1><div style="color:rgba(229,231,235,.78);font-weight:700" data-i18n="camps.heroSubtitle">აღმოაჩინე ახალგაზრდული ბანაკები, თარიღები და რეგისტრაციის დეტალები.</div></div>
@@ -471,25 +471,10 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
   </main>
 
-  <div id="siteFooterMount"></div>
+  <?php require_once __DIR__ . '/../footer.php'; ?>
+  <script src="/app.js?v=2" defer></script>
 
   <script>
-    async function inject(id, file) {
-      const el = document.getElementById(id);
-      const res = await fetch(file + (file.includes('?') ? '&' : '?') + 'v=2', {cache:'force-cache'});
-      if (res.ok) el.innerHTML = await res.text();
-    }
-
-    async function loadScript(src) {
-      return new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = src + (src.includes('?') ? '&' : '?') + 'v=2';
-        s.onload = resolve;
-        s.onerror = () => reject(new Error(`Failed to load script: ${src}`));
-        document.body.appendChild(s);
-      });
-    }
-
     function normalizeStr(s){
       return (s || '').toString().toLowerCase().trim();
     }
@@ -554,22 +539,11 @@ $camps = $stmt->fetchAll(PDO::FETCH_ASSOC);
       apply();
     }
 
-    (async () => {
-      try {
-        const headerP = inject('siteHeaderMount', '/header.php');
-        const appP = loadScript('/app.js');
-        const footerP = inject('siteFooterMount', '/footer.php');
-        try{
-          await Promise.all([headerP, appP]);
-          if (typeof window.initHeader === 'function') window.initHeader();
-        }catch(e){}
-        await footerP;
-
-        initCampsClassic();
-      } catch (err) {
-        console.error('HEADER/FOOTER ERROR:', err);
-      }
-    })();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initCampsClassic, { once: true });
+    } else {
+      initCampsClassic();
+    }
   </script>
 </body>
 </html>

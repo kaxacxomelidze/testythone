@@ -366,7 +366,7 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
 </head>
 
 <body>
-  <div id="siteHeaderMount"></div>
+  <?php require_once __DIR__ . '/../header.php'; ?>
 
   <main class="wrap">
     <section class="hero">
@@ -450,27 +450,7 @@ $items = $st->fetchAll(PDO::FETCH_ASSOC);
     <?php endif; ?>
   </main>
 
-  <div id="siteFooterMount"></div>
-
-  <script>
-    async function inject(id, url){
-      const el = document.getElementById(id);
-      const res = await fetch(url + (url.includes('?')?'&':'?') + 'v=2');
-      if(res.ok) el.innerHTML = await res.text();
-    }
-    async function loadScript(url){
-      return new Promise((ok, bad)=>{
-        const s=document.createElement('script');
-        s.src=url + (url.includes('?')?'&':'?') + 'v=2';
-        s.onload=ok; s.onerror=bad;
-        document.body.appendChild(s);
-      });
-    }
-    (async()=>{
-      await inject('siteHeaderMount','/header.php');
-      try{ await loadScript('/app.js'); if(typeof window.initHeader==='function') window.initHeader(); }catch(e){}
-      await inject('siteFooterMount','/footer.php');
-    })();
-  </script>
+  <?php require_once __DIR__ . '/../footer.php'; ?>
+  <script src="/app.js?v=2" defer></script>
 </body>
 </html>

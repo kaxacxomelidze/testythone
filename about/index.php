@@ -26,7 +26,7 @@
   </style>
 </head>
 <body>
-  <div id="siteHeaderMount"></div>
+  <?php require_once __DIR__ . '/../header.php'; ?>
   <main class="page">
     <section class="page-card">
       <div class="hero-icon"><i class="fa-solid fa-circle-info"></i></div>
@@ -34,11 +34,7 @@
       <p data-i18n="about.body">სსიპ ახალგაზრდობის სააგენტო არის საჯარო სამართლის იურიდიული პირი, რომელიც შექმნილია სახელმწიფო ახალგაზრდული პოლიტიკის სტრატეგიის შემუშავების, განხორციელებისა და კოორდინაციის მიზნით. ახალგაზრდობა არის ქვეყნის მდგრადი განვითარების მამოძრავებელი ძალა და ადამიანური კაპიტალის მთავარი განახლებადი წყარო. სახელმწიფო ახალგაზრდებისთვის და ახალგაზრდებთან ერთად ქმნის მათი, როგორც ინდივიდებისა და საზოგადოების სრულფასოვანი წევრების განვითარების მხარდამჭერ გარემოს, რაც ხელს შეუწყობს თითოეულის პოტენციალის სრულად გამოყენებას, ეკონომიკურ გაძლიერებასა და ქვეყნის განვითარების პროცესში აქტიურ მონაწილეობას.</p>
     </section>
   </main>
-  <div id="siteFooterMount"></div>
-  <script>
-    async function inject(id, file) { const el = document.getElementById(id); if (!el) throw new Error(`Mount element not found: #${id}`); const res = await fetch(file + '?v=2', {cache:'force-cache'}); if (!res.ok) throw new Error(`${file} not found. Status: ${res.status}`); el.innerHTML = await res.text(); }
-    async function loadScript(src) { return new Promise((resolve, reject) => { const s = document.createElement('script'); s.src = src + '?v=2'; s.onload = resolve; s.onerror = () => reject(new Error(`Failed to load script: ${src}`)); document.body.appendChild(s); }); }
-    (async () => { try { const headerP = inject('siteHeaderMount', '/header.php'); const appP = loadScript('/app.js'); const footerP = inject('siteFooterMount', '/footer.php'); await Promise.all([headerP, appP]); if (typeof window.initHeader === 'function') window.initHeader(); await footerP; } catch (err) { console.error(err); } })();
-  </script>
+  <?php require_once __DIR__ . '/../footer.php'; ?>
+  <script src="/app.js?v=2" defer></script>
 </body>
 </html>

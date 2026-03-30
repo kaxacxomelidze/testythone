@@ -493,8 +493,7 @@ $canonicalUrl = 'https://sspm.ge/news/' . ($q !== '' ? '?q=' . rawurlencode($q) 
 
 <body class="news-page">
 
-  <!-- ✅ HEADER (injected) -->
-  <div id="siteHeaderMount"></div>
+  <?php require_once __DIR__ . '/../header.php'; ?>
 
   <main class="wrap">
 
@@ -612,40 +611,8 @@ $canonicalUrl = 'https://sspm.ge/news/' . ($q !== '' ? '?q=' . rawurlencode($q) 
 
   </main>
 
-  <!-- ✅ FOOTER (injected) -->
-  <div id="siteFooterMount"></div>
-
-  <!-- ✅ HEADER / FOOTER LOADER (absolute paths) -->
-  <script>
-    async function inject(id, url) {
-      const el = document.getElementById(id);
-      if (!el) throw new Error(`Mount element not found: #${id}`);
-      const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'v=2');
-      if (!res.ok) throw new Error(`${url} not found. Status: ${res.status}`);
-      el.innerHTML = await res.text();
-    }
-
-    async function loadScript(url) {
-      return new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = url + (url.includes('?') ? '&' : '?') + 'v=2';
-        s.onload = resolve;
-        s.onerror = () => reject(new Error(`Failed to load script: ${url}`));
-        document.body.appendChild(s);
-      });
-    }
-
-    (async () => {
-      try {
-        await inject('siteHeaderMount', '/header.php');
-        await loadScript('/app.js');
-        if (typeof window.initHeader === 'function') window.initHeader();
-        await inject('siteFooterMount', '/footer.php');
-      } catch (err) {
-        console.error('HEADER/FOOTER ERROR:', err);
-      }
-    })();
-  </script>
+  <?php require_once __DIR__ . '/../footer.php'; ?>
+  <script src="/app.js?v=2" defer></script>
 
 </body>
 </html>

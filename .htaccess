@@ -19,7 +19,7 @@ RewriteRule ^ - [L]
 # HOME (optional clean URL)
 # / -> /index.html
 # ------------------------------
-DirectoryIndex index.html index.php
+DirectoryIndex index.php index.html
 
 # ------------------------------
 # CLEAN PUBLIC PAGES
