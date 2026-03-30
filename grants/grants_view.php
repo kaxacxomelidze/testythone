@@ -609,7 +609,7 @@ $stepNames = array_values(array_unique($stepNames));
 </head>
 
 <body>
-  <div id="siteHeaderMount"></div>
+  <?php require_once __DIR__ . '/../header.php'; ?>
 
   <main class="wrap">
     <div class="topbar">
@@ -773,34 +773,8 @@ $stepNames = array_values(array_unique($stepNames));
     </section>
   </main>
 
-  <div id="siteFooterMount"></div>
-
-  <script>
-    async function inject(id, url){
-      const el = document.getElementById(id);
-      if(!el) return;
-      const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'v=2');
-      if(res.ok) el.innerHTML = await res.text();
-    }
-
-    async function loadScript(url){
-      return new Promise((ok, bad) => {
-        const s = document.createElement('script');
-        s.src = url + (url.includes('?') ? '&' : '?') + 'v=2';
-        s.onload = ok;
-        s.onerror = bad;
-        document.body.appendChild(s);
-      });
-    }
-
-    (async () => {
-      await inject('siteHeaderMount', '/header.php');
-      try {
-        await loadScript('/app.js');
-        if (typeof window.initHeader === 'function') window.initHeader();
-      } catch (e) {}
-      await inject('siteFooterMount', '/footer.php');
-    })();
-  </script>
+  <?php require_once __DIR__ . '/../footer.php'; ?>
+  <script src="/app.js?v=2" defer></script>
+  <script>window.addEventListener("DOMContentLoaded",()=>{if(typeof window.initHeader==="function") window.initHeader(); if(typeof window.initFooterAccordion==="function") window.initFooterAccordion();},{once:true});</script>
 </body>
 </html>

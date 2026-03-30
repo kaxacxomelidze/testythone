@@ -586,7 +586,7 @@ $payload = [
 </head>
 
 <body>
-  <div id="siteHeaderMount"></div>
+  <?php require_once __DIR__ . '/../header.php'; ?>
 
   <div class="wrap">
     <div class="banner">
@@ -697,7 +697,7 @@ $payload = [
     <?php endif; ?>
   </div>
 
-  <div id="siteFooterMount"></div>
+  <?php require_once __DIR__ . '/../footer.php'; ?>
 
   <script>
     const DATA = <?= json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
@@ -2456,31 +2456,7 @@ $payload = [
     })();
   </script>
 
-  <script>
-    async function inject(id, file) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const res = await fetch(file + (file.includes('?') ? '&' : '?') + 'v=2');
-      if (!res.ok) return;
-      el.innerHTML = await res.text();
-    }
-
-    async function loadScript(src) {
-      return new Promise((resolve) => {
-        const s = document.createElement('script');
-        s.src = src + (src.includes('?') ? '&' : '?') + 'v=2';
-        s.onload = resolve;
-        s.onerror = resolve;
-        document.body.appendChild(s);
-      });
-    }
-
-    (async () => {
-      await inject('siteHeaderMount', '/header.php');
-      await loadScript('/app.js');
-      if (typeof window.initHeader === 'function') window.initHeader();
-      await inject('siteFooterMount', '/footer.php');
-    })();
-  </script>
+  <script src="/app.js?v=2" defer></script>
+  <script>window.addEventListener("DOMContentLoaded",()=>{if(typeof window.initHeader==="function") window.initHeader(); if(typeof window.initFooterAccordion==="function") window.initFooterAccordion();},{once:true});</script>
 </body>
 </html>

@@ -17,13 +17,10 @@
   </style>
 </head>
 <body>
-  <div id="siteHeaderMount"></div>
+  <?php require_once __DIR__ . '/header.php'; ?>
   <main class="page"><section class="card"><div class="code">404</div><h1 data-i18n="notFound.title">გვერდი ვერ მოიძებნა</h1><p data-i18n="notFound.body">შესაძლოა მისამართი არასწორად აკრიფეთ ან მოთხოვნილი გვერდი გადატანილია.</p><div class="actions"><a class="btn-link primary" href="/"><span data-i18n="notFound.home">მთავარზე დაბრუნება</span></a><a class="btn-link" href="/contact/"><span data-i18n="notFound.contact">დაგვიკავშირდით</span></a></div></section></main>
-  <div id="siteFooterMount"></div>
-  <script>
-    async function inject(id, file) { const el = document.getElementById(id); if (!el) throw new Error(`Mount element not found: #${id}`); const res = await fetch(file + '?v=2'); if (!res.ok) throw new Error(`${file} not found. Status: ${res.status}`); el.innerHTML = await res.text(); }
-    async function loadScript(src) { return new Promise((resolve, reject) => { const s = document.createElement('script'); s.src = src + '?v=2'; s.onload = resolve; s.onerror = () => reject(new Error(`Failed to load script: ${src}`)); document.body.appendChild(s); }); }
-    (async () => { try { await inject('siteHeaderMount', '/header.php'); await loadScript('/app.js'); if (typeof window.initHeader === 'function') window.initHeader(); await inject('siteFooterMount', '/footer.php'); } catch (err) { console.error(err); } })();
-  </script>
+  <?php require_once __DIR__ . '/footer.php'; ?>
+  <script src="/app.js?v=2" defer></script>
+  <script>window.addEventListener("DOMContentLoaded",()=>{if(typeof window.initHeader==="function") window.initHeader(); if(typeof window.initFooterAccordion==="function") window.initFooterAccordion();},{once:true});</script>
 </body>
 </html>
