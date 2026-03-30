@@ -155,7 +155,7 @@
         await Promise.all([headerPromise, appScriptPromise]);
         if (typeof window.initHeader === 'function') window.initHeader();
 
-        await Promise.all([newsPromise, footerPromise]);
+        await newsPromise;
       } catch (err) {
         console.error(err);
       }
