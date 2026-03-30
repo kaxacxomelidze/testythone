@@ -14,6 +14,19 @@ function has_col(PDO $pdo, string $table, string $col): bool {
   }
 }
 
+function normalize_public_path(string $path): string {
+  $path = trim($path);
+  if ($path === '') return '';
+  if (preg_match('~^(https?:)?//~i', $path) || str_starts_with($path, 'data:')) return $path;
+  $path = str_replace('\\', '/', $path);
+  $path = preg_replace('~/+~', '/', $path) ?? $path;
+  if (!str_starts_with($path, '/')) $path = '/' . ltrim($path, '/');
+  if (str_starts_with($path, '/youthagency/')) {
+    $path = '/' . ltrim(substr($path, strlen('/youthagency/')), '/');
+  }
+  return $path;
+}
+
 function fmt_date(?string $dt): string {
   if (!$dt) return '';
   $ts = strtotime($dt);
@@ -64,7 +77,7 @@ $slug = trim((string)($n['slug'] ?? ''));
 if ($slug === '' || $slug === '-' || $slug === 'news') $slug = 'news-' . (int)$n['id'];
 
 $reqSlug = trim((string)($_GET['slug'] ?? ''));
-$correctUrl = "/youthagency/news/" . (int)$n['id'] . "/" . $slug;
+$correctUrl = "/news/" . (int)$n['id'] . "/" . $slug;
 
 if ($reqSlug !== '' && $reqSlug !== $slug) {
   header("Location: $correctUrl", true, 301);
@@ -105,9 +118,9 @@ if ($lang === 'en') {
 $metaDescription = trim(preg_replace('/\s+/u', ' ', strip_tags($viewBody)) ?? '');
 if ($metaDescription === '') $metaDescription = 'Youth Agency-ის სიახლე და დეტალური ინფორმაცია.';
 if (mb_strlen($metaDescription) > 170) $metaDescription = mb_substr($metaDescription, 0, 167) . '...';
-$heroImage = trim((string)($n['image_path'] ?? ''));
-$heroImageUrl = $heroImage !== '' ? 'https://sspm.ge/youthagency/' . ltrim($heroImage, '/') : 'https://sspm.ge/youthagency/imgs/youthagencyicon.png';
-$canonicalUrl = 'https://sspm.ge/youthagency/news/' . (int)$n['id'] . '/' . rawurlencode($slug);
+$heroImage = normalize_public_path((string)($n['image_path'] ?? ''));
+$heroImageUrl = $heroImage !== '' ? 'https://sspm.ge/' . ltrim($heroImage, '/') : 'https://sspm.ge/imgs/youthagencyicon.png';
+$canonicalUrl = 'https://sspm.ge/news/' . (int)$n['id'] . '/' . rawurlencode($slug);
 
 ?>
 <!doctype html>
@@ -119,7 +132,7 @@ $canonicalUrl = 'https://sspm.ge/youthagency/news/' . (int)$n['id'] . '/' . rawu
   <meta name="description" content="<?=h($metaDescription)?>">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="<?=h($canonicalUrl)?>">
-  <link rel="icon" type="image/png" href="/youthagency/imgs/youthagencyicon.png">
+  <link rel="icon" type="image/png" href="/imgs/youthagencyicon.png">
   <meta property="og:type" content="article">
   <meta property="og:title" content="<?=h($viewTitle)?>">
   <meta property="og:description" content="<?=h($metaDescription)?>">
@@ -127,7 +140,7 @@ $canonicalUrl = 'https://sspm.ge/youthagency/news/' . (int)$n['id'] . '/' . rawu
   <meta property="og:image" content="<?=h($heroImageUrl)?>">
   <meta name="twitter:card" content="summary_large_image">
 
-  <link rel="stylesheet" href="/youthagency/assets.css?v=1">
+  <link rel="stylesheet" href="/assets.css?v=2">
 
   <style>
     .wrap{max-width:1000px;margin:30px auto;padding:0 18px}
@@ -139,15 +152,17 @@ $canonicalUrl = 'https://sspm.ge/youthagency/news/' . (int)$n['id'] . '/' . rawu
   </style>
 </head>
 <body>
+  <div id="siteHeaderMount"></div>
+
   <div class="wrap">
-    <a class="btn" href="/youthagency/news/">← Back to news</a>
+    <a class="btn" href="/news/">← Back to news</a>
 
     <h1 style="margin:14px 0"><?=h($viewTitle)?></h1>
 
     <div class="meta"><?=h(fmt_date($n['published_at'] ?? ''))?></div>
 
     <?php if (!empty($n['image_path'])): ?>
-      <img class="heroimg" src="/youthagency/<?=h($n['image_path'])?>" alt="">
+      <img class="heroimg" src="<?=h(normalize_public_path((string)$n['image_path']))?>" alt="">
     <?php endif; ?>
 
     <?php if (trim($viewBody) !== ''): ?>
@@ -158,13 +173,46 @@ $canonicalUrl = 'https://sspm.ge/youthagency/news/' . (int)$n['id'] . '/' . rawu
       <h3 style="margin-top:22px">Gallery</h3>
       <div class="gallery">
         <?php foreach($gallery as $img): ?>
-          <img src="/youthagency/<?=h($img['image_path'])?>" alt="">
+          <img src="<?=h(normalize_public_path((string)$img['image_path']))?>" alt="">
         <?php endforeach; ?>
       </div>
     <?php endif; ?>
   </div>
 
-  <!-- Keep app.js for header/menu translations -->
-  <script src="/youthagency/app.js?v=2"></script>
+  <div id="siteFooterMount"></div>
+
+  <script>
+    async function inject(id, file) {
+      const el = document.getElementById(id);
+      if (!el) throw new Error(`Mount element not found: #${id}`);
+      const res = await fetch(file + '?v=2', { cache: 'force-cache' });
+      if (!res.ok) throw new Error(`${file} not found. Status: ${res.status}`);
+      el.innerHTML = await res.text();
+    }
+
+    async function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src + '?v=2';
+        s.onload = resolve;
+        s.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+        document.body.appendChild(s);
+      });
+    }
+
+    (async () => {
+      try {
+        const headerPromise = inject('siteHeaderMount', '/header.php');
+        const footerPromise = inject('siteFooterMount', '/footer.php');
+        const appPromise = loadScript('/app.js');
+
+        await Promise.all([headerPromise, appPromise]);
+        if (typeof window.initHeader === 'function') window.initHeader();
+        await footerPromise;
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  </script>
 </body>
 </html>

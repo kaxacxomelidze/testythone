@@ -105,12 +105,39 @@ function upload_public_file(string $fieldName, string $subdir, array $allowedExt
     if (!@mkdir($dir, 0775, true) && !is_dir($dir)) return '';
   }
 
-  $fname = "up_" . time() . "_" . bin2hex(random_bytes(8)) . "." . $ext;
+  $base = "up_" . time() . "_" . bin2hex(random_bytes(8));
+  $fname = $base . "." . $ext;
   $dest  = $dir . "/" . $fname;
 
-  if (!move_uploaded_file($tmp, $dest)) return '';
+  $isImage = in_array($ext, ['jpg','jpeg','png','webp','gif'], true);
+  if ($isImage) {
+    $fname = $base . ".webp";
+    $dest = $dir . "/" . $fname;
+    if (!convert_image_to_webp($tmp, $dest, 90)) {
+      $fname = $base . "." . $ext;
+      $dest = $dir . "/" . $fname;
+      if (!move_uploaded_file($tmp, $dest)) return '';
+    }
+  } else {
+    if (!move_uploaded_file($tmp, $dest)) return '';
+  }
 
-  return "/youthagency/uploads/$subdir/" . $fname;
+  return "/uploads/$subdir/" . $fname;
+}
+
+function normalize_public_path(string $path): string {
+  $path = trim($path);
+  if ($path === '') return '';
+  if (preg_match('~^(https?:)?//~i', $path) || str_starts_with($path, 'data:')) return $path;
+
+  $path = str_replace('\\', '/', $path);
+  $path = preg_replace('~/+~', '/', $path) ?? $path;
+  if (!str_starts_with($path, '/')) $path = '/' . ltrim($path, '/');
+
+  if (str_starts_with($path, '/youthagency/')) {
+    $path = '/' . ltrim(substr($path, strlen('/youthagency/')), '/');
+  }
+  return $path;
 }
 
 /* ------------------ PRG: POST -> REDIRECT -> GET ------------------ */
@@ -331,20 +358,21 @@ $campName  = (string)($camp['name'] ?? '');
 $campNameEn  = (string)($camp['name_en'] ?? '');
 $campText  = (string)($camp['card_text'] ?? '');
 $campTextEn  = (string)($camp['card_text_en'] ?? '');
-$campCover = (string)($camp['cover'] ?? '');
+$campCover = normalize_public_path((string)($camp['cover'] ?? ''));
 $campStart = fmtDate((string)($camp['start_date'] ?? ''));
 $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
 ?>
 <!doctype html>
 <html lang="ka">
 <head>
+  <link rel="icon" type="image/png" href="/imgs/youthagencyicon.png">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title><?=h($campName)?></title>
 
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="/youthagency/assets.css?v=1">
+  <link rel="stylesheet" href="/assets.css?v=2">
 
   <style>
     :root{
@@ -607,7 +635,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
   <main class="wrap">
 
     <div class="topbar">
-      <a class="back" href="/youthagency/camps/">
+      <a class="back" href="/camps/">
         <i class="fa-solid fa-arrow-left"></i> <span data-i18n="campsView.back">ბანაკებზე დაბრუნება</span>
       </a>
 
@@ -671,7 +699,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
           <article class="post">
             <div class="postTop">
               <?php if (!empty($p['cover'])): ?>
-                <img class="postCover" src="<?=h((string)$p['cover'])?>" alt="">
+                <img class="postCover" src="<?=h(normalize_public_path((string)$p['cover']))?>" alt="">
               <?php endif; ?>
 
               <div>
@@ -688,7 +716,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
               <div class="gallery">
                 <?php foreach ($g as $img): ?>
                   <a href="<?=h((string)$img['path'])?>" target="_blank" rel="noopener">
-                    <img src="<?=h((string)$img['path'])?>" alt="">
+                    <img src="<?=h(normalize_public_path((string)$img['path']))?>" alt="">
                   </a>
                 <?php endforeach; ?>
               </div>
@@ -862,7 +890,7 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
 
           async function lookup(pid){
             try{
-              const res = await fetch("/youthagency/api/member_lookup.php?pid=" + encodeURIComponent(pid));
+              const res = await fetch("/api/member_lookup.php?pid=" + encodeURIComponent(pid));
               const j = await res.json().catch(()=>null);
               if(!j || !j.ok || !j.found) return null;
               return j.member || null;
@@ -921,10 +949,10 @@ $campEnd   = fmtDate((string)($camp['end_date'] ?? ''));
     }
 
     (async () => {
-      await inject('siteHeaderMount', '/youthagency/header.html');
-      await loadScript('/youthagency/app.js');
+      await inject('siteHeaderMount', '/header.php');
+      await loadScript('/app.js');
       if (typeof window.initHeader === 'function') window.initHeader();
-      await inject('siteFooterMount', '/youthagency/footer.html');
+      await inject('siteFooterMount', '/footer.php');
     })();
   </script>
 

@@ -28,10 +28,25 @@ foreach ($usersToEnsure as $u) {
   if ($row) {
     $pdo->prepare("UPDATE admin_users SET password_hash=?, role=?, is_active=1 WHERE id=?")
         ->execute([$hash, $u['role'], $row['id']]);
+    if (function_exists('log_admin_safe')) {
+      log_admin_safe('admin_user_updated', 'admin_users', (int)$row['id'], [
+        'username' => $u['username'],
+        'role' => $u['role'],
+        'source' => 'create_user.php',
+      ]);
+    }
     echo "Updated: {$u['username']} ({$u['role']})<br>";
   } else {
     $pdo->prepare("INSERT INTO admin_users (username, password_hash, role, is_active) VALUES (?,?,?,1)")
         ->execute([$u['username'], $hash, $u['role']]);
+    $newId = (int)$pdo->lastInsertId();
+    if (function_exists('log_admin_safe')) {
+      log_admin_safe('admin_user_created', 'admin_users', $newId, [
+        'username' => $u['username'],
+        'role' => $u['role'],
+        'source' => 'create_user.php',
+      ]);
+    }
     echo "Created: {$u['username']} ({$u['role']})<br>";
   }
 }

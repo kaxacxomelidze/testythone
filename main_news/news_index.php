@@ -7,7 +7,7 @@ $pdo = db();
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 if (preg_match('~/main_news/news_index\.php$~', $requestPath)) {
   $qs = $_SERVER['QUERY_STRING'] ?? '';
-  header('Location: /youthagency/news/' . ($qs !== '' ? ('?' . $qs) : ''), true, 301);
+  header('Location: /news/' . ($qs !== '' ? ('?' . $qs) : ''), true, 301);
   exit;
 }
 
@@ -27,7 +27,7 @@ function news_url(array $n): string {
   $id = (int)$n['id'];
   $slug = trim((string)($n['slug'] ?? ''));
   if ($slug === '' || $slug === '-' || $slug === 'news') $slug = 'news-' . $id;
-  return "/youthagency/news/$id/" . rawurlencode($slug);
+  return "/news/$id/" . rawurlencode($slug);
 }
 
 function excerpt(string $text, int $len = 240): string {
@@ -48,15 +48,18 @@ function fmt_date(?string $raw): string {
  * Convert stored path to a public URL.
  * - If it's already http(s) or data: -> keep it
  * - If it starts with "/" -> keep it
- * - Else assume relative to /youthagency/
+ * - Else assume relative to /
  */
 function public_url(string $path): string {
   $p = trim($path);
   if ($p === '') return '';
   if (preg_match('~^(https?:)?//~i', $p)) return $p;
   if (str_starts_with($p, 'data:')) return $p;
-  if (str_starts_with($p, '/')) return $p;
-  return '/youthagency/' . ltrim($p, '/');
+  if (!str_starts_with($p, '/')) $p = '/' . ltrim($p, '/');
+  if (str_starts_with($p, '/youthagency/')) {
+    return '/' . ltrim(substr($p, strlen('/youthagency/')), '/');
+  }
+  return $p;
 }
 
 /* detect columns safely */
@@ -149,7 +152,7 @@ $seoTitle = 'Youth Agency • News';
 $seoDescription = $q !== ''
   ? ('მოძებნე სიახლეები Youth Agency-ის ვებგვერდზე: ' . $q)
   : 'Youth Agency-ის სიახლეები, განცხადებები და განახლებები ერთ გვერდზე.';
-$canonicalUrl = 'https://sspm.ge/youthagency/news/' . ($q !== '' ? '?q=' . rawurlencode($q) : '');
+$canonicalUrl = 'https://sspm.ge/news/' . ($q !== '' ? '?q=' . rawurlencode($q) : '');
 ?>
 <!doctype html>
 <html lang="ka">
@@ -161,12 +164,12 @@ $canonicalUrl = 'https://sspm.ge/youthagency/news/' . ($q !== '' ? '?q=' . rawur
   <meta name="description" content="<?=h($seoDescription)?>">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="<?=h($canonicalUrl)?>">
-  <link rel="icon" type="image/png" href="/youthagency/imgs/youthagencyicon.png">
+  <link rel="icon" type="image/png" href="/imgs/youthagencyicon.png">
   <meta property="og:type" content="website">
   <meta property="og:title" content="<?=h($seoTitle)?>">
   <meta property="og:description" content="<?=h($seoDescription)?>">
   <meta property="og:url" content="<?=h($canonicalUrl)?>">
-  <meta property="og:image" content="https://sspm.ge/youthagency/imgs/youthagencyicon.png">
+  <meta property="og:image" content="https://sspm.ge/imgs/youthagencyicon.png">
   <meta name="twitter:card" content="summary_large_image">
 
   <!-- Fonts & Icons -->
@@ -174,7 +177,7 @@ $canonicalUrl = 'https://sspm.ge/youthagency/news/' . ($q !== '' ? '?q=' . rawur
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <!-- Main CSS (your global styles) -->
-  <link rel="stylesheet" href="/youthagency/assets.css?v=1">
+  <link rel="stylesheet" href="/assets.css?v=2">
 
 <style>
   :root{
@@ -503,7 +506,7 @@ $canonicalUrl = 'https://sspm.ge/youthagency/news/' . ($q !== '' ? '?q=' . rawur
 
     <!-- ✅ improved search UI INSIDE your bar -->
     <div class="bar">
-      <form method="get" action="/youthagency/news/">
+      <form method="get" action="/news/">
         <div class="in-wrap">
           <i class="fa-solid fa-magnifying-glass in-ico" aria-hidden="true"></i>
           <input class="in" type="text" name="q" value="<?=h($q)?>" placeholder="Search news..." data-i18n-placeholder="newsIndex.searchPlaceholder">
@@ -514,7 +517,7 @@ $canonicalUrl = 'https://sspm.ge/youthagency/news/' . ($q !== '' ? '?q=' . rawur
         </button>
 
         <?php if ($q !== ''): ?>
-          <a class="btn ghost" href="/youthagency/news/">
+          <a class="btn ghost" href="/news/">
             <i class="fa-solid fa-rotate-left" style="margin-right:8px;"></i> <span data-i18n="newsIndex.resetButton">Reset</span>
           </a>
         <?php endif; ?>
@@ -599,7 +602,7 @@ $canonicalUrl = 'https://sspm.ge/youthagency/news/' . ($q !== '' ? '?q=' . rawur
             for ($p=1;$p<=$totalPages;$p++):
           ?>
             <a class="<?= $p===$page ? 'active':'' ?>"
-               href="/youthagency/news/?page=<?=$p?><?=$qPart?>">
+               href="/news/?page=<?=$p?><?=$qPart?>">
                <?=$p?>
             </a>
           <?php endfor; ?>
@@ -634,10 +637,10 @@ $canonicalUrl = 'https://sspm.ge/youthagency/news/' . ($q !== '' ? '?q=' . rawur
 
     (async () => {
       try {
-        await inject('siteHeaderMount', '/youthagency/header.html');
-        await loadScript('/youthagency/app.js');
+        await inject('siteHeaderMount', '/header.php');
+        await loadScript('/app.js');
         if (typeof window.initHeader === 'function') window.initHeader();
-        await inject('siteFooterMount', '/youthagency/footer.html');
+        await inject('siteFooterMount', '/footer.php');
       } catch (err) {
         console.error('HEADER/FOOTER ERROR:', err);
       }
