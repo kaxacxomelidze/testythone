@@ -532,6 +532,14 @@ function resolveFileUrl(path){
   if(p.startsWith("/")) return p;
   return "../" + p.replace(/^\.?\//, "");
 }
+function resolveAdminUploadUrl(upload, mode="open"){
+  const id = Number(upload?.id || 0);
+  if(id > 0){
+    return `upload_file.php?id=${encodeURIComponent(String(id))}&mode=${encodeURIComponent(mode)}`;
+  }
+  const rawPath = (upload?.file_path || upload?.url || "").toString();
+  return resolveFileUrl(rawPath);
+}
 function esc(s){
   return (s ?? '').toString()
     .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
@@ -1829,7 +1837,8 @@ function renderUploads(uploads, formData, grantId=0){
 
   box.innerHTML = merged.map(u=>{
     const rawPath = (u.file_path || u.url || "").toString();
-    const url = resolveFileUrl(rawPath);
+    const openUrl = resolveAdminUploadUrl(u, "open");
+    const downloadUrl = resolveAdminUploadUrl(u, "download");
     const name = u.original_name || u.file_name || u.stored_name || (rawPath ? rawPath.split("/").pop() : "file");
     const fieldLabel = u.field_label ? resolveLabelForKey(grantId, u.field_label) : "";
     const req = u.requirement_name ? ` • მოთხოვნა: ${u.requirement_name}` : "";
@@ -1845,8 +1854,8 @@ function renderUploads(uploads, formData, grantId=0){
             <span class="mini">${esc(sz)}${mime ? " • " + esc(mime) : ""}${esc(req)}${esc(fld)}</span>
           </div>
           <div class="uploadActions">
-            ${url ? `<a class="btn ghost" href="${escAttr(url)}" target="_blank" rel="noopener">გახსნა</a>` : `<span class="mini">ბმული არ მოიძებნა</span>`}
-            ${url ? `<a class="btn ghost" href="${escAttr(url)}" download>ჩამოტვირთვა</a>` : ``}
+            ${openUrl ? `<a class="btn ghost" href="${escAttr(openUrl)}" target="_blank" rel="noopener">გახსნა</a>` : `<span class="mini">ბმული არ მოიძებნა</span>`}
+            ${downloadUrl ? `<a class="btn ghost" href="${escAttr(downloadUrl)}">ჩამოტვირთვა</a>` : ``}
           </div>
         </div>
         <div class="mini mono" style="margin-top:6px;opacity:.85">path: ${esc(rawPath || "-")}</div>
