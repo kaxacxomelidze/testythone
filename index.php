@@ -9,10 +9,10 @@
   <meta name="author" content="სსიპ ახალგაზრდობის სააგენტო">
   <meta name="robots" content="index,follow">
   <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
-  <link rel="canonical" href="https://sspm.ge/">
-  <link rel="alternate" href="https://sspm.ge/" hreflang="ka-ge">
-  <link rel="alternate" href="https://sspm.ge/en/" hreflang="en">
-  <link rel="alternate" href="https://sspm.ge/" hreflang="x-default">
+  <link rel="canonical" href="https://youthagency.gov.ge/">
+  <link rel="alternate" href="https://youthagency.gov.ge/" hreflang="ka-ge">
+  <link rel="alternate" href="https://youthagency.gov.ge/en/" hreflang="en">
+  <link rel="alternate" href="https://youthagency.gov.ge/" hreflang="x-default">
 
   <link rel="icon" type="image/png" sizes="32x32" href="/imgs/youthagencyicon.png?v=6">
   <link rel="icon" type="image/png" sizes="16x16" href="/imgs/youthagencyicon.png?v=6">
@@ -23,12 +23,12 @@
   <meta property="og:site_name" content="ახალგაზრდობის სააგენტო">
   <meta property="og:title" content="ახალგაზრდობის სააგენტო">
   <meta property="og:description" content="ახალგაზრდული პროგრამები, სიახლეები, ბანაკები და საგრანტო შესაძლებლობები.">
-  <meta property="og:url" content="https://sspm.ge/">
-  <meta property="og:image" content="https://sspm.ge/imgs/youthagencyicon.png">
+  <meta property="og:url" content="https://youthagency.gov.ge/">
+  <meta property="og:image" content="https://youthagency.gov.ge/imgs/youthagencyicon.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="ახალგაზრდობის სააგენტო">
   <meta name="twitter:description" content="სიახლეები, ბანაკები, საგრანტო შესაძლებლობები და საკონტაქტო ინფორმაცია.">
-  <meta name="twitter:image" content="https://sspm.ge/imgs/youthagencyicon.png">
+  <meta name="twitter:image" content="https://youthagency.gov.ge/imgs/youthagencyicon.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

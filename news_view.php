@@ -119,8 +119,8 @@ $metaDescription = trim(preg_replace('/\s+/u', ' ', strip_tags($viewBody)) ?? ''
 if ($metaDescription === '') $metaDescription = 'Youth Agency-ის სიახლე და დეტალური ინფორმაცია.';
 if (mb_strlen($metaDescription) > 170) $metaDescription = mb_substr($metaDescription, 0, 167) . '...';
 $heroImage = normalize_public_path((string)($n['image_path'] ?? ''));
-$heroImageUrl = $heroImage !== '' ? 'https://sspm.ge/' . ltrim($heroImage, '/') : 'https://sspm.ge/imgs/youthagencyicon.png';
-$canonicalUrl = 'https://sspm.ge/news/' . (int)$n['id'] . '/' . rawurlencode($slug);
+$heroImageUrl = $heroImage !== '' ? 'https://youthagency.gov.ge/' . ltrim($heroImage, '/') : 'https://youthagency.gov.ge/imgs/youthagencyicon.png';
+$canonicalUrl = 'https://youthagency.gov.ge/news/' . (int)$n['id'] . '/' . rawurlencode($slug);
 
 ?>
 <!doctype html>
