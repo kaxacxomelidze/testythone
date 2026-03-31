@@ -152,7 +152,7 @@ $seoTitle = 'Youth Agency • News';
 $seoDescription = $q !== ''
   ? ('მოძებნე სიახლეები Youth Agency-ის ვებგვერდზე: ' . $q)
   : 'Youth Agency-ის სიახლეები, განცხადებები და განახლებები ერთ გვერდზე.';
-$canonicalUrl = 'https://sspm.ge/news/' . ($q !== '' ? '?q=' . rawurlencode($q) : '');
+$canonicalUrl = 'https://youthagency.gov.ge/news/' . ($q !== '' ? '?q=' . rawurlencode($q) : '');
 ?>
 <!doctype html>
 <html lang="ka">
@@ -169,7 +169,7 @@ $canonicalUrl = 'https://sspm.ge/news/' . ($q !== '' ? '?q=' . rawurlencode($q) 
   <meta property="og:title" content="<?=h($seoTitle)?>">
   <meta property="og:description" content="<?=h($seoDescription)?>">
   <meta property="og:url" content="<?=h($canonicalUrl)?>">
-  <meta property="og:image" content="https://sspm.ge/imgs/youthagencyicon.png">
+  <meta property="og:image" content="https://youthagency.gov.ge/imgs/youthagencyicon.png">
   <meta name="twitter:card" content="summary_large_image">
 
   <!-- Fonts & Icons -->

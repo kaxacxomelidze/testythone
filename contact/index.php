@@ -82,13 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <title>Youth Agency • Contact</title>
   <meta name="description" content="დაუკავშირდით Youth Agency-ს — საკონტაქტო ფორმა, მისამართი, ტელეფონი და ელფოსტა ერთ გვერდზე.">
   <meta name="robots" content="index,follow">
-  <link rel="canonical" href="https://sspm.ge/contact/">
+  <link rel="canonical" href="https://youthagency.gov.ge/contact/">
   <link rel="icon" type="image/png" href="/imgs/youthagencyicon.png">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Youth Agency • Contact">
   <meta property="og:description" content="დაგვიკავშირდით Youth Agency-ს ფორმის, ელფოსტის ან ტელეფონის საშუალებით.">
-  <meta property="og:url" content="https://sspm.ge/contact/">
-  <meta property="og:image" content="https://sspm.ge/imgs/youthagencyicon.png">
+  <meta property="og:url" content="https://youthagency.gov.ge/contact/">
+  <meta property="og:image" content="https://youthagency.gov.ge/imgs/youthagencyicon.png">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="/assets.css?v=2">

@@ -6,13 +6,13 @@
   <title>წესები და პირობები | სსიპ ახალგაზრდობის სააგენტო</title>
   <meta name="description" content="სსიპ ახალგაზრდობის სააგენტოს წესები და პირობები: კონფიდენციალურობა, განაცხადის შევსება, ვადები და პლატფორმის გამოყენების პირობები.">
   <meta name="robots" content="index,follow">
-  <link rel="canonical" href="https://sspm.ge/rules/">
+  <link rel="canonical" href="https://youthagency.gov.ge/rules/">
   <link rel="icon" type="image/png" href="/imgs/youthagencyicon.png">
   <meta property="og:type" content="website">
   <meta property="og:title" content="წესები და პირობები | სსიპ ახალგაზრდობის სააგენტო">
   <meta property="og:description" content="იხილეთ სააგენტოს წესები: კონფიდენციალურობა, რეგისტრაცია, განაცხადების ვადები და პასუხისმგებლობა.">
-  <meta property="og:url" content="https://sspm.ge/rules/">
-  <meta property="og:image" content="https://sspm.ge/imgs/youthagencyicon.png">
+  <meta property="og:url" content="https://youthagency.gov.ge/rules/">
+  <meta property="og:image" content="https://youthagency.gov.ge/imgs/youthagencyicon.png">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="/assets.css?v=2">

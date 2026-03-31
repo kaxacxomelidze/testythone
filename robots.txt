@@ -7,4 +7,4 @@ Disallow: /api/
 Disallow: /data/
 Disallow: /uploads/cache/
 
-Sitemap: https://sspm.ge/sitemap.xml
+Sitemap: https://youthagency.gov.ge/sitemap.xml
