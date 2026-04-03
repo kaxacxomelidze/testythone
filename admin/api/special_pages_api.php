@@ -28,11 +28,13 @@ $dataFile = $root . '/data/special_pages.json';
 $uploadDir = $root . '/uploads/special_pages';
 
 function sp_load_data(string $file): array {
-  if (!is_file($file)) return ['pages'=>[]];
+  if (!is_file($file)) return ['meta'=>['facebook_pixel_id'=>''], 'pages'=>[]];
   $raw = (string)@file_get_contents($file);
-  if ($raw === '') return ['pages'=>[]];
+  if ($raw === '') return ['meta'=>['facebook_pixel_id'=>''], 'pages'=>[]];
   $j = json_decode($raw, true);
-  if (!is_array($j)) return ['pages'=>[]];
+  if (!is_array($j)) return ['meta'=>['facebook_pixel_id'=>''], 'pages'=>[]];
+  if (!is_array($j['meta'] ?? null)) $j['meta'] = ['facebook_pixel_id'=>''];
+  if (!array_key_exists('facebook_pixel_id', $j['meta'])) $j['meta']['facebook_pixel_id'] = '';
   if (!is_array($j['pages'] ?? null)) $j['pages'] = [];
   return $j;
 }
@@ -96,13 +98,17 @@ if ($action === 'list') {
     ];
   }
   usort($items, fn($a,$b) => strcmp($a['slug'], $b['slug']));
-  sp_ok(['items' => $items]);
+  sp_ok([
+    'items' => $items,
+    'facebook_pixel_id' => (string)($data['meta']['facebook_pixel_id'] ?? ''),
+  ]);
 }
 
 if ($action === 'save') {
   $slug = sp_slug((string)($_POST['slug'] ?? ''));
   $title = trim((string)($_POST['title'] ?? ''));
   $description = trim((string)($_POST['description'] ?? ''));
+  $facebookPixelId = trim((string)($_POST['facebook_pixel_id'] ?? ''));
   $logo = trim((string)($_POST['logo'] ?? ''));
   $linksJson = (string)($_POST['links_json'] ?? '[]');
 
@@ -137,6 +143,7 @@ if ($action === 'save') {
     'logo' => $logo,
     'links' => $cleanLinks,
   ];
+  $data['meta']['facebook_pixel_id'] = $facebookPixelId;
 
   sp_save_data($dataFile, $data);
   sp_ensure_page_folder($root, $slug);

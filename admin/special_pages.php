@@ -62,6 +62,13 @@ input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px soli
 
     <div class="row" style="margin-top:10px">
       <div>
+        <label class="small">Facebook Pixel ID (ავტომატურად ყველა სპეციალურ გვერდზე)</label>
+        <input id="pixelIdInput" placeholder="მაგ: 123456789012345">
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:10px">
+      <div>
         <label class="small">ლოგოს URL</label>
         <input id="logoInput" placeholder="/imgs/logo.png ან https://...">
       </div>
@@ -91,6 +98,7 @@ const CSRF = <?= json_encode($csrf, JSON_UNESCAPED_UNICODE) ?>;
 const API = 'api/special_pages_api.php';
 let pages = [];
 let current = null;
+let pixelId = '';
 
 function esc(s){return (s??'').toString().replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');}
 
@@ -204,6 +212,7 @@ async function savePage(){
   const title = document.getElementById('titleInput').value.trim();
   const description = document.getElementById('descInput').value.trim();
   const logo = document.getElementById('logoInput').value.trim();
+  const facebookPixelId = document.getElementById('pixelIdInput').value.trim();
   if(!slug || !title) return alert('Slug და სათაური სავალდებულოა');
 
   const links = collectLinks();
@@ -212,6 +221,7 @@ async function savePage(){
   fd.append('title', title);
   fd.append('description', description);
   fd.append('logo', logo);
+  fd.append('facebook_pixel_id', facebookPixelId);
   fd.append('links_json', JSON.stringify(links.map(x=>({label:x.label, url:x.url, link_type:x.link_type}))));
 
   const logoFile = document.getElementById('logoFile').files?.[0] || null;
@@ -241,6 +251,8 @@ async function deletePage(){
 async function load(){
   const j = await apiGet('list');
   pages = j.items || [];
+  pixelId = j.facebook_pixel_id || '';
+  document.getElementById('pixelIdInput').value = pixelId;
   renderPages();
 }
 
