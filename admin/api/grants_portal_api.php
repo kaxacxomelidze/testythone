@@ -250,6 +250,8 @@ function ensure_schema(PDO $pdo): void {
   if (!has_col($pdo, 'grant_steps', 'is_enabled')) { try { add_col($pdo, 'grant_steps', "ADD COLUMN is_enabled TINYINT(1) NOT NULL DEFAULT 1 AFTER sort_order"); } catch(Throwable $e) {} }
   if (!has_col($pdo, 'grant_fields', 'is_enabled')) { try { add_col($pdo, 'grant_fields', "ADD COLUMN is_enabled TINYINT(1) NOT NULL DEFAULT 1 AFTER sort_order"); } catch(Throwable $e) {} }
   if (!has_col($pdo, 'grant_file_requirements', 'is_enabled')) { try { add_col($pdo, 'grant_file_requirements', "ADD COLUMN is_enabled TINYINT(1) NOT NULL DEFAULT 1 AFTER sort_order"); } catch(Throwable $e) {} }
+  if (!has_col($pdo, 'grant_file_requirements', 'template_file_path')) { try { add_col($pdo, 'grant_file_requirements', "ADD COLUMN template_file_path VARCHAR(500) NULL AFTER name"); } catch(Throwable $e) {} }
+  if (!has_col($pdo, 'grant_file_requirements', 'template_file_name')) { try { add_col($pdo, 'grant_file_requirements', "ADD COLUMN template_file_name VARCHAR(255) NULL AFTER template_file_path"); } catch(Throwable $e) {} }
 
   if (!has_col($pdo, 'grant_steps', 'step_key')) { try { add_col($pdo, 'grant_steps', "ADD COLUMN step_key VARCHAR(255) NOT NULL DEFAULT '' AFTER name"); } catch(Throwable $e) {} }
   if (!has_col($pdo, 'grant_fields', 'options_json')) { try { add_col($pdo, 'grant_fields', "ADD COLUMN options_json MEDIUMTEXT NULL AFTER show_for"); } catch(Throwable $e) {} }
@@ -438,6 +440,35 @@ function allow_upload_mime(string $mime): bool {
     'text/plain',
   ];
   return in_array($mime, $allowed, true);
+}
+
+function save_requirement_template_file(?array $file): array {
+  if (!$file || !isset($file['tmp_name']) || !is_uploaded_file((string)$file['tmp_name'])) return ['', ''];
+  if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) json_err("ფაილის ატვირთვის შეცდომა");
+
+  $maxBytes = 25 * 1024 * 1024;
+  if ((int)($file['size'] ?? 0) > $maxBytes) json_err("ფაილი ძალიან დიდია (მაქს 25MB)");
+
+  $finfo = new finfo(FILEINFO_MIME_TYPE);
+  $mime = (string)$finfo->file((string)$file['tmp_name']);
+  if ($mime === '') $mime = (string)($file['type'] ?? '');
+  if (!allow_upload_mime($mime)) json_err("ფაილის ტიპი არაა დაშვებული");
+
+  $orig = trim((string)($file['name'] ?? 'file'));
+  if ($orig === '') $orig = 'file';
+
+  $dir = __DIR__ . '/../uploads/grants/requirements';
+  ensure_dir($dir);
+
+  $ext = safe_ext_from_mime($mime, $orig);
+  $name = 'req_tpl_' . date('Ymd_His') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+  $abs = $dir . '/' . $name;
+
+  if (!move_uploaded_file((string)$file['tmp_name'], $abs)) {
+    json_err("ვერ მოხერხდა ფაილის შენახვა", 500);
+  }
+
+  return ['uploads/grants/requirements/' . $name, $orig];
 }
 
 function safe_ext_from_mime(string $mime, string $fallbackName): string {
@@ -1043,7 +1074,10 @@ try {
       $fieldsByStep[$sid][] = $r;
     }
 
-    $reqs = $pdo->prepare("SELECT id,grant_id,name,is_required,sort_order, {$reqIsEnabled}
+    $reqTplPath = has_col($pdo, 'grant_file_requirements', 'template_file_path') ? 'template_file_path' : "NULL AS template_file_path";
+    $reqTplName = has_col($pdo, 'grant_file_requirements', 'template_file_name') ? 'template_file_name' : "NULL AS template_file_name";
+
+    $reqs = $pdo->prepare("SELECT id,grant_id,name,is_required,sort_order, {$reqIsEnabled}, {$reqTplPath}, {$reqTplName}
                            FROM grant_file_requirements
                            WHERE grant_id=?
                            ORDER BY sort_order ASC, id ASC");
@@ -1227,35 +1261,52 @@ try {
 
   /* ----------------------------- FILE REQUIREMENTS CRUD ----------------------------- */
   if ($action === 'req_add') {
-    $grant_id = (int)($json['grant_id'] ?? 0);
-    $name = trim((string)($json['name'] ?? ''));
-    $is_required = (int)($json['is_required'] ?? 1);
+    $grant_id = (int)($_POST['grant_id'] ?? ($json['grant_id'] ?? 0));
+    $name = trim((string)($_POST['name'] ?? ($json['name'] ?? '')));
+    $is_required = (int)($_POST['is_required'] ?? ($json['is_required'] ?? 1));
 
     if ($grant_id <= 0) json_err('grant_id არასწორია');
     if ($name === '') json_err('მოთხოვნა სავალდებულოა');
 
+    [$templatePath, $templateName] = save_requirement_template_file($_FILES['template_file'] ?? null);
     $sort = max_sort($pdo, 'grant_file_requirements', 'grant_id=?', [$grant_id]) + 1;
 
     if (has_col($pdo, 'grant_file_requirements', 'is_enabled')) {
-      $pdo->prepare("INSERT INTO grant_file_requirements(grant_id,name,is_required,sort_order,is_enabled) VALUES(?,?,?,?,1)")
-          ->execute([$grant_id,$name,$is_required?1:0,$sort]);
+      $pdo->prepare("INSERT INTO grant_file_requirements(grant_id,name,template_file_path,template_file_name,is_required,sort_order,is_enabled) VALUES(?,?,?,?,?,?,1)")
+          ->execute([$grant_id,$name,($templatePath ?: null),($templateName ?: null),$is_required?1:0,$sort]);
     } else {
-      $pdo->prepare("INSERT INTO grant_file_requirements(grant_id,name,is_required,sort_order) VALUES(?,?,?,?)")
-          ->execute([$grant_id,$name,$is_required?1:0,$sort]);
+      $pdo->prepare("INSERT INTO grant_file_requirements(grant_id,name,template_file_path,template_file_name,is_required,sort_order) VALUES(?,?,?,?,?,?)")
+          ->execute([$grant_id,$name,($templatePath ?: null),($templateName ?: null),$is_required?1:0,$sort]);
     }
 
     json_ok(['id' => (int)$pdo->lastInsertId()]);
   }
 
   if ($action === 'req_update') {
-    $id = (int)($json['id'] ?? 0);
-    $name = trim((string)($json['name'] ?? ''));
-    $is_required = (int)($json['is_required'] ?? 1);
+    $id = (int)($_POST['id'] ?? ($json['id'] ?? 0));
+    $name = trim((string)($_POST['name'] ?? ($json['name'] ?? '')));
+    $is_required = (int)($_POST['is_required'] ?? ($json['is_required'] ?? 1));
     if ($id <= 0) json_err('id არასწორია');
     if ($name === '') json_err('მოთხოვნა სავალდებულოა');
 
-    $pdo->prepare("UPDATE grant_file_requirements SET name=?, is_required=? WHERE id=?")
-        ->execute([$name, $is_required?1:0, $id]);
+    $cur = $pdo->prepare("SELECT template_file_path, template_file_name FROM grant_file_requirements WHERE id=? LIMIT 1");
+    $cur->execute([$id]);
+    $existing = $cur->fetch(PDO::FETCH_ASSOC);
+    if (!$existing) json_err('მოთხოვნა ვერ მოიძებნა', 404);
+    $existingPath = (string)($existing['template_file_path'] ?? '');
+    $existingName = (string)($existing['template_file_name'] ?? '');
+
+    [$templatePath, $templateName] = save_requirement_template_file($_FILES['template_file'] ?? null);
+    if ($templatePath !== '' && $existingPath !== '') {
+      $oldAbs = __DIR__ . '/../' . ltrim($existingPath, '/');
+      if (is_file($oldAbs)) @unlink($oldAbs);
+    }
+
+    $finalPath = $templatePath !== '' ? $templatePath : $existingPath;
+    $finalName = $templateName !== '' ? $templateName : $existingName;
+
+    $pdo->prepare("UPDATE grant_file_requirements SET name=?, template_file_path=?, template_file_name=?, is_required=? WHERE id=?")
+        ->execute([$name, ($finalPath !== '' ? $finalPath : null), ($finalName !== '' ? $finalName : null), $is_required?1:0, $id]);
 
     json_ok();
   }
@@ -1287,7 +1338,14 @@ try {
   if ($action === 'req_delete') {
     $id = (int)($json['id'] ?? 0);
     if ($id <= 0) json_err('id არასწორია');
+    $st = $pdo->prepare("SELECT template_file_path FROM grant_file_requirements WHERE id=? LIMIT 1");
+    $st->execute([$id]);
+    $path = (string)($st->fetchColumn() ?: '');
     $pdo->prepare("DELETE FROM grant_file_requirements WHERE id=?")->execute([$id]);
+    if ($path !== '') {
+      $abs = __DIR__ . '/../' . ltrim($path, '/');
+      if (is_file($abs)) @unlink($abs);
+    }
     json_ok();
   }
 
