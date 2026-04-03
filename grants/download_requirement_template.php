@@ -39,18 +39,40 @@ if ($rel === '') {
 }
 
 $safeRel = ltrim(str_replace('..', '', str_replace('\\', '/', $rel)), '/');
-$abs = realpath(__DIR__ . '/../' . $safeRel);
-$base = realpath(__DIR__ . '/../uploads/grants/requirements');
+$safeRel = preg_replace('~^admin/+~', '', $safeRel);
 
-if (!$abs || !$base || !str_starts_with($abs, $base . DIRECTORY_SEPARATOR) || !is_file($abs)) {
+$candidates = [
+  __DIR__ . '/../' . $safeRel,
+  __DIR__ . '/../admin/' . $safeRel,
+];
+
+$allowedBases = array_filter([
+  realpath(__DIR__ . '/../uploads/grants/requirements'),
+  realpath(__DIR__ . '/../admin/uploads/grants/requirements'),
+]);
+
+$abs = null;
+foreach ($candidates as $candidate) {
+  $rp = realpath($candidate);
+  if (!$rp || !is_file($rp)) continue;
+  foreach ($allowedBases as $base) {
+    $base = rtrim((string)$base, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+    if (str_starts_with($rp, $base)) {
+      $abs = $rp;
+      break 2;
+    }
+  }
+}
+
+if (!$abs) {
   http_response_code(404);
   exit('ფაილი ვერ მოიძებნა');
 }
 
 $name = trim((string)($row['template_file_name'] ?? ''));
-if ($name === '') $name = basename($abs);
+if ($name === '') $name = basename((string)$abs);
 
-$mime = (string)(mime_content_type($abs) ?: 'application/octet-stream');
+$mime = (string)(mime_content_type((string)$abs) ?: 'application/octet-stream');
 
 header('Content-Description: File Transfer');
 header('Content-Type: ' . $mime);
@@ -59,7 +81,7 @@ header('Content-Transfer-Encoding: binary');
 header('Expires: 0');
 header('Cache-Control: must-revalidate');
 header('Pragma: public');
-header('Content-Length: ' . (string)filesize($abs));
+header('Content-Length: ' . (string)filesize((string)$abs));
 
-readfile($abs);
+readfile((string)$abs);
 exit;
