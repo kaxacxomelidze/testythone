@@ -95,6 +95,9 @@ $isSuper = ($role === 'super');
 <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/admin_grants.php') ? 'active':''?>" href="admin_grants.php">
   grants 
 </a>
+<a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/special_pages.php') ? 'active':''?>" href="special_pages.php">
+  Special Pages
+</a>
 <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/contact_messages.php') ? 'active':''?>" href="contact_messages.php">
   Contact Messages
 </a>
