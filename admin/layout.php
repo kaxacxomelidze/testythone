@@ -77,46 +77,49 @@ $isSuper = ($role === 'super');
       <div class="brand">
         <div class="logo"></div>
         <div>
-          <div style="font-weight:1000">Admin Panel</div>
+          <div style="font-weight:1000">ადმინ პანელი</div>
           <div class="muted"><?=h($user)?> • <?=h($role)?></div>
         </div>
       </div>
 
       <nav class="menu">
         <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/index.php') ? 'active':''?>" href="index.php">
-          Slider / Settings
+          სლაიდერი / პარამეტრები
         </a>
-<a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/news.php') ? 'active':''?>" href="news.php">News</a>
-<a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/camps.php') ? 'active':''?>" href="camps.php">Camps</a>
+<a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/news.php') ? 'active':''?>" href="news.php">სიახლეები</a>
+<a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/camps.php') ? 'active':''?>" href="camps.php">ბანაკები</a>
 
 <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/camp_applicants.php') ? 'active':''?>" href="camp_applicants.php">
-  Camp Applicants
+  ბანაკის აპლიკანტები
 </a>
 <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/admin_grants.php') ? 'active':''?>" href="admin_grants.php">
-  grants 
+  გრანტები 
+</a>
+<a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/special_pages.php') ? 'active':''?>" href="special_pages.php">
+  სპეციალური გვერდები
 </a>
 <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/contact_messages.php') ? 'active':''?>" href="contact_messages.php">
-  Contact Messages
+  საკონტაქტო შეტყობინებები
 </a>
         <?php if ($isSuper): ?>
           <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/admins.php') ? 'active':''?>" href="admins.php">
-            Admins
+            ადმინები
           </a>
 
           <!-- ✅ ADMIN LOGS -->
           <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/admin_logs.php') ? 'active':''?>" href="admin_logs.php">
-            Admin Logs
+            ადმინის ლოგები
           </a>
         <?php endif; ?>
 
-        <a class="item" href="logout.php">Logout</a>
+        <a class="item" href="logout.php">გასვლა</a>
       </nav>
     </aside>
 
     <main class="main">
       <div class="topbar">
         <div><?=h($title)?></div>
-        <span class="pill"><?= $isSuper ? 'SUPER ADMIN' : 'ADMIN' ?></span>
+        <span class="pill"><?= $isSuper ? 'სუპერ ადმინი' : 'ადმინი' ?></span>
       </div>
 
       <?= $content ?>

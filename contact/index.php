@@ -132,14 +132,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="info-panel">
           <h2 data-i18n="contact.infoTitle">საკონტაქტო ინფორმაცია</h2>
           <div class="info-list">
-            <div class="info-row"><span data-i18n="contact.address">ვაჟა ფშაველას ქ. #76</span></div>
+            <div class="info-row"><span data-i18n="contact.address">ვაჟა ფშაველას ქ. #76ბ</span></div>
             <div class="info-row"><span data-i18n="contact.phoneInfo">032 230 51 65</span></div>
             <div class="info-row"><span data-i18n="contact.emailInfo">info@youthagency.gov.ge</span></div>
           </div>
         </div>
         <div class="map-card">
           <h2 data-i18n="contact.mapTitle">მდებარეობა რუკაზე</h2>
-          <iframe class="map-frame" title="Youth Agency location map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=76%20Vazha-Pshavela%20Ave%2C%20Tbilisi&z=15&output=embed"></iframe>
+          <iframe class="map-frame" title="Youth Agency location map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=76B%20Vazha-Pshavela%20Ave%2C%20Tbilisi&z=15&output=embed"></iframe>
           <p class="map-note" data-i18n="contact.mapNote">ოფისი შეგიძლიათ მარტივად ნახოთ რუკაზე და დაგეგმოთ ვიზიტი წინასწარ.</p>
         </div>
       </aside>
