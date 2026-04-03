@@ -8,7 +8,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(16));
 $csrf = (string)$_SESSION['csrf'];
 
-$title = 'Admin — Special Pages';
+$title = 'ადმინი — სპეციალური გვერდები';
 ob_start();
 ?>
 <style>
@@ -28,15 +28,15 @@ input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px soli
 </style>
 
 <div class="cardx">
-  <h2 style="margin:0">Special Pages Builder</h2>
+  <h2 style="margin:0">სპეციალური გვერდების ბილდერი</h2>
   <div class="small">შექმენი / შეცვალე გვერდები Mokhalise_fest-ის მსგავსი დიზაინით (ლოგო + ტექსტი + ლინკების სია).</div>
 </div>
 
 <div class="sp-wrap">
   <div class="cardx">
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <b>Pages</b>
-      <button class="btn ac" type="button" onclick="newPage()">+ New</button>
+      <b>გვერდები</b>
+      <button class="btn ac" type="button" onclick="newPage()">+ ახალი</button>
     </div>
     <div id="pagesList" style="margin-top:8px"></div>
   </div>
@@ -44,25 +44,25 @@ input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px soli
   <div class="cardx">
     <div class="row">
       <div>
-        <label class="small">Slug (URL: /slug/)</label>
+        <label class="small">Slug (მისამართი: /slug/)</label>
         <input id="slug" placeholder="მაგ: Mokhalise_fest">
       </div>
       <div>
-        <label class="small">Title</label>
+        <label class="small">სათაური</label>
         <input id="titleInput" placeholder="გვერდის სათაური">
       </div>
     </div>
 
     <div class="row" style="margin-top:10px">
       <div>
-        <label class="small">Description</label>
+        <label class="small">აღწერა</label>
         <textarea id="descInput" rows="2" placeholder="მოკლე ტექსტი"></textarea>
       </div>
     </div>
 
     <div class="row" style="margin-top:10px">
       <div>
-        <label class="small">Logo URL</label>
+        <label class="small">ლოგოს URL</label>
         <input id="logoInput" placeholder="/imgs/logo.png ან https://...">
       </div>
       <div>
@@ -73,14 +73,14 @@ input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px soli
 
     <hr style="border-color:#2b3a5d;opacity:.5;margin:14px 0">
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <b>Text + Links</b>
-      <button class="btn" type="button" onclick="addLinkRow()">+ Add link row</button>
+      <b>ტექსტი + ლინკები</b>
+      <button class="btn" type="button" onclick="addLinkRow()">+ ლინკის დამატება</button>
     </div>
     <div id="linksBox"></div>
 
     <div class="row" style="margin-top:14px">
-      <div><button class="btn ac" type="button" onclick="savePage()">Save page</button></div>
-      <div><button class="btn bad" type="button" onclick="deletePage()">Delete page</button></div>
+      <div><button class="btn ac" type="button" onclick="savePage()">გვერდის შენახვა</button></div>
+      <div><button class="btn bad" type="button" onclick="deletePage()">გვერდის წაშლა</button></div>
     </div>
     <div class="small" id="status" style="margin-top:8px"></div>
   </div>
@@ -96,42 +96,57 @@ function esc(s){return (s??'').toString().replaceAll('&','&amp;').replaceAll('<'
 
 async function apiGet(action){
   const r = await fetch(API + '?action=' + encodeURIComponent(action), {headers:{'X-CSRF': CSRF}});
-  const j = await r.json(); if(!j.ok) throw new Error(j.error || 'error'); return j;
+  const raw = await r.text();
+  let j = null;
+  try{ j = JSON.parse(raw); }catch(_){}
+  if(!r.ok) throw new Error((j && j.error) ? j.error : ('HTTP ' + r.status));
+  if(!j || !j.ok) throw new Error((j && j.error) ? j.error : 'API შეცდომა');
+  return j;
 }
 
 async function apiSave(fd){
   const r = await fetch(API + '?action=save', {method:'POST', headers:{'X-CSRF': CSRF}, body: fd});
-  const j = await r.json(); if(!j.ok) throw new Error(j.error || 'error'); return j;
+  const raw = await r.text();
+  let j = null;
+  try{ j = JSON.parse(raw); }catch(_){}
+  if(!r.ok) throw new Error((j && j.error) ? j.error : ('HTTP ' + r.status));
+  if(!j || !j.ok) throw new Error((j && j.error) ? j.error : 'API შეცდომა');
+  return j;
 }
 
 async function apiDelete(slug){
   const r = await fetch(API + '?action=delete', {method:'POST', headers:{'X-CSRF': CSRF,'Content-Type':'application/json'}, body: JSON.stringify({slug})});
-  const j = await r.json(); if(!j.ok) throw new Error(j.error || 'error'); return j;
+  const raw = await r.text();
+  let j = null;
+  try{ j = JSON.parse(raw); }catch(_){}
+  if(!r.ok) throw new Error((j && j.error) ? j.error : ('HTTP ' + r.status));
+  if(!j || !j.ok) throw new Error((j && j.error) ? j.error : 'API შეცდომა');
+  return j;
 }
 
 function linkRowHtml(link={}, idx=0){
   return `<div class="linkRow" data-link-row="${idx}">
     <div class="row">
-      <div><label class="small">Text</label><input data-k="label" value="${esc(link.label||'')}" placeholder="ლინკის ტექსტი"></div>
+      <div><label class="small">ტექსტი</label><input data-k="label" value="${esc(link.label||'')}" placeholder="ლინკის ტექსტი"></div>
       <div>
-        <label class="small">Link type</label>
+        <label class="small">ლინკის ტიპი</label>
         <select data-k="link_type">
-          <option value="open" ${(link.link_type||'open')==='open'?'selected':''}>Open link</option>
-          <option value="download" ${(link.link_type||'open')==='download'?'selected':''}>Download file</option>
+          <option value="open" ${(link.link_type||'open')==='open'?'selected':''}>გახსნა</option>
+          <option value="download" ${(link.link_type||'open')==='download'?'selected':''}>ჩამოტვირთვა</option>
         </select>
       </div>
     </div>
     <div class="row" style="margin-top:8px">
-      <div><label class="small">URL / File path</label><input data-k="url" value="${esc(link.url||'')}" placeholder="/downloads/file.pdf ან https://..."></div>
-      <div><label class="small">or upload file</label><input data-k="file" type="file"></div>
+      <div><label class="small">URL / ფაილის მისამართი</label><input data-k="url" value="${esc(link.url||'')}" placeholder="/downloads/file.pdf ან https://..."></div>
+      <div><label class="small">ან ატვირთე ფაილი</label><input data-k="file" type="file"></div>
     </div>
-    <div style="margin-top:8px"><button class="btn bad" type="button" onclick="removeLinkRow(${idx})">Remove</button></div>
+    <div style="margin-top:8px"><button class="btn bad" type="button" onclick="removeLinkRow(${idx})">წაშლა</button></div>
   </div>`;
 }
 
 function renderLinks(links=[]){
   const box = document.getElementById('linksBox');
-  box.innerHTML = links.map((l,i)=>linkRowHtml(l,i)).join('') || '<div class="small" style="margin-top:8px">No links yet.</div>';
+  box.innerHTML = links.map((l,i)=>linkRowHtml(l,i)).join('') || '<div class="small" style="margin-top:8px">ლინკები ჯერ არ არის.</div>';
 }
 
 function collectLinks(){
@@ -147,7 +162,7 @@ function collectLinks(){
 
 function renderPages(){
   const box = document.getElementById('pagesList');
-  box.innerHTML = pages.map(p=>`<div class="item ${current===p.slug?'active':''}" onclick="selectPage('${esc(p.slug)}')"><b>${esc(p.title||p.slug)}</b><div class="small">/${esc(p.slug)}/</div></div>`).join('') || '<div class="small">No pages.</div>';
+  box.innerHTML = pages.map(p=>`<div class="item ${current===p.slug?'active':''}" onclick="selectPage('${esc(p.slug)}')"><b>${esc(p.title||p.slug)}</b><div class="small">/${esc(p.slug)}/</div></div>`).join('') || '<div class="small">გვერდები ჯერ არ არის.</div>';
 }
 
 function selectPage(slug){
@@ -189,7 +204,7 @@ async function savePage(){
   const title = document.getElementById('titleInput').value.trim();
   const description = document.getElementById('descInput').value.trim();
   const logo = document.getElementById('logoInput').value.trim();
-  if(!slug || !title) return alert('Slug and title required');
+  if(!slug || !title) return alert('Slug და სათაური სავალდებულოა');
 
   const links = collectLinks();
   const fd = new FormData();
@@ -205,7 +220,7 @@ async function savePage(){
 
   try{
     const res = await apiSave(fd);
-    document.getElementById('status').textContent = 'Saved ✅ URL: ' + (res.url || ('/' + slug + '/'));
+    document.getElementById('status').textContent = 'შენახულია ✅ მისამართი: ' + (res.url || ('/' + slug + '/'));
     await load();
     selectPage(res.slug || slug);
   }catch(e){ alert(e.message); }
@@ -214,10 +229,10 @@ async function savePage(){
 async function deletePage(){
   const slug = document.getElementById('slug').value.trim();
   if(!slug) return;
-  if(!confirm('Delete page config?')) return;
+  if(!confirm('წავშალო გვერდის კონფიგურაცია?')) return;
   try{
     await apiDelete(slug);
-    document.getElementById('status').textContent = 'Deleted';
+    document.getElementById('status').textContent = 'წაიშალა';
     await load();
     newPage();
   }catch(e){ alert(e.message); }

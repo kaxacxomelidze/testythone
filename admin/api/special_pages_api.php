@@ -14,14 +14,14 @@ function sp_json_out(array $payload, int $status = 200): void {
 function sp_ok(array $data = []): void { sp_json_out(['ok'=>true] + $data); }
 function sp_err(string $message, int $status = 400): void { sp_json_out(['ok'=>false,'error'=>$message], $status); }
 
-if (!is_logged_in()) sp_err('Unauthorized', 401);
+if (empty($_SESSION['admin_logged_in'])) sp_err('ავტორიზაცია საჭიროა', 401);
 
 $csrf = (string)($_SESSION['csrf'] ?? '');
 $hdr = (string)($_SERVER['HTTP_X_CSRF'] ?? '');
-if ($csrf === '' || $hdr === '' || !hash_equals($csrf, $hdr)) sp_err('CSRF failed', 403);
+if ($csrf === '' || $hdr === '' || !hash_equals($csrf, $hdr)) sp_err('CSRF შეცდომა', 403);
 
 $action = (string)($_GET['action'] ?? '');
-if ($action === '') sp_err('action required');
+if ($action === '') sp_err('action სავალდებულოა');
 
 $root = dirname(__DIR__, 2);
 $dataFile = $root . '/data/special_pages.json';
@@ -39,10 +39,10 @@ function sp_load_data(string $file): array {
 
 function sp_save_data(string $file, array $data): void {
   $dir = dirname($file);
-  if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) sp_err('Cannot create data dir', 500);
+  if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) sp_err('ვერ შეიქმნა მონაცემების საქაღალდე', 500);
   $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-  if ($json === false) sp_err('Encode failed', 500);
-  if (@file_put_contents($file, $json . "\n", LOCK_EX) === false) sp_err('Cannot save data', 500);
+  if ($json === false) sp_err('ვერ დაკოდირდა მონაცემები', 500);
+  if (@file_put_contents($file, $json . "\n", LOCK_EX) === false) sp_err('ვერ შეინახა მონაცემები', 500);
 }
 
 function sp_slug(string $value): string {
@@ -54,10 +54,10 @@ function sp_slug(string $value): string {
 
 function sp_save_uploaded_file(array $file, string $uploadDir): ?string {
   if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) return null;
-  if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) sp_err('File upload error');
-  if (!is_uploaded_file((string)($file['tmp_name'] ?? ''))) sp_err('Invalid file upload');
+  if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) sp_err('ფაილის ატვირთვის შეცდომა');
+  if (!is_uploaded_file((string)($file['tmp_name'] ?? ''))) sp_err('ფაილის ატვირთვა არასწორია');
 
-  if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) sp_err('Cannot create upload dir', 500);
+  if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) sp_err('ვერ შეიქმნა ატვირთვის საქაღალდე', 500);
 
   $orig = trim((string)($file['name'] ?? 'file'));
   $ext = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
@@ -66,19 +66,19 @@ function sp_save_uploaded_file(array $file, string $uploadDir): ?string {
 
   $name = 'sp_' . date('Ymd_His') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
   $abs = rtrim($uploadDir, '/\\') . DIRECTORY_SEPARATOR . $name;
-  if (!move_uploaded_file((string)$file['tmp_name'], $abs)) sp_err('Failed to move uploaded file', 500);
+  if (!move_uploaded_file((string)$file['tmp_name'], $abs)) sp_err('ვერ შეინახა ატვირთული ფაილი', 500);
   return '/uploads/special_pages/' . $name;
 }
 
 function sp_ensure_page_folder(string $root, string $slug): void {
   $dir = $root . '/' . $slug;
-  if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) sp_err('Cannot create page folder', 500);
+  if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) sp_err('ვერ შეიქმნა გვერდის საქაღალდე', 500);
 
   $indexPath = $dir . '/index.php';
   if (is_file($indexPath)) return;
 
   $tpl = "<?php\ndeclare(strict_types=1);\n\nrequire_once __DIR__ . '/../special_page_template.php';\n\nrender_special_page('" . addslashes($slug) . "');\n";
-  if (@file_put_contents($indexPath, $tpl, LOCK_EX) === false) sp_err('Cannot create page index', 500);
+  if (@file_put_contents($indexPath, $tpl, LOCK_EX) === false) sp_err('ვერ შეიქმნა გვერდის index.php', 500);
 }
 
 $data = sp_load_data($dataFile);
@@ -106,8 +106,8 @@ if ($action === 'save') {
   $logo = trim((string)($_POST['logo'] ?? ''));
   $linksJson = (string)($_POST['links_json'] ?? '[]');
 
-  if ($slug === '') sp_err('Slug required');
-  if ($title === '') sp_err('Title required');
+  if ($slug === '') sp_err('Slug სავალდებულოა');
+  if ($title === '') sp_err('სათაური სავალდებულოა');
 
   $links = json_decode($linksJson, true);
   if (!is_array($links)) $links = [];
@@ -146,10 +146,10 @@ if ($action === 'save') {
 if ($action === 'delete') {
   $raw = json_decode((string)file_get_contents('php://input'), true);
   $slug = sp_slug((string)($raw['slug'] ?? ''));
-  if ($slug === '') sp_err('Slug required');
+  if ($slug === '') sp_err('Slug სავალდებულოა');
   unset($data['pages'][$slug]);
   sp_save_data($dataFile, $data);
   sp_ok();
 }
 
-sp_err('Unknown action', 404);
+sp_err('უცნობი action', 404);
