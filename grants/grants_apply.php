@@ -1548,15 +1548,23 @@ $payload = [
         const must = Number(r.is_required || 0) === 1;
         const f = state.reqUploads[rid];
         const tplPath = String(r.template_file_path || '').replace(/^\/+/, '');
-        const tplName = String(r.template_file_name || 'ჩამოტვირთე ფაილი');
-        const tplUrl = tplPath ? `/admin/${tplPath}` : '';
+        const tplName = String(r.template_file_name || 'ფაილი');
+        const grantId = Number(DATA?.grant?.id || 0);
+        const tplUrl = (tplPath && grantId > 0 && Number(r.id || 0) > 0)
+          ? `/grants/download_requirement_template.php?grant_id=${encodeURIComponent(String(grantId))}&req_id=${encodeURIComponent(String(r.id))}`
+          : '';
         return `
           <div class="card" style="margin-top:10px;background:#0a0f1c;box-shadow:none">
             <div class="row sp">
               <div>
                 <b>${esc(String(r.name || ""))}</b>
                 <div class="small">${must ? "სავალდებულო" : "არასავალდებულო"}</div>
-                ${tplUrl ? `<div class="small" style="margin-top:6px"><a href="${escAttr(tplUrl)}" download>${esc(tplName)}</a></div>` : ``}
+                ${tplUrl ? `
+                  <div class="small" style="margin-top:8px;padding:8px 10px;border:1px dashed rgba(34,197,94,.55);border-radius:10px;background:rgba(22,163,74,.10);color:#dcfce7">
+                    <b>📎 ჩამოტვირთეთ ფაილი და ატვირთეთ შევსებული</b><br>
+                    <a href="${escAttr(tplUrl)}" style="color:#86efac;text-decoration:underline;font-weight:800" target="_blank" rel="noopener">${esc(tplName)} — ჩამოტვირთვა</a>
+                  </div>
+                ` : ``}
               </div>
               <span class="pill ${f ? "open":"closed"}">${f ? "არჩეულია":"არ არის"}</span>
             </div>
