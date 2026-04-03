@@ -260,6 +260,10 @@ hr{border:0;border-top:1px solid var(--line);margin:12px 0}
       <b>ფაილების მოთხოვნები</b>
       <div class="row" style="margin-top:10px">
         <div><input id="reqName" placeholder="მაგ: პროექტის ბიუჯეტი (PDF)"></div>
+        <div>
+          <input id="reqTemplateFile" type="file">
+          <div class="small" style="margin-top:6px">სურვილის შემთხვევაში ატვირთე ფაილი, რომელსაც მომხმარებელი ჩამოტვირთავს.</div>
+        </div>
         <div class="tight">
           <select id="reqReq">
             <option value="1">სავალდებულო</option>
@@ -774,6 +778,7 @@ function renderReqs(){
         <div>
           <b>${esc(r.name)}</b>
           <div class="small">${String(r.is_required)==='1'?'სავალდებულო':'არასავალდებულო'}</div>
+          ${r.template_file_path ? `<div class="small" style="margin-top:6px">ფაილი: <a href="/admin/${escAttr(String(r.template_file_path).replace(/^\/+/,''))}" target="_blank" rel="noopener">${esc(r.template_file_name || 'ჩამოტვირთვა')}</a></div>` : `<div class="small" style="margin-top:6px">ფაილი: —</div>`}
         </div>
         <div class="actions">
           <button class="btn bad" type="button" onclick="reqDelete(${Number(r.id)})">წაშლა</button>
@@ -787,12 +792,20 @@ async function addRequirement(){
   const gid = Number(document.getElementById('bGrant').value || 0);
   const name = document.getElementById('reqName').value.trim();
   const is_required = Number(document.getElementById('reqReq').value || 1);
+  const templateFile = document.getElementById('reqTemplateFile').files?.[0] || null;
 
   if(!name) return alert("ჩაწერე მოთხოვნა");
 
   try{
-    await api("req_add", {grant_id: gid, name, is_required});
+    const fd = new FormData();
+    fd.append("grant_id", String(gid));
+    fd.append("name", name);
+    fd.append("is_required", String(is_required));
+    if(templateFile) fd.append("template_file", templateFile);
+
+    await api("req_add", fd);
     document.getElementById('reqName').value = '';
+    document.getElementById('reqTemplateFile').value = '';
     toast("დამატებულია ✅", "მოთხოვნა შეიქმნა");
     await loadBuilder();
   }catch(e){ showError(e.message); }

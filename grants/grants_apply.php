@@ -205,7 +205,9 @@ $reqs = [];
 $reqTable = 'grant_file_requirements';
 $reqHasEnabled = has_col($pdo, $reqTable, 'is_enabled');
 
-$reqSql = "SELECT id,grant_id,name,is_required FROM {$reqTable} WHERE grant_id=? ";
+$reqTplPathCol = has_col($pdo, $reqTable, 'template_file_path') ? 'template_file_path' : 'NULL AS template_file_path';
+$reqTplNameCol = has_col($pdo, $reqTable, 'template_file_name') ? 'template_file_name' : 'NULL AS template_file_name';
+$reqSql = "SELECT id,grant_id,name,is_required,{$reqTplPathCol},{$reqTplNameCol} FROM {$reqTable} WHERE grant_id=? ";
 if ($reqHasEnabled) $reqSql .= "AND is_enabled=1 ";
 $reqSql .= "ORDER BY id ASC";
 
@@ -1545,12 +1547,16 @@ $payload = [
         const rid = String(r.id);
         const must = Number(r.is_required || 0) === 1;
         const f = state.reqUploads[rid];
+        const tplPath = String(r.template_file_path || '').replace(/^\/+/, '');
+        const tplName = String(r.template_file_name || 'ჩამოტვირთე ფაილი');
+        const tplUrl = tplPath ? `/admin/${tplPath}` : '';
         return `
           <div class="card" style="margin-top:10px;background:#0a0f1c;box-shadow:none">
             <div class="row sp">
               <div>
                 <b>${esc(String(r.name || ""))}</b>
                 <div class="small">${must ? "სავალდებულო" : "არასავალდებულო"}</div>
+                ${tplUrl ? `<div class="small" style="margin-top:6px"><a href="${escAttr(tplUrl)}" download>${esc(tplName)}</a></div>` : ``}
               </div>
               <span class="pill ${f ? "open":"closed"}">${f ? "არჩეულია":"არ არის"}</span>
             </div>
