@@ -37,11 +37,10 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
  * =========================
  */
 if (!defined('ADMIN_USER')) define('ADMIN_USER', 'admin');
-if (!defined('ADMIN_PASS')) define('ADMIN_PASS', 'admin123'); // შეცვალე!
+if (!defined('ADMIN_PASS')) define('ADMIN_PASS', 'admin123');
 
 if (!defined('DATA_DIR'))   define('DATA_DIR', __DIR__ . '/../data');
 if (!defined('UPLOAD_DIR')) define('UPLOAD_DIR', __DIR__ . '/../uploads');
-
 
 if (!function_exists('env_or')) {
   function env_or(string $key, string $default = ''): string {
@@ -54,9 +53,9 @@ if (!function_exists('env_or')) {
 }
 
 if (!defined('DB_HOST')) define('DB_HOST', env_or('DB_HOST', '127.0.0.1'));
-if (!defined('DB_NAME')) define('DB_NAME', env_or('DB_NAME', 'sspm_test'));
-if (!defined('DB_USER')) define('DB_USER', env_or('DB_USER', 'sspm_main'));
-if (!defined('DB_PASS')) define('DB_PASS', env_or('DB_PASS', 'themainfirst!@#$'));
+if (!defined('DB_NAME')) define('DB_NAME', env_or('DB_NAME', 'youthagency_hub'));
+if (!defined('DB_USER')) define('DB_USER', env_or('DB_USER', 'youthagency_lider'));
+if (!defined('DB_PASS')) define('DB_PASS', env_or('DB_PASS', 'eKH+TOt-@xZ?dbcI'));
 
 if (!function_exists('security_headers')) {
   function security_headers(bool $isJson = false): void {
@@ -76,7 +75,7 @@ if (!function_exists('rate_limit_exceeded')) {
   function rate_limit_exceeded(string $bucket, int $max = 120, int $windowSec = 60): bool {
     $ip = (string)($_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown');
     $key = hash('sha256', $bucket . '|' . $ip);
-    $dir = sys_get_temp_dir() . '/sspm_rate_limits';
+    $dir = sys_get_temp_dir() . '/youthagency_rate_limits';
     if (!is_dir($dir)) @mkdir($dir, 0775, true);
     $file = $dir . '/' . $key . '.json';
 
@@ -197,7 +196,7 @@ if (!function_exists('enforce_same_origin_post')) {
     if (!in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) return;
 
     $origin = trim((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
-    if ($origin === '') return; // some same-origin browser requests omit Origin
+    if ($origin === '') return;
 
     $host = trim((string)($_SERVER['HTTP_HOST'] ?? ''));
     if ($host === '') return;
@@ -215,6 +214,7 @@ if (!function_exists('enforce_same_origin_post')) {
     exit;
   }
 }
+
 /**
  * =========================
  * PDO Database
@@ -235,7 +235,7 @@ if (!function_exists('db')) {
       ]);
     } catch (PDOException $e) {
       if (str_contains($e->getMessage(), 'Unknown database')) {
-        exit("Database '".DB_NAME."' not found. Create it in phpMyAdmin.");
+        exit("Database '" . DB_NAME . "' not found. Create it in phpMyAdmin.");
       }
       throw $e;
     }
@@ -306,12 +306,12 @@ if (!function_exists('csrf_check')) {
     }
   }
 }
+
 /**
  * =========================
  * Admin roles helpers
  * =========================
  */
-
 if (!function_exists('is_super_admin')) {
   function is_super_admin(): bool {
     return !empty($_SESSION['admin_logged_in'])
@@ -323,19 +323,21 @@ if (!function_exists('require_super_admin')) {
   function require_super_admin(): void {
     if (!is_super_admin()) {
       http_response_code(403);
-      echo '403 Forbidden — Super admin only';
+      echo '403 Forbidden - Super admin only';
       exit;
     }
   }
 }
+
 if (!function_exists('admin_name')) {
   function admin_name(): string {
     return $_SESSION['admin_name'] ?? 'Admin';
   }
 }
+
 if (!function_exists('client_ip')) {
   function client_ip(): string {
-    $keys = ['HTTP_CF_CONNECTING_IP','HTTP_X_FORWARDED_FOR','REMOTE_ADDR'];
+    $keys = ['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'];
     foreach ($keys as $k) {
       if (!empty($_SERVER[$k])) {
         return trim(explode(',', $_SERVER[$k])[0]);
@@ -373,14 +375,14 @@ if (!function_exists('log_admin')) {
 
     try {
       $ok = $stmt->execute([
-      $adminId ?: null,
-      $adminName ?: null,
-      $action,
-      $entity,
-      $entityId,
-      $details,
-      client_ip(),
-      substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255),
+        $adminId ?: null,
+        $adminName ?: null,
+        $action,
+        $entity,
+        $entityId,
+        $details,
+        client_ip(),
+        substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255),
       ]);
       if (!$ok) {
         $err = $stmt->errorInfo();
@@ -394,7 +396,10 @@ if (!function_exists('log_admin')) {
 
 if (!function_exists('log_admin_safe')) {
   function log_admin_safe(string $action, ?string $entity = null, ?int $entityId = null, $details = null): void {
-    try { log_admin($action, $entity, $entityId, $details); } catch (Throwable $e) {}
+    try {
+      log_admin($action, $entity, $entityId, $details);
+    } catch (Throwable $e) {
+    }
   }
 }
 
@@ -435,3 +440,5 @@ if (!function_exists('bootstrap_admin_audit')) {
 }
 
 bootstrap_admin_audit();
+
+security_headers(false);

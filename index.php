@@ -47,9 +47,29 @@
   <style>
     .visually-hidden{position:absolute !important;width:1px !important;height:1px !important;padding:0 !important;margin:-1px !important;overflow:hidden !important;clip:rect(0, 0, 0, 0) !important;white-space:nowrap !important;border:0 !important;}
   </style>
+  <style>
+    .maintenance-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(9,20,43,.58);backdrop-filter:blur(4px);z-index:9999;opacity:1;visibility:visible;transition:opacity .22s ease,visibility .22s ease;}
+    .maintenance-modal.is-hidden{opacity:0;visibility:hidden;pointer-events:none;}
+    .maintenance-modal__dialog{position:relative;max-width:560px;width:min(100%,560px);background:#123470;border-radius:24px;padding:34px 28px 28px;box-shadow:0 28px 80px rgba(0,0,0,.22);text-align:center;border:1px solid rgba(18,52,112,.25);}
+    .maintenance-modal__close{position:absolute;top:14px;right:14px;width:42px;height:42px;border:1px solid rgba(255,255,255,.35);border-radius:999px;background:rgba(255,255,255,.12);color:#fff;font-size:22px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .18s ease,transform .18s ease;}
+    .maintenance-modal__close:hover{background:rgba(255,255,255,.2);transform:scale(1.04);}
+    .maintenance-modal__logo{display:block;max-width:220px;width:70%;height:auto;margin:0 auto 16px;}
+    .maintenance-modal__title{margin:0 0 12px;font:800 28px/1.18 "Noto Sans Georgian",system-ui,sans-serif;color:#fff;}
+    .maintenance-modal__text{margin:0;font:500 16px/1.65 "Noto Sans Georgian",system-ui,sans-serif;color:rgba(255,255,255,.85);}
+    @media (max-width:640px){.maintenance-modal{padding:16px;}.maintenance-modal__dialog{border-radius:20px;padding:28px 20px 22px;}.maintenance-modal__title{font-size:24px;}.maintenance-modal__text{font-size:15px;}}
+  </style>
 </head>
 <body>
   <?php require_once __DIR__ . '/header.php'; ?>
+
+  <div class="maintenance-modal" id="maintenanceModal" role="dialog" aria-modal="true" aria-labelledby="maintenanceModalTitle">
+    <div class="maintenance-modal__dialog" role="document">
+      <button class="maintenance-modal__close" type="button" id="maintenanceModalClose" aria-label="დახურვა">&times;</button>
+      <img class="maintenance-modal__logo" src="/imgs/youthagency.png" alt="Youth Agency" width="220" height="60" loading="eager" decoding="async">
+      <h2 class="maintenance-modal__title" id="maintenanceModalTitle">საიტზე მიმდინარეობს ტექნიკური სამუშაოები</h2>
+      <p class="maintenance-modal__text">გთხოვთ გაითვალისწინოთ, რომ ზოგიერთი ფუნქცია შესაძლოა დროებით შეფერხებით მუშაობდეს. გმადლობთ მოთმინებისთვის.</p>
+    </div>
+  </div>
 
   <main id="mainContent">
     <section class="hero">
@@ -78,5 +98,16 @@
   <script>window.addEventListener("DOMContentLoaded",()=>{if(typeof window.initHeader==="function") window.initHeader(); if(typeof window.initFooterAccordion==="function") window.initFooterAccordion();},{once:true});</script>
   <script src="/news.js?v=2" defer></script>
   <script src="/slider.js?v=2" defer></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      var modal = document.getElementById("maintenanceModal");
+      var closeBtn = document.getElementById("maintenanceModalClose");
+      if (!modal) return;
+      function closeModal() { modal.classList.add("is-hidden"); }
+      if (closeBtn) closeBtn.addEventListener("click", closeModal);
+      modal.addEventListener("click", function (event) { if (event.target === modal) closeModal(); });
+      document.addEventListener("keydown", function (event) { if (event.key === "Escape") closeModal(); });
+    }, { once: true });
+  </script>
 </body>
 </html>
