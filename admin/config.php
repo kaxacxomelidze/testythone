@@ -266,6 +266,124 @@ if (!function_exists('require_login')) {
       header('Location: login.php');
       exit;
     }
+
+    $self = basename((string)($_SERVER['PHP_SELF'] ?? ''));
+    if ($self === '' || $self === 'login.php' || $self === 'logout.php') return;
+    if (is_super_admin()) return;
+
+    if (!admin_has_page_access($self)) {
+      http_response_code(403);
+      echo '403 Forbidden - ამ გვერდზე წვდომა არ გაქვთ';
+      exit;
+    }
+  }
+}
+
+if (!function_exists('admin_page_catalog')) {
+  function admin_page_catalog(): array {
+    $labels = [
+      'index.php' => 'სლაიდერი / პარამეტრები',
+      'news.php' => 'სიახლეები',
+      'camps.php' => 'ბანაკები',
+      'camp_applicants.php' => 'ბანაკის აპლიკანტები',
+      'admin_grants.php' => 'გრანტები',
+      'admin_builder.php' => 'გრანტების ბილდერი',
+      'admin_apps.php' => 'განაცხადები',
+      'special_pages.php' => 'სპეციალური გვერდები',
+      'contact_messages.php' => 'საკონტაქტო შეტყობინებები',
+      'admins.php' => 'ადმინები',
+      'admin_logs.php' => 'ადმინის ლოგები',
+    ];
+
+    $exclude = ['config.php','db.php','layout.php','login.php','logout.php'];
+    foreach (glob(__DIR__ . '/*.php') as $fp) {
+      $base = basename($fp);
+      if (in_array($base, $exclude, true)) continue;
+      if (!isset($labels[$base])) {
+        $name = preg_replace('~\.php$~i', '', $base);
+        $name = str_replace(['_', '-'], ' ', (string)$name);
+        $labels[$base] = mb_convert_case((string)$name, MB_CASE_TITLE, 'UTF-8');
+      }
+    }
+    ksort($labels);
+    return $labels;
+  }
+}
+
+if (!function_exists('ensure_admin_permissions_table')) {
+  function ensure_admin_permissions_table(): void {
+    try {
+      $pdo = db();
+      $pdo->exec("
+        CREATE TABLE IF NOT EXISTS admin_page_permissions (
+          id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          admin_id INT UNSIGNED NOT NULL,
+          page_key VARCHAR(120) NOT NULL,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE KEY uniq_admin_page (admin_id, page_key),
+          KEY idx_admin (admin_id),
+          CONSTRAINT fk_admin_perm_admin FOREIGN KEY (admin_id) REFERENCES admin_users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      ");
+    } catch (Throwable $e) {
+      // ignore: fallback is allow access
+    }
+  }
+}
+
+if (!function_exists('get_admin_page_permissions')) {
+  function get_admin_page_permissions(int $adminId): array {
+    if ($adminId <= 0) return [];
+    try {
+      ensure_admin_permissions_table();
+      $pdo = db();
+      $st = $pdo->prepare("SELECT page_key FROM admin_page_permissions WHERE admin_id=?");
+      $st->execute([$adminId]);
+      return array_values(array_unique(array_map('strval', $st->fetchAll(PDO::FETCH_COLUMN) ?: [])));
+    } catch (Throwable $e) {
+      return [];
+    }
+  }
+}
+
+if (!function_exists('set_admin_page_permissions')) {
+  function set_admin_page_permissions(int $adminId, array $pages): void {
+    if ($adminId <= 0) return;
+    ensure_admin_permissions_table();
+    $allowed = array_keys(admin_page_catalog());
+    $pages = array_values(array_unique(array_filter(array_map('strval', $pages), fn($p) => in_array($p, $allowed, true))));
+
+    $pdo = db();
+    $pdo->beginTransaction();
+    try {
+      $pdo->prepare("DELETE FROM admin_page_permissions WHERE admin_id=?")->execute([$adminId]);
+      if ($pages) {
+        $ins = $pdo->prepare("INSERT INTO admin_page_permissions(admin_id, page_key) VALUES(?,?)");
+        foreach ($pages as $p) $ins->execute([$adminId, $p]);
+      }
+      $pdo->commit();
+    } catch (Throwable $e) {
+      if ($pdo->inTransaction()) $pdo->rollBack();
+      throw $e;
+    }
+  }
+}
+
+if (!function_exists('admin_has_page_access')) {
+  function admin_has_page_access(string $pageKey): bool {
+    $pageKey = basename(trim($pageKey));
+    if ($pageKey === '' || $pageKey === 'logout.php') return true;
+    if (is_super_admin()) return true;
+
+    $adminId = (int)($_SESSION['admin_id'] ?? 0);
+    if ($adminId <= 0) return false;
+
+    $catalog = admin_page_catalog();
+    if (!isset($catalog[$pageKey])) return false;
+
+    $perms = get_admin_page_permissions($adminId);
+    if (!$perms) return false; // explicit permissions required for non-super admins
+    return in_array($pageKey, $perms, true);
   }
 }
 
