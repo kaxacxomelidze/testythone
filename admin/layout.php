@@ -8,6 +8,9 @@ $content = $content ?? '';
 $role = $_SESSION['admin_role'] ?? 'admin';
 $user = $_SESSION['admin_user'] ?? ($_SESSION['admin_name'] ?? 'admin');
 $isSuper = ($role === 'super');
+$can = static function(string $page) use ($isSuper): bool {
+  return $isSuper || admin_has_page_access($page);
+};
 ?>
 <!doctype html>
 <html lang="ka">
@@ -83,33 +86,51 @@ $isSuper = ($role === 'super');
       </div>
 
       <nav class="menu">
+        <?php if ($can('index.php')): ?>
         <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/index.php') ? 'active':''?>" href="index.php">
           სლაიდერი / პარამეტრები
         </a>
+        <?php endif; ?>
+<?php if ($can('news.php')): ?>
 <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/news.php') ? 'active':''?>" href="news.php">სიახლეები</a>
+<?php endif; ?>
+<?php if ($can('camps.php')): ?>
 <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/camps.php') ? 'active':''?>" href="camps.php">ბანაკები</a>
+<?php endif; ?>
 
+<?php if ($can('camp_applicants.php')): ?>
 <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/camp_applicants.php') ? 'active':''?>" href="camp_applicants.php">
   ბანაკის აპლიკანტები
 </a>
+<?php endif; ?>
+<?php if ($can('admin_grants.php')): ?>
 <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/admin_grants.php') ? 'active':''?>" href="admin_grants.php">
   გრანტები 
 </a>
+<?php endif; ?>
+<?php if ($can('special_pages.php')): ?>
 <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/special_pages.php') ? 'active':''?>" href="special_pages.php">
   სპეციალური გვერდები
 </a>
+<?php endif; ?>
+<?php if ($can('contact_messages.php')): ?>
 <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/contact_messages.php') ? 'active':''?>" href="contact_messages.php">
   საკონტაქტო შეტყობინებები
 </a>
+<?php endif; ?>
         <?php if ($isSuper): ?>
+          <?php if ($can('admins.php')): ?>
           <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/admins.php') ? 'active':''?>" href="admins.php">
             ადმინები
           </a>
+          <?php endif; ?>
 
           <!-- ✅ ADMIN LOGS -->
+          <?php if ($can('admin_logs.php')): ?>
           <a class="item <?=str_ends_with($_SERVER['PHP_SELF'],'/admin_logs.php') ? 'active':''?>" href="admin_logs.php">
             ადმინის ლოგები
           </a>
+          <?php endif; ?>
         <?php endif; ?>
 
         <a class="item" href="logout.php">გასვლა</a>

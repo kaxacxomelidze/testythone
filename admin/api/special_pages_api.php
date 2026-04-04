@@ -15,6 +15,7 @@ function sp_ok(array $data = []): void { sp_json_out(['ok'=>true] + $data); }
 function sp_err(string $message, int $status = 400): void { sp_json_out(['ok'=>false,'error'=>$message], $status); }
 
 if (empty($_SESSION['admin_logged_in'])) sp_err('ავტორიზაცია საჭიროა', 401);
+if (!is_super_admin() && !admin_has_page_access('special_pages.php')) sp_err('წვდომა აკრძალულია', 403);
 
 $csrf = (string)($_SESSION['csrf'] ?? '');
 $hdr = (string)($_SERVER['HTTP_X_CSRF'] ?? '');
