@@ -281,7 +281,7 @@ if (!function_exists('require_login')) {
 
 if (!function_exists('admin_page_catalog')) {
   function admin_page_catalog(): array {
-    $labels = [
+    return [
       'index.php' => 'სლაიდერი / პარამეტრები',
       'news.php' => 'სიახლეები',
       'camps.php' => 'ბანაკები',
@@ -294,19 +294,33 @@ if (!function_exists('admin_page_catalog')) {
       'admins.php' => 'ადმინები',
       'admin_logs.php' => 'ადმინის ლოგები',
     ];
+  }
+}
 
-    $exclude = ['config.php','db.php','layout.php','login.php','logout.php'];
-    foreach (glob(__DIR__ . '/*.php') as $fp) {
-      $base = basename($fp);
-      if (in_array($base, $exclude, true)) continue;
-      if (!isset($labels[$base])) {
-        $name = preg_replace('~\.php$~i', '', $base);
-        $name = str_replace(['_', '-'], ' ', (string)$name);
-        $labels[$base] = mb_convert_case((string)$name, MB_CASE_TITLE, 'UTF-8');
-      }
-    }
-    ksort($labels);
-    return $labels;
+if (!function_exists('admin_page_alias_map')) {
+  function admin_page_alias_map(): array {
+    return [
+      // slider/settings sub-pages -> index.php permission
+      'slide_add.php' => 'index.php',
+      'slide_edit.php' => 'index.php',
+      'slide_delete.php' => 'index.php',
+
+      // news sub-pages -> news.php permission
+      'news_add.php' => 'news.php',
+      'news_edit.php' => 'news.php',
+      'news_delete.php' => 'news.php',
+
+      // grants/applications builder related pages
+      'admin_builder.php' => 'admin_builder.php',
+      'admin_apps.php' => 'admin_apps.php',
+      'grants_edit.php' => 'admin_grants.php',
+      'export_application_word.php' => 'admin_apps.php',
+      'upload_file.php' => 'admin_apps.php',
+
+      // admin management/log helper pages
+      'create_user.php' => 'admins.php',
+      'test_log.php' => 'admin_logs.php',
+    ];
   }
 }
 
@@ -378,12 +392,15 @@ if (!function_exists('admin_has_page_access')) {
     $adminId = (int)($_SESSION['admin_id'] ?? 0);
     if ($adminId <= 0) return false;
 
+    $aliases = admin_page_alias_map();
+    $checkKey = $aliases[$pageKey] ?? $pageKey;
+
     $catalog = admin_page_catalog();
-    if (!isset($catalog[$pageKey])) return false;
+    if (!isset($catalog[$checkKey])) return false;
 
     $perms = get_admin_page_permissions($adminId);
     if (!$perms) return false; // explicit permissions required for non-super admins
-    return in_array($pageKey, $perms, true);
+    return in_array($checkKey, $perms, true);
   }
 }
 
