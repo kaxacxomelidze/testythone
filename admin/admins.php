@@ -28,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       try {
         $stmt->execute([$username, $hash, $role]);
         $newId = (int)$pdo->lastInsertId();
-        if ($newId > 0) {
-          // by default give full access; super admin can later narrow exact pages
+        if ($newId > 0 && $role === 'admin') {
+          // default სრულად admins-ზე; super admin შემდეგ ზუსტად შეზღუდავს
           set_admin_page_permissions($newId, array_keys($pageCatalog));
         }
         $msg = "დამატებულია.";
@@ -49,9 +49,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $msg = "საკუთარ თავს ვერ გათიშავ.";
     } else {
       $pdo->prepare("UPDATE admin_users SET role=?, is_active=? WHERE id=?")->execute([$role, $active, $id]);
-      $pages = $_POST['page_perms'] ?? [];
-      if (!is_array($pages)) $pages = [];
-      set_admin_page_permissions($id, $pages);
+      if ($role === 'admin') {
+        $pages = $_POST['page_perms'] ?? [];
+        if (!is_array($pages)) $pages = [];
+        set_admin_page_permissions($id, $pages);
+      } else {
+        // super admin-ს page permission არ ეხება
+        set_admin_page_permissions($id, []);
+      }
       $msg = "შენახულია.";
     }
 
@@ -156,21 +161,27 @@ ob_start();
 
               <input name="new_pass" type="password" placeholder="ახალი პაროლი (optional)" style="padding:8px;border-radius:10px;border:1px solid var(--line);background:rgba(17,28,51,.55);color:var(--txt)">
 
-              <div style="border:1px solid var(--line);border-radius:12px;padding:8px;max-height:220px;overflow:auto">
-                <div class="muted" style="margin-bottom:6px">გვერდების უფლებები</div>
-                <?php
-                  $uid = (int)$a['id'];
-                  $owned = $adminPermMap[$uid] ?? [];
-                  foreach($pageCatalog as $pk => $label):
-                    $checked = in_array($pk, $owned, true) ? 'checked' : '';
-                ?>
-                  <label style="display:flex;gap:8px;align-items:center;margin:4px 0">
-                    <input type="checkbox" name="page_perms[]" value="<?=h($pk)?>" <?=$checked?>>
-                    <span><?=h($label)?> <span class="muted">(<?=h($pk)?>)</span></span>
-                  </label>
-                <?php endforeach; ?>
-                <div class="muted" style="margin-top:6px">თუ არცერთი არ იქნება მონიშნული, ადმინს არ ექნება წვდომა არც ერთ გვერდზე.</div>
-              </div>
+              <?php if (($a['role'] ?? 'admin') === 'admin'): ?>
+                <div style="border:1px solid var(--line);border-radius:12px;padding:8px;max-height:220px;overflow:auto">
+                  <div class="muted" style="margin-bottom:6px">გვერდების უფლებები (მხოლოდ admin)</div>
+                  <?php
+                    $uid = (int)$a['id'];
+                    $owned = $adminPermMap[$uid] ?? [];
+                    foreach($pageCatalog as $pk => $label):
+                      $checked = in_array($pk, $owned, true) ? 'checked' : '';
+                  ?>
+                    <label style="display:flex;gap:8px;align-items:center;margin:4px 0">
+                      <input type="checkbox" name="page_perms[]" value="<?=h($pk)?>" <?=$checked?>>
+                      <span><?=h($label)?> <span class="muted">(<?=h($pk)?>)</span></span>
+                    </label>
+                  <?php endforeach; ?>
+                  <div class="muted" style="margin-top:6px">თუ არცერთი არ იქნება მონიშნული, ადმინს არ ექნება წვდომა არც ერთ გვერდზე.</div>
+                </div>
+              <?php else: ?>
+                <div style="border:1px solid var(--line);border-radius:12px;padding:8px">
+                  <div class="muted">SUPER ADMIN — სრული წვდომა (permissions არ გამოიყენება).</div>
+                </div>
+              <?php endif; ?>
 
               <div style="display:flex;gap:8px;align-items:center">
                 <button class="btn ac" type="submit">შენახვა</button>
