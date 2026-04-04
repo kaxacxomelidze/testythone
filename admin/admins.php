@@ -7,6 +7,8 @@ require_super_admin();
 
 $title = 'Admins';
 $csrf = csrf_token();
+ensure_admin_permissions_table();
+$pageCatalog = admin_page_catalog();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   csrf_check($_POST['csrf'] ?? '');
@@ -25,6 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $stmt = $pdo->prepare("INSERT INTO admin_users (username, password_hash, role) VALUES (?,?,?)");
       try {
         $stmt->execute([$username, $hash, $role]);
+        $newId = (int)$pdo->lastInsertId();
+        if ($newId > 0 && $role === 'admin') {
+          // default სრულად admins-ზე; super admin შემდეგ ზუსტად შეზღუდავს
+          set_admin_page_permissions($newId, array_keys($pageCatalog));
+        }
         $msg = "დამატებულია.";
       } catch (Throwable $e) {
         $msg = "ვერ დაემატა (შეიძლება username უკვე არსებობს).";
@@ -42,6 +49,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $msg = "საკუთარ თავს ვერ გათიშავ.";
     } else {
       $pdo->prepare("UPDATE admin_users SET role=?, is_active=? WHERE id=?")->execute([$role, $active, $id]);
+      if ($role === 'admin') {
+        $pages = $_POST['page_perms'] ?? [];
+        if (!is_array($pages)) $pages = [];
+        set_admin_page_permissions($id, $pages);
+      } else {
+        // super admin-ს page permission არ ეხება
+        set_admin_page_permissions($id, []);
+      }
       $msg = "შენახულია.";
     }
 
@@ -70,51 +85,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $admins = $pdo->query("SELECT id, username, role, is_active, created_at, last_login_at FROM admin_users ORDER BY role DESC, id ASC")->fetchAll();
+$adminPermMap = [];
+foreach ($admins as $ad) {
+  $adminPermMap[(int)$ad['id']] = get_admin_page_permissions((int)$ad['id']);
+}
 
 ob_start();
 ?>
 <div class="card">
-  <div class="muted" style="margin-bottom:10px">Only SUPER ADMIN can manage admins.</div>
+  <div class="muted" style="margin-bottom:10px">მხოლოდ SUPER ADMIN მართავს ადმინებს და გვერდების წვდომებს.</div>
   <?php if (!empty($msg)): ?>
     <div style="margin-bottom:10px;color:var(--muted)"><?=h($msg)?></div>
   <?php endif; ?>
 
-  <h3 style="margin:0 0 10px">Add Admin</h3>
+  <h3 style="margin:0 0 10px">ადმინის დამატება</h3>
   <form method="post" style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end">
     <input type="hidden" name="csrf" value="<?=h($csrf)?>">
     <input type="hidden" name="action" value="create">
 
     <div>
-      <label class="muted">Username</label>
+      <label class="muted">მომხმარებელი</label>
       <input name="username" required style="width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(17,28,51,.55);color:var(--txt)">
     </div>
     <div>
-      <label class="muted">Password (min 8)</label>
+      <label class="muted">პაროლი (მინ 8)</label>
       <input name="pass" type="password" required style="width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(17,28,51,.55);color:var(--txt)">
     </div>
     <div>
-      <label class="muted">Role</label>
+      <label class="muted">როლი</label>
       <select name="role" style="width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(17,28,51,.55);color:var(--txt)">
         <option value="admin">admin</option>
         <option value="super">super</option>
       </select>
     </div>
-    <button class="btn ac" type="submit">Create</button>
+    <button class="btn ac" type="submit">დამატება</button>
   </form>
 </div>
 
 <div class="card">
-  <h3 style="margin:0 0 10px">Admins list</h3>
+  <h3 style="margin:0 0 10px">ადმინების სია</h3>
 
   <div style="overflow:auto">
     <table style="width:100%;border-collapse:collapse">
       <thead>
         <tr class="muted">
-          <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line)">User</th>
-          <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line)">Role</th>
-          <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line)">Active</th>
-          <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line)">Last login</th>
-          <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line)">Actions</th>
+          <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line)">მომხმარებელი</th>
+          <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line)">როლი</th>
+          <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line)">აქტიური</th>
+          <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line)">ბოლო შესვლა</th>
+          <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line)">ქმედებები / უფლებები</th>
         </tr>
       </thead>
       <tbody>
@@ -122,10 +141,10 @@ ob_start();
         <tr>
           <td style="padding:10px;border-bottom:1px solid var(--line)"><?=h($a['username'])?></td>
           <td style="padding:10px;border-bottom:1px solid var(--line)"><?=h($a['role'])?></td>
-          <td style="padding:10px;border-bottom:1px solid var(--line)"><?= (int)$a['is_active'] ? 'yes' : 'no' ?></td>
+          <td style="padding:10px;border-bottom:1px solid var(--line)"><?= (int)$a['is_active'] ? 'კი' : 'არა' ?></td>
           <td style="padding:10px;border-bottom:1px solid var(--line)"><?=h($a['last_login_at'] ?? '-')?></td>
           <td style="padding:10px;border-bottom:1px solid var(--line)">
-            <form method="post" style="display:grid;grid-template-columns:140px 120px 120px 140px auto auto;gap:8px;align-items:center">
+            <form method="post" style="display:grid;grid-template-columns:140px 120px 180px 1fr;gap:8px;align-items:start">
               <input type="hidden" name="csrf" value="<?=h($csrf)?>">
               <input type="hidden" name="action" value="update">
               <input type="hidden" name="id" value="<?=h($a['id'])?>">
@@ -137,19 +156,43 @@ ob_start();
 
               <label style="display:flex;gap:8px;align-items:center" class="muted">
                 <input type="checkbox" name="is_active" value="1" <?= (int)$a['is_active'] ? 'checked':'' ?>>
-                active
+                აქტიური
               </label>
 
-              <input name="new_pass" type="password" placeholder="new password" style="padding:8px;border-radius:10px;border:1px solid var(--line);background:rgba(17,28,51,.55);color:var(--txt)">
+              <input name="new_pass" type="password" placeholder="ახალი პაროლი (optional)" style="padding:8px;border-radius:10px;border:1px solid var(--line);background:rgba(17,28,51,.55);color:var(--txt)">
 
-              <button class="btn ac" type="submit">Save</button>
+              <?php if (($a['role'] ?? 'admin') === 'admin'): ?>
+                <div style="border:1px solid var(--line);border-radius:12px;padding:8px;max-height:220px;overflow:auto">
+                  <div class="muted" style="margin-bottom:6px">გვერდების უფლებები (მხოლოდ admin)</div>
+                  <?php
+                    $uid = (int)$a['id'];
+                    $owned = $adminPermMap[$uid] ?? [];
+                    foreach($pageCatalog as $pk => $label):
+                      $checked = in_array($pk, $owned, true) ? 'checked' : '';
+                  ?>
+                    <label style="display:flex;gap:8px;align-items:center;margin:4px 0">
+                      <input type="checkbox" name="page_perms[]" value="<?=h($pk)?>" <?=$checked?>>
+                      <span><?=h($label)?> <span class="muted">(<?=h($pk)?>)</span></span>
+                    </label>
+                  <?php endforeach; ?>
+                  <div class="muted" style="margin-top:6px">თუ არცერთი არ იქნება მონიშნული, ადმინს არ ექნება წვდომა არც ერთ გვერდზე.</div>
+                </div>
+              <?php else: ?>
+                <div style="border:1px solid var(--line);border-radius:12px;padding:8px">
+                  <div class="muted">SUPER ADMIN — სრული წვდომა (permissions არ გამოიყენება).</div>
+                </div>
+              <?php endif; ?>
+
+              <div style="display:flex;gap:8px;align-items:center">
+                <button class="btn ac" type="submit">შენახვა</button>
+              </div>
             </form>
 
-            <form method="post" style="margin-top:8px" onsubmit="return confirm('Delete admin?')">
+            <form method="post" style="margin-top:8px" onsubmit="return confirm('წავშალო ადმინი?')">
               <input type="hidden" name="csrf" value="<?=h($csrf)?>">
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="id" value="<?=h($a['id'])?>">
-              <button class="btn bad" type="submit">Delete</button>
+              <button class="btn bad" type="submit">წაშლა</button>
             </form>
 
           </td>
