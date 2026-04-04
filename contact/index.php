@@ -7,6 +7,18 @@ $dataFile = DATA_DIR . '/contact_messages.json';
 $errors = [];
 $success = false;
 
+function refresh_contact_captcha(): void {
+  $a = random_int(1, 9);
+  $b = random_int(1, 9);
+  $_SESSION['contact_captcha_a'] = $a;
+  $_SESSION['contact_captcha_b'] = $b;
+  $_SESSION['contact_captcha_answer'] = $a + $b;
+}
+
+if (!isset($_SESSION['contact_captcha_answer'])) {
+  refresh_contact_captcha();
+}
+
 function save_message(string $path, array $message): bool {
   $dir = dirname($path);
   if (!is_dir($dir)) {
@@ -50,10 +62,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $email = trim((string)($_POST['email'] ?? ''));
   $phone = trim((string)($_POST['phone'] ?? ''));
   $message = trim((string)($_POST['message'] ?? ''));
+  $captcha = trim((string)($_POST['captcha'] ?? ''));
+  $honeypot = trim((string)($_POST['website'] ?? ''));
 
   if ($name === '') $errors[] = 'name';
   if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'email';
   if ($message === '') $errors[] = 'message';
+  if ($honeypot !== '') $errors[] = 'captcha';
+  if ($captcha === '' || (int)$captcha !== (int)($_SESSION['contact_captcha_answer'] ?? -1)) $errors[] = 'captcha';
 
   if (!$errors) {
     $entry = [
@@ -68,9 +84,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (save_message($dataFile, $entry)) {
       $success = true;
+      refresh_contact_captcha();
     } else {
       $errors[] = 'save';
     }
+  } else {
+    refresh_contact_captcha();
   }
 }
 ?>
@@ -121,10 +140,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($success): ?><div class="notice success"><strong data-i18n="contact.successTitle">გმადლობთ!</strong> <span data-i18n="contact.successText">თქვენი შეტყობინება მიღებულია. მალე დაგიკავშირდებით.</span></div><?php elseif ($errors): ?><div class="notice error"><span data-i18n="contact.error">გთხოვთ სწორად შეავსოთ აუცილებელი ველები.</span></div><?php endif; ?>
         <form class="form-grid" method="post">
           <input type="hidden" name="csrf" value="<?=h(csrf_token())?>">
+          <input type="text" name="website" value="" autocomplete="off" tabindex="-1" class="visually-hidden" aria-hidden="true">
           <div class="form-row"><label for="name" data-i18n="contact.name">სახელი და გვარი</label><input id="name" name="name" type="text" value="<?=h($_POST['name'] ?? '')?>" required></div>
           <div class="form-row"><label for="email" data-i18n="contact.email">ელფოსტა</label><input id="email" name="email" type="email" value="<?=h($_POST['email'] ?? '')?>" required></div>
           <div class="form-row"><label for="phone" data-i18n="contact.phone">ტელეფონი (არასავალდებულო)</label><input id="phone" name="phone" type="text" value="<?=h($_POST['phone'] ?? '')?>"></div>
           <div class="form-row"><label for="message" data-i18n="contact.message">შეტყობინება</label><textarea id="message" name="message" required><?=h($_POST['message'] ?? '')?></textarea></div>
+          <div class="form-row">
+            <label for="captcha">უსაფრთხოების კითხვა: <?= (int)($_SESSION['contact_captcha_a'] ?? 0) ?> + <?= (int)($_SESSION['contact_captcha_b'] ?? 0) ?> = ?</label>
+            <input id="captcha" name="captcha" type="number" inputmode="numeric" required>
+          </div>
           <button class="btn-submit" type="submit" data-i18n="contact.submit">გაგზავნა</button>
         </form>
       </article>
